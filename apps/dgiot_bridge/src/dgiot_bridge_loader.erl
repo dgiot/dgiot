@@ -27,7 +27,7 @@
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
-%% 内部函数导出（用于测试）
+%% 鍐呴儴鍑芥暟瀵煎嚭锛堢敤浜庢祴璇曪級
 -export([safe_to_channel_type/1]).
 -define(SERVER, ?MODULE).
 -record(state, {success}).
@@ -212,7 +212,7 @@ start_load_channel(Pid, PageSize, MaxTotal, #{<<"where">> := Where}) ->
 %%update_product_(_, _ChannleId, _Name, _Type) ->
 %%    pass.
 
-%% @doc 安全地将通道类型字符串转换为整数类型
+%% @doc 瀹夊叏鍦板皢閫氶亾绫诲瀷瀛楃涓茶浆鎹负鏁存暟绫诲瀷
 %% @spec safe_to_channel_type(binary()) -> integer()
 safe_to_channel_type(<<"protocol">>) -> ?PROTOCOL_CHL;
 safe_to_channel_type(<<"bridge">>) -> ?BRIDGE_CHL;
