@@ -408,8 +408,8 @@ last_resort_join(Socket, MulticastGroup, Interface) ->
     
     % 方法1: 使用原始setsockopt
     try
-        % 获取socket的文件描述符
-        {ok, [{fd, Fd}]} = inet:getopts(Socket, [fd]),
+        % 获取socket的文件描述符（已不再需要，但保留调用以验证socket）
+        {ok, [{fd, _}]} = inet:getopts(Socket, [fd]),
         
         % 构建ip_mreq结构
         IpMreq = <<
@@ -423,13 +423,13 @@ last_resort_join(Socket, MulticastGroup, Interface) ->
             (element(4, Interface)):8
         >>,
         
-        % 使用prim_inet直接调用setsockopt
-        case prim_inet:setsockopt(Fd, inet, ip, add_membership, IpMreq) of
+        % 使用inet:setopts替代prim_inet:setsockopt
+        case inet:setopts(Socket, [{add_membership, IpMreq}]) of
             ok ->
-                ?LOG(error, "[LAST_RESORT_JOIN] ✅ 原始setsockopt成功"),
+                ?LOG(error, "[LAST_RESORT_JOIN] ✅ inet:setopts成功"),
                 ok;
             {error, Reason} ->
-                ?LOG(error, "[LAST_RESORT_JOIN] ❌ 原始setsockopt失败: ~p", [Reason]),
+                ?LOG(error, "[LAST_RESORT_JOIN] ❌ inet:setopts失败: ~p", [Reason]),
                 {error, Reason}
         end
     catch

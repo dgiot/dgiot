@@ -1,0 +1,57 @@
+[
+  {
+    "type": "test_start",
+    "timestamp": "2026-03-25T10:54:36.419915",
+    "test_id": "20260325_105436",
+    "station_id": 1700,
+    "station_name": "磁航向工位"
+  },
+  {
+    "type": "step_start",
+    "timestamp": "2026-03-25T10:54:36.419924",
+    "step_no": 1,
+    "step_name": "扫码获取设备编码"
+  },
+  {
+    "type": "step_end",
+    "timestamp": "2026-03-25T10:54:44.420818",
+    "step_no": 1,
+    "step_name": "扫码获取设备编码",
+    "status": "passed",
+    "result": "设备成功绑定到1700工位"
+  },
+  {
+    "type": "step_start",
+    "timestamp": "2026-03-25T10:54:44.420833",
+    "step_no": 2,
+    "step_name": "磁航向校准"
+  },
+  {
+    "type": "step_end",
+    "timestamp": "2026-03-25T10:55:45.429998",
+    "step_no": 2,
+    "step_name": "磁航向校准",
+    "status": "passed",
+    "result": "磁航向数据正常，校准完成"
+  },
+  {
+    "type": "step_start",
+    "timestamp": "2026-03-25T10:55:45.430014",
+    "step_no": 3,
+    "step_name": "磁场精度检测"
+  },
+  {
+    "type": "step_end",
+    "timestamp": "2026-03-25T10:56:37.435953",
+    "step_no": 3,
+    "step_name": "磁场精度检测",
+    "status": "passed",
+    "result": "磁场误差 < 0.5° (实际最大误差: 0.2°)"
+  },
+  {
+    "type": "test_end",
+    "timestamp": "2026-03-25T10:56:37.436132",
+    "duration_seconds": 121.016217,
+    "duration_formatted": "121.02s"
+  }
+]

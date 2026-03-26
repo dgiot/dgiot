@@ -272,6 +272,114 @@ do_request(post_trace, #{<<"action">> := Action, <<"tracetype">> := Tracetype, <
             {400, #{<<"code">> => 400, <<"error">> => dgiot_utils:format("~p", [Reason])}}
     end;
 
+%% 备份Parse数据库
+do_request(post_backup_parse, _Args, _Context, _Req) ->
+    Date = erlang:localtime(),
+    {{Y, M, D}, {H, Min, S}} = Date,
+    FileName = lists:flatten(io_lib:format("parse_~4.0B~2.0B~2.0B_~2.0B~2.0B~2.0B.sql", [Y, M, D, H, Min, S])),
+    BackupPath = "/data/" ++ FileName,
+    Cmd = lists:flatten(io_lib:format("sudo -u postgres /usr/local/pgsql/15/bin/pg_dump -F p -f ~s -C -E UTF8 -h 127.0.0.1 -U postgres parse", [BackupPath])),
+    ?LOG(info, "执行备份命令: ~s", [Cmd]),
+    case os:cmd(Cmd) of
+        [] ->
+            GzipCmd = lists:flatten(io_lib:format("gzip ~s", [BackupPath])),
+            os:cmd(GzipCmd),
+            {ok, #{
+                <<"success">> => true,
+                <<"filename">> => list_to_binary(FileName ++ ".gz"),
+                <<"path">> => list_to_binary(BackupPath ++ ".gz")
+            }};
+        Error ->
+            ?LOG(error, "备份失败: ~p", [Error]),
+            {error, list_to_binary(Error)}
+    end;
+
+%% 获取测试项顺序列表
+do_request(get_testitem_order, _Args, _Context, _Req) ->
+    ProductId = <<"343cf21f82">>,
+    case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"product">> => #{
+        <<"__type">> => <<"Pointer">>,
+        <<"className">> => <<"Product">>,
+        <<"objectId">> => ProductId
+    }}}, 100) of
+        {ok, #{<<"results">> := Items}} ->
+            SortedItems = lists:sort(fun(A, B) ->
+                OrderA = maps:get(<<"order">>, maps:get(<<"content">>, A, #{}), 0),
+                OrderB = maps:get(<<"order">>, maps:get(<<"content">>, B, #{}), 0),
+                OrderA =< OrderB
+            end, Items),
+            Result = [ #{
+                <<"objectId">> => maps:get(<<"objectId">>, Item),
+                <<"name">> => maps:get(<<"name">>, Item),
+                <<"order">> => maps:get(<<"order">>, maps:get(<<"content">>, Item, #{}), 0),
+                <<"steps">> => [ #{
+                    <<"name">> => maps:get(<<"name">>, Step, <<>>),
+                    <<"step_number">> => maps:get(<<"step_number">>, Step, 0),
+                    <<"description">> => maps:get(<<"description">>, Step, <<>>)
+                } || Step <- maps:get(<<"steps">>, maps:get(<<"content">>, Item, #{}), [])]
+            } || Item <- SortedItems],
+            {ok, #{<<"data">> => Result}};
+        Error ->
+            ?LOG(error, "获取测试项顺序失败: ~p", [Error]),
+            {error, <<"获取测试项顺序失败">>}
+    end;
+
+%% 更新测试项顺序
+do_request(post_testitem_order, Args, _Context, _Req) ->
+    Orders = maps:get(<<"orders">>, Args, []),
+    ProductId = <<"343cf21f82">>,
+    case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"product">> => #{
+        <<"__type">> => <<"Pointer">>,
+        <<"className">> => <<"Product">>,
+        <<"objectId">> => ProductId
+    }}}, 100) of
+        {ok, #{<<"results">> := Items}} ->
+            lists:foreach(fun(OrderItem) ->
+                ItemId = maps:get(<<"objectId">>, OrderItem),
+                NewOrder = maps:get(<<"order">>, OrderItem, 0),
+                case lists:keyfind(ItemId, 3, Items) of
+                    false -> ok;
+                    Item ->
+                        OldContent = maps:get(<<"content">>, Item, #{}),
+                        NewContent = OldContent#{<<"order">> => NewOrder},
+                        dgiot_parse:update_object(<<"Device">>, ItemId, #{<<"content">> => NewContent})
+                end
+            end, Orders),
+            {ok, #{<<"success">> => true, <<"message">> => <<"更新成功">>}};
+        Error ->
+            ?LOG(error, "更新测试项顺序失败: ~p", [Error]),
+            {error, <<"更新测试项顺序失败">>}
+    end;
+
+%% 更新测试步骤顺序
+do_request(post_teststep_order, Args, _Context, _Req) ->
+    ItemId = maps:get(<<"objectId">>, Args),
+    Steps = maps:get(<<"steps">>, Args, []),
+    case dgiot_parse:get_object(<<"Device">>, ItemId) of
+        {ok, Item} ->
+            OldContent = maps:get(<<"content">>, Item, #{}),
+            OldSteps = maps:get(<<"steps">>, OldContent, []),
+            NewSteps = lists:map(fun(StepReq) ->
+                NewNum = maps:get(<<"step_number">>, StepReq),
+                case lists:keyfind(NewNum, 2, OldSteps) of
+                    false -> null;
+                    Step -> Step
+                end
+            end, Steps),
+            FilteredSteps = [S || S <- NewSteps, S /= null],
+            NewContent = OldContent#{<<"steps">> => FilteredSteps},
+            case dgiot_parse:update_object(<<"Device">>, ItemId, #{<<"content">> => NewContent}) of
+                {ok, _} ->
+                    {ok, #{<<"success">> => true, <<"message">> => <<"更新成功">>}};
+                Error ->
+                    ?LOG(error, "更新测试步骤顺序失败: ~p", [Error]),
+                    {error, <<"更新测试步骤顺序失败">>}
+            end;
+        Error ->
+            ?LOG(error, "获取测试项失败: ~p", [Error]),
+            {error, <<"获取测试项失败">>}
+    end;
+
 
 %%  服务器不支持的API接口
 do_request(OperationId, Args, _Context, _Req) ->

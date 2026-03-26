@@ -1,0 +1,136 @@
+{
+  "metadata": {
+    "generated_at": "2026-03-25T07:52:00Z",
+    "source": "Parse Database Product_bd49cc8272",
+    "version": "1.0.0"
+  },
+  "fixture_type": "超近距无人机治具",
+  "protocol": "Modbus RTU/TCP",
+  "slave_id": "02",
+  "description": "无人机测试治具Modbus指令集",
+  "commands": [
+    {
+      "code": 1,
+      "name": "控制大继电器上电",
+      "description": "控制大继电器给无人机上电",
+      "category": "power_control"
+    },
+    {
+      "code": 2,
+      "name": "控制大继电器断电",
+      "description": "控制大继电器断电",
+      "category": "power_control"
+    },
+    {
+      "code": 3,
+      "name": "启动无人机",
+      "description": "启动无人机电源",
+      "category": "power_control"
+    },
+    {
+      "code": 4,
+      "name": "关闭无人机",
+      "description": "关闭无人机电源",
+      "category": "power_control"
+    },
+    {
+      "code": 5,
+      "name": "风速管堵上",
+      "description": "风速管堵上操作",
+      "category": "test_control"
+    },
+    {
+      "code": 6,
+      "name": "风速管打开",
+      "description": "风速管打开操作",
+      "category": "test_control"
+    },
+    {
+      "code": 7,
+      "name": "测试引信9,10点电阻",
+      "description": "测试引信9和10点之间的电阻",
+      "category": "resistance_test"
+    },
+    {
+      "code": 8,
+      "name": "测试引信7,8点电阻",
+      "description": "测试引信7和8点之间的电阻",
+      "category": "resistance_test"
+    },
+    {
+      "code": 9,
+      "name": "测试引信7和后翼安装钉电阻",
+      "description": "测试引信7和后翼安装钉之间的电阻",
+      "category": "resistance_test"
+    },
+    {
+      "code": 10,
+      "name": "测试引信8和后翼安装钉电阻",
+      "description": "测试引信8和后翼安装钉之间的电阻",
+      "category": "resistance_test"
+    },
+    {
+      "code": 11,
+      "name": "测无人机电池端口电阻",
+      "description": "测试无人机电池端口的电阻",
+      "category": "resistance_test"
+    },
+    {
+      "code": 12,
+      "name": "测试引信5点与地电压",
+      "description": "测试引信5点与地之间的电压",
+      "category": "voltage_test"
+    },
+    {
+      "code": 13,
+      "name": "测试引信1点与地电压",
+      "description": "测试引信1点与地之间的电压",
+      "category": "voltage_test"
+    },
+    {
+      "code": 14,
+      "name": "读取工位信息",
+      "description": "读取工位地址和信息",
+      "category": "communication"
+    },
+    {
+      "code": 15,
+      "name": "PC与治具通讯检测",
+      "description": "PC通过Modbus-RTU功能码05置位线圈3检测通讯状态(值:FF00=置位,0000=复位)",
+      "category": "communication"
+    },
+    {
+      "code": 16,
+      "name": "PC控制治具测试",
+      "description": "PC通过Modbus-RTU功能码06写寄存器13控制测试启动(03)/结束(09)",
+      "category": "communication"
+    }
+  ],
+  "command_categories": {
+    "power_control": {
+      "name": "电源控制",
+      "description": "治具电源控制指令",
+      "commands": [1, 2, 3, 4]
+    },
+    "test_control": {
+      "name": "测试控制",
+      "description": "测试操作控制指令",
+      "commands": [5, 6]
+    },
+    "resistance_test": {
+      "name": "电阻测试",
+      "description": "引信电阻测试指令",
+      "commands": [7, 8, 9, 10, 11]
+    },
+    "voltage_test": {
+      "name": "电压测试",
+      "description": "引信电压测试指令",
+      "commands": [12, 13]
+    },
+    "communication": {
+      "name": "通讯控制",
+      "description": "通讯检测和控制指令",
+      "commands": [14, 15, 16]
+    }
+  }
+}

@@ -1,0 +1,333 @@
+%%%-------------------------------------------------------------------
+%%% @doc
+%%% dgiot_uav Schema Configuration
+%%%
+%%% 无人机PLC测试系统配置架构
+%%% 参考：dgiot_dlink.schema格式
+%%%-------------------------------------------------------------------
+
+%% IP地址配置
+{mapping, "uav.magnetic_plc_ip", "dgiot_uav.magnetic_plc_ip", [
+    {default, "192.168.100.20"},
+    {datatype, string},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.magnetic_dtu_ip", "dgiot_uav.magnetic_dtu_ip", [
+    {default, "192.168.100.21"},
+    {datatype, string},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.shared_ip", "dgiot_uav.shared_ip", [
+    {default, "192.168.100.40"},
+    {datatype, string},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.fixture_prefix", "dgiot_uav.fixture_prefix", [
+    {default, "192.168.100."},
+    {datatype, string},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+%% 端口配置
+{mapping, "uav.modbus_port", "dgiot_uav.modbus_port", [
+    {default, 502},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+%% 从机地址配置
+{mapping, "uav.slave_address_plc", "dgiot_uav.slave_address_plc", [
+    {default, 502},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.slave_address_device_1", "dgiot_uav.slave_address_device_1", [
+    {default, 1},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.slave_address_device_2", "dgiot_uav.slave_address_device_2", [
+    {default, 2},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.slave_address_broadcast", "dgiot_uav.slave_address_broadcast", [
+    {default, 255},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+%% 基地址配置
+{mapping, "uav.base_magnetic", "dgiot_uav.base_magnetic", [
+    {default, 1700},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.base_total_test_2", "dgiot_uav.base_total_test_2", [
+    {default, 1600},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.base_total_test_1", "dgiot_uav.base_total_test_1", [
+    {default, 1500},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.base_burn_in_2", "dgiot_uav.base_burn_in_2", [
+    {default, 1300},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.base_burn_in_1", "dgiot_uav.base_burn_in_1", [
+    {default, 1200},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.base_gantry", "dgiot_uav.base_gantry", [
+    {default, 1100},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+%% 治具地址配置
+{mapping, "uav.fixture_magnetic", "dgiot_uav.fixture_magnetic", [
+    {default, 0},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.fixture_loading", "dgiot_uav.fixture_loading", [
+    {default, 255},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.fixture_total_test_2", "dgiot_uav.fixture_total_test_2", [
+    {default, 1},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.fixture_total_test_2_power", "dgiot_uav.fixture_total_test_2_power", [
+    {default, 2},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.fixture_total_test_1", "dgiot_uav.fixture_total_test_1", [
+    {default, 3},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.fixture_total_test_1_power", "dgiot_uav.fixture_total_test_1_power", [
+    {default, 4},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.fixture_burn_in_2", "dgiot_uav.fixture_burn_in_2", [
+    {default, 6},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.fixture_burn_in_1", "dgiot_uav.fixture_burn_in_1", [
+    {default, 7},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.fixture_gantry", "dgiot_uav.fixture_gantry", [
+    {default, 5},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+%% 传感器编码配置
+{mapping, "uav.sensor_magnetic", "dgiot_uav.sensor_magnetic", [
+    {default, 1},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.sensor_loading", "dgiot_uav.sensor_loading", [
+    {default, 2},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.sensor_total_test_2", "dgiot_uav.sensor_total_test_2", [
+    {default, 3},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.sensor_total_test_2_power", "dgiot_uav.sensor_total_test_2_power", [
+    {default, 4},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.sensor_total_test_1", "dgiot_uav.sensor_total_test_1", [
+    {default, 5},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.sensor_total_test_1_power", "dgiot_uav.sensor_total_test_1_power", [
+    {default, 6},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.sensor_burn_in_2", "dgiot_uav.sensor_burn_in_2", [
+    {default, 7},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.sensor_burn_in_1", "dgiot_uav.sensor_burn_in_1", [
+    {default, 8},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.sensor_gantry", "dgiot_uav.sensor_gantry", [
+    {default, 9},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+%% 工位配置列表 (简化格式，避免cuttlefish解析复杂类型错误)
+%% 使用JSON字符串格式存储，在代码中解析
+{mapping, "uav.stations", "dgiot_uav.stations", [
+    {default, ""},
+    {datatype, string},
+    {comma_separated_list, false},
+    {nullable, true}
+]}.
+
+%% 设备类型配置
+{mapping, "uav.device_fixture_base", "dgiot_uav.device_fixture_base", [
+    {default, "治具基准舵面"},
+    {datatype, string},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.device_left_front_wing", "dgiot_uav.device_left_front_wing", [
+    {default, "左前翼舵面"},
+    {datatype, string},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.device_right_front_wing", "dgiot_uav.device_right_front_wing", [
+    {default, "右前翼舵面"},
+    {datatype, string},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.device_left_side_wing", "dgiot_uav.device_left_side_wing", [
+    {default, "左侧翼舵面"},
+    {datatype, string},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.device_right_side_wing", "dgiot_uav.device_right_side_wing", [
+    {default, "右侧翼舵面"},
+    {datatype, string},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.device_ground_test", "dgiot_uav.device_ground_test", [
+    {default, "地测口"},
+    {datatype, string},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.device_microcontroller", "dgiot_uav.device_microcontroller", [
+    {default, "单片机"},
+    {datatype, string},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+%% MES系统配置
+{mapping, "uav.mes_api_url", "dgiot_uav.mes_api_url", [
+    {default, "http://172.1.2.222:801/lezao/jymes/api/equip/proExec"},
+    {datatype, string},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.mes_api_timeout", "dgiot_uav.mes_api_timeout", [
+    {default, 5000},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+{mapping, "uav.mes_api_token", "dgiot_uav.mes_api_token", [
+    {default, ""},
+    {datatype, string},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.
+
+%% 二维码缓存配置
+{mapping, "uav.qrcode_cache_expire", "dgiot_uav.qrcode_cache_expire", [
+    {default, 20000},
+    {datatype, integer},
+    {comma_separated_list, false},
+    {nullable, false}
+]}.

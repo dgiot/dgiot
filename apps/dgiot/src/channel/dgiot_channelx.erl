@@ -19,7 +19,7 @@
 -author("johnliu").
 -define(CHANNEL(Type, Id), binary_to_atom(get_name(ChannelType, ChannelId), utf8)).
 -behaviour(gen_server).
--include_lib("dgiot/include/logger.hrl").
+-include("logger.hrl").
 
 %% API
 -export([
@@ -180,7 +180,7 @@ get_name(ChannelType, ChannelId) when is_binary(ChannelId) ->
 get_name(ChannelType, ChannelId) ->
     list_to_binary(lists:concat([ChannelType, "/", ChannelId])).
 
-%% @doc 查找通道信息
+%% @doc 鏌ユ壘閫氶亾淇℃伅
 %% @spec lookup(ChannelId) -> {ok, ChannelInfo} | {error, not_found}
 lookup(ChannelId) ->
     case dgiot_data:get({channeltype, ChannelId}) of

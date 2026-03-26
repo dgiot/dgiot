@@ -605,11 +605,11 @@ do_request(post_station_data, Args, #{<<"sessionToken">> := SessionToken} = _Con
 %% iot_hub 概要: 设备调试接口
 %% OperationId:post_device_debug
 %% 请求:POST /iotapi/post_device_debug
-do_request(post_device_debug, #{<<"deviceid">> := DeviceId, <<"messagetype">> := Messagetype, <<"data">> := Data} = _Args, _Context, _Req) ->
+do_request(post_device_debug, #{<<"deviceid">> := DeviceId, <<"messagetype">> := _Messagetype, <<"data">> := Data} = _Args, _Context, _Req) ->
     case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}}} ->
             ProfileTopic = <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/debug">>,
-            NewData = dgiot_edge:get_writeData(Messagetype, Data),
+            NewData = Data, % dgiot_edge:get_writeData(Messagetype,Data) 函数已移除，直接使用原始数据
             dgiot_mqtt:publish(DeviceId, ProfileTopic, NewData),
             {200, #{<<"status">> => 0, <<"data">> => #{<<"topic">> => ProfileTopic}}};
         _ ->

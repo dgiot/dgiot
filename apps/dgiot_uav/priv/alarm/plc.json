@@ -1,0 +1,29 @@
+[
+  {
+    "station_id": 1,
+    "word_address": 1130,
+    "bit": 0,
+    "device": "测试线PLC",
+    "description": "有急停按下，请复位后再运行机台！",
+    "level": 1,
+    "enabled": true
+  },
+  {
+    "station_id": 1,
+    "word_address": 1130,
+    "bit": 1,
+    "device": "测试线PLC",
+    "description": "传送Y轴_9驱动器报警",
+    "level": 2,
+    "enabled": true
+  },
+  {
+    "station_id": 2,
+    "word_address": 1730,
+    "bit": 0,
+    "device": "磁航向PLC",
+    "description": "有急停按下",
+    "level": 1,
+    "enabled": true
+  }
+]

@@ -1,0 +1,482 @@
+[
+  {
+    "device_address": "磁航向_磁航向校准",
+    "device_name": "磁航向校准",
+    "station_name": "磁航向",
+    "test_step_count": 11
+  },
+  {
+    "device_address": "磁航向_磁航向测试",
+    "device_name": "磁航向测试",
+    "station_name": "磁航向",
+    "test_step_count": 4
+  },
+  {
+    "device_address": "总测_上电",
+    "device_name": "上电",
+    "station_name": "总测",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "总测_导电膜与引信通信调试",
+    "device_name": "导电膜与引信通信调试",
+    "station_name": "总测",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "总测_引信5V供电调试",
+    "device_name": "引信5V供电调试",
+    "station_name": "总测",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "总测_引信24V供电调试",
+    "device_name": "引信24V供电调试",
+    "station_name": "总测",
+    "test_step_count": 8
+  },
+  {
+    "device_address": "总测_弹翼开关与引信通信调试",
+    "device_name": "弹翼开关与引信通信调试",
+    "station_name": "总测",
+    "test_step_count": 8
+  },
+  {
+    "device_address": "总测_飞控版本号检查",
+    "device_name": "飞控版本号检查",
+    "station_name": "总测",
+    "test_step_count": 3
+  },
+  {
+    "device_address": "总测_导航状态检查",
+    "device_name": "导航状态检查",
+    "station_name": "总测",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "总测_帧频检查",
+    "device_name": "帧频检查",
+    "station_name": "总测",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "总测_发射筒通讯测试",
+    "device_name": "发射筒通讯测试",
+    "station_name": "总测",
+    "test_step_count": 3
+  },
+  {
+    "device_address": "总测_主循环时间检查",
+    "device_name": "主循环时间检查",
+    "station_name": "总测",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "总测_电压显示",
+    "device_name": "电压显示",
+    "station_name": "总测",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "总测_一次电池通讯检查",
+    "device_name": "一次电池通讯检查",
+    "station_name": "总测",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "总测_卫星导航检查",
+    "device_name": "卫星导航检查",
+    "station_name": "总测",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "总测_原点装订功能调试",
+    "device_name": "原点装订功能调试",
+    "station_name": "总测",
+    "test_step_count": 4
+  },
+  {
+    "device_address": "总测_航线装订功能",
+    "device_name": "航线装订功能",
+    "station_name": "总测",
+    "test_step_count": 6
+  },
+  {
+    "device_address": "总测_加速度校准",
+    "device_name": "加速度校准",
+    "station_name": "总测",
+    "test_step_count": 5
+  },
+  {
+    "device_address": "总测_姿态测试",
+    "device_name": "姿态测试",
+    "station_name": "总测",
+    "test_step_count": 8
+  },
+  {
+    "device_address": "总测_气压高度检查",
+    "device_name": "气压高度检查",
+    "station_name": "总测",
+    "test_step_count": 7
+  },
+  {
+    "device_address": "总测_空速标定",
+    "device_name": "空速标定",
+    "station_name": "总测",
+    "test_step_count": 3
+  },
+  {
+    "device_address": "总测_空速调试",
+    "device_name": "空速调试",
+    "station_name": "总测",
+    "test_step_count": 5
+  },
+  {
+    "device_address": "总测_左前翼校准",
+    "device_name": "左前翼校准",
+    "station_name": "总测",
+    "test_step_count": 14
+  },
+  {
+    "device_address": "总测_右前翼校准",
+    "device_name": "右前翼校准",
+    "station_name": "总测",
+    "test_step_count": 14
+  },
+  {
+    "device_address": "总测_左垂尾校准",
+    "device_name": "左垂尾校准",
+    "station_name": "总测",
+    "test_step_count": 20
+  },
+  {
+    "device_address": "总测_右垂尾校准",
+    "device_name": "右垂尾校准",
+    "station_name": "总测",
+    "test_step_count": 19
+  },
+  {
+    "device_address": "总测_舵面极性调试",
+    "device_name": "舵面极性调试",
+    "station_name": "总测",
+    "test_step_count": 10
+  },
+  {
+    "device_address": "总测_铁电故障调试",
+    "device_name": "铁电故障调试",
+    "station_name": "总测",
+    "test_step_count": 3
+  },
+  {
+    "device_address": "总测_动力测试",
+    "device_name": "动力测试",
+    "station_name": "总测",
+    "test_step_count": 17
+  },
+  {
+    "device_address": "总测_导电膜与引信通信调试",
+    "device_name": "导电膜与引信通信调试",
+    "station_name": "总测",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "总测_引信5V供电调试",
+    "device_name": "引信5V供电调试",
+    "station_name": "总测",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "总测_引信24V供电调试",
+    "device_name": "引信24V供电调试",
+    "station_name": "总测",
+    "test_step_count": 8
+  },
+  {
+    "device_address": "总测_弹翼开关与引信通信调试",
+    "device_name": "弹翼开关与引信通信调试",
+    "station_name": "总测",
+    "test_step_count": 8
+  },
+  {
+    "device_address": "总测_飞控版本号检查",
+    "device_name": "飞控版本号检查",
+    "station_name": "总测",
+    "test_step_count": 3
+  },
+  {
+    "device_address": "总测_导航状态检查",
+    "device_name": "导航状态检查",
+    "station_name": "总测",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "总测_帧频检查",
+    "device_name": "帧频检查",
+    "station_name": "总测",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "总测_发射筒通讯测试",
+    "device_name": "发射筒通讯测试",
+    "station_name": "总测",
+    "test_step_count": 3
+  },
+  {
+    "device_address": "总测_主循环时间检查",
+    "device_name": "主循环时间检查",
+    "station_name": "总测",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "总测_电压显示",
+    "device_name": "电压显示",
+    "station_name": "总测",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "总测_一次电池通讯检查",
+    "device_name": "一次电池通讯检查",
+    "station_name": "总测",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "总测_卫星导航检查",
+    "device_name": "卫星导航检查",
+    "station_name": "总测",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "总测_原点装订功能调试",
+    "device_name": "原点装订功能调试",
+    "station_name": "总测",
+    "test_step_count": 4
+  },
+  {
+    "device_address": "总测_航线装订功能",
+    "device_name": "航线装订功能",
+    "station_name": "总测",
+    "test_step_count": 6
+  },
+  {
+    "device_address": "总测_加速度校准",
+    "device_name": "加速度校准",
+    "station_name": "总测",
+    "test_step_count": 5
+  },
+  {
+    "device_address": "总测_姿态测试",
+    "device_name": "姿态测试",
+    "station_name": "总测",
+    "test_step_count": 8
+  },
+  {
+    "device_address": "总测_气压高度检查",
+    "device_name": "气压高度检查",
+    "station_name": "总测",
+    "test_step_count": 7
+  },
+  {
+    "device_address": "总测_空速标定",
+    "device_name": "空速标定",
+    "station_name": "总测",
+    "test_step_count": 3
+  },
+  {
+    "device_address": "总测_空速调试",
+    "device_name": "空速调试",
+    "station_name": "总测",
+    "test_step_count": 5
+  },
+  {
+    "device_address": "总测_左前翼校准",
+    "device_name": "左前翼校准",
+    "station_name": "总测",
+    "test_step_count": 14
+  },
+  {
+    "device_address": "总测_右前翼校准",
+    "device_name": "右前翼校准",
+    "station_name": "总测",
+    "test_step_count": 14
+  },
+  {
+    "device_address": "总测_左垂尾校准",
+    "device_name": "左垂尾校准",
+    "station_name": "总测",
+    "test_step_count": 20
+  },
+  {
+    "device_address": "总测_右垂尾校准",
+    "device_name": "右垂尾校准",
+    "station_name": "总测",
+    "test_step_count": 19
+  },
+  {
+    "device_address": "总测_舵面极性调试",
+    "device_name": "舵面极性调试",
+    "station_name": "总测",
+    "test_step_count": 10
+  },
+  {
+    "device_address": "总测_铁电故障调试",
+    "device_name": "铁电故障调试",
+    "station_name": "总测",
+    "test_step_count": 3
+  },
+  {
+    "device_address": "总测_动力测试",
+    "device_name": "动力测试",
+    "station_name": "总测",
+    "test_step_count": 17
+  },
+  {
+    "device_address": "总测3_动力测试",
+    "device_name": "动力测试",
+    "station_name": "总测3",
+    "test_step_count": 11
+  },
+  {
+    "device_address": "总测4_动力测试",
+    "device_name": "动力测试",
+    "station_name": "总测4",
+    "test_step_count": 11
+  },
+  {
+    "device_address": "拷机_拷机准备",
+    "device_name": "拷机准备",
+    "station_name": "拷机",
+    "test_step_count": 3
+  },
+  {
+    "device_address": "拷机_导航状态检查",
+    "device_name": "导航状态检查",
+    "station_name": "拷机",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "拷机_卫星导航检查",
+    "device_name": "卫星导航检查",
+    "station_name": "拷机",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "拷机_空速标定",
+    "device_name": "空速标定",
+    "station_name": "拷机",
+    "test_step_count": 3
+  },
+  {
+    "device_address": "拷机_空速调试",
+    "device_name": "空速调试",
+    "station_name": "拷机",
+    "test_step_count": 5
+  },
+  {
+    "device_address": "拷机_帧频检查",
+    "device_name": "帧频检查",
+    "station_name": "拷机",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "拷机_数据链检查",
+    "device_name": "数据链检查",
+    "station_name": "拷机",
+    "test_step_count": 13
+  },
+  {
+    "device_address": "拷机_拷机准备",
+    "device_name": "拷机准备",
+    "station_name": "拷机",
+    "test_step_count": 3
+  },
+  {
+    "device_address": "拷机_导航状态检查",
+    "device_name": "导航状态检查",
+    "station_name": "拷机",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "拷机_卫星导航检查",
+    "device_name": "卫星导航检查",
+    "station_name": "拷机",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "拷机_空速标定",
+    "device_name": "空速标定",
+    "station_name": "拷机",
+    "test_step_count": 3
+  },
+  {
+    "device_address": "拷机_空速调试",
+    "device_name": "空速调试",
+    "station_name": "拷机",
+    "test_step_count": 5
+  },
+  {
+    "device_address": "拷机_帧频检查",
+    "device_name": "帧频检查",
+    "station_name": "拷机",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "拷机_数据链检查",
+    "device_name": "数据链检查",
+    "station_name": "拷机",
+    "test_step_count": 13
+  },
+  {
+    "device_address": "桁架_导引头上电",
+    "device_name": "导引头上电",
+    "station_name": "桁架",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "桁架_电子变倍功能调试",
+    "device_name": "电子变倍功能调试",
+    "station_name": "桁架",
+    "test_step_count": 4
+  },
+  {
+    "device_address": "桁架_扫描与刹车测试",
+    "device_name": "扫描与刹车测试",
+    "station_name": "桁架",
+    "test_step_count": 3
+  },
+  {
+    "device_address": "桁架_锁定测试",
+    "device_name": "锁定测试",
+    "station_name": "桁架",
+    "test_step_count": 2
+  },
+  {
+    "device_address": "桁架_可见光与红外切换测试",
+    "device_name": "可见光与红外切换测试",
+    "station_name": "桁架",
+    "test_step_count": 3
+  },
+  {
+    "device_address": "桁架_黑白热切换测试",
+    "device_name": "黑白热切换测试",
+    "station_name": "桁架",
+    "test_step_count": 3
+  },
+  {
+    "device_address": "桁架_H264码率、图像清晰度测试",
+    "device_name": "H264码率、图像清晰度测试",
+    "station_name": "桁架",
+    "test_step_count": 3
+  },
+  {
+    "device_address": "桁架_重复性检查",
+    "device_name": "重复性检查",
+    "station_name": "桁架",
+    "test_step_count": 1
+  },
+  {
+    "device_address": "桁架_拷机结束",
+    "device_name": "拷机结束",
+    "station_name": "桁架",
+    "test_step_count": 5
+  }
+]

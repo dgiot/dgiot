@@ -32,7 +32,7 @@
 -export([init/3, handle_event/3, handle_message/2, stop/3, handle_init/1]).
 -export([handle_info/2, test/1]).
 
--export([read_productid_from_ets/1]).
+-export([read_productid_from_ets/1, new_productid_ets/0]).
 
 %% 注册通道类型
 -channel_type(#{
@@ -216,9 +216,22 @@ handle_message(init, #state{id = ChannelId, env = Config} = State) ->
     case dgiot_bridge:get_products(ChannelId) of
         {ok, _, ProductIds} ->
             NewProducts = lists:foldl(fun(X, Acc) ->
-                                              dgiot_data:insert({tdchannel_product, binary_to_atom(X)}, ChannelId),
-                                              save_productid_to_ets(X, ChannelId),
-                                              Acc ++ dgiot_product_tdengine:get_products(X, ChannelId)
+                                              %% 处理tuple格式的ProductId: {ProductId, _}
+                                              ProductId = case X of
+                                                  {P, _} when is_binary(P) -> P;
+                                                  P when is_binary(P) -> P;
+                                                  _ ->
+                                                      ?LOG(error, "产品ID格式错误: ~p", [X]),
+                                                      undefined
+                                              end,
+                                              case ProductId of
+                                                  undefined ->
+                                                      Acc;
+                                                  _ ->
+                                                      dgiot_data:insert({tdchannel_product, binary_to_atom(ProductId)}, ChannelId),
+                                                      save_productid_to_ets(ProductId, ChannelId),
+                                                      Acc ++ dgiot_product_tdengine:get_products(ProductId, ChannelId)
+                                              end
                                       end,
                                       [],
                                       ProductIds),
@@ -392,11 +405,37 @@ test(_, _) -> ok.
 
 
 new_productid_ets() ->
-    ets:new(td_product_channel, [bag, public, named_table, {write_concurrency, true}, {read_concurrency, true}]).
+    case ets:info(td_product_channel, name) of
+        undefined ->
+            ets:new(td_product_channel, [bag, public, named_table, {write_concurrency, true}, {read_concurrency, true}, {heir, none}]);
+        _ ->
+            td_product_channel
+    end.
 
 
+save_productid_to_ets(ProductId, ChannelId) when is_binary(ProductId), is_binary(ChannelId) ->
+    try
+        % 确保ETS表存在
+        new_productid_ets(),
+        % 使用ets:insert_new避免并发冲突，如果记录已存在则返回false
+        case ets:insert_new(td_product_channel, {ProductId, ChannelId}) of
+            true ->
+                ?LOG(info, "TDengine通道: 产品ID已保存到ETS - ProductId=~s, ChannelId=~s", [ProductId, ChannelId]),
+                ok;
+            false ->
+                % 记录已存在，直接返回成功
+                ?LOG(debug, "TDengine通道: 产品ID已存在于ETS - ProductId=~s", [ProductId]),
+                ok
+        end
+    catch
+        _:Error ->
+            ?LOG(error, "TDengine通道: ETS插入失败 - ProductId=~s, ChannelId=~s, Error=~p", 
+                  [ProductId, ChannelId, Error]),
+            {error, Error}
+    end;
 save_productid_to_ets(ProductId, ChannelId) ->
-    ets:insert(td_product_channel, {ProductId, ChannelId}).
+    ?LOG(error, "TDengine通道: 产品ID或通道ID格式错误 - ProductId=~p, ChannelId=~p", [ProductId, ChannelId]),
+    {error, invalid_format}.
 
 
 read_productid_from_ets(ProductId) ->

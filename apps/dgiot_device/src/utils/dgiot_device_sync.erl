@@ -140,7 +140,11 @@ generate_final_report(StartTime, TotalDevices) ->
     ?LOG(info, "  - Processed: ~p/~p devices", [FinalProcessed, TotalDevices]),
     ?LOG(info, "  - Updated: ~p devices", [FinalUpdated]),
     ?LOG(info, "  - Batches: ~p successful, ~p failed", [SuccessfulBatches, FailedBatches]),
-    ?LOG(info, "  - Rate: ~.1f devices/sec", [FinalProcessed / TotalTime]).
+    Rate = if
+        TotalTime > 0 -> FinalProcessed / TotalTime;
+        true -> FinalProcessed  % 瞬时完成，速率等于处理总数
+    end,
+    ?LOG(info, "  - Rate: ~.1f devices/sec", [Rate]).
 
 report_progress_with_config(TotalDevices, StartTime) ->
     Processed = get(processed_devices_count),

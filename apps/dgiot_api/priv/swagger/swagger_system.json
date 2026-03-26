@@ -657,6 +657,98 @@
           "Data"
         ]
       }
+    },
+    "/testitem/order": {
+      "get": {
+        "summary": "获取测试项顺序列表",
+        "description": "获取所有测试项及其顺序",
+        "parameters": [],
+        "responses": {
+          "200": { "description": "成功" },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" }
+        },
+        "tags": ["System"]
+      }
+    },
+    "/testitem/order": {
+      "post": {
+        "summary": "更新测试项顺序",
+        "description": "批量更新测试项的顺序",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "orders": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectId": { "type": "string" },
+                      "order": { "type": "integer" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": { "description": "成功" },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" }
+        },
+        "tags": ["System"]
+      }
+    },
+    "/teststep/order": {
+      "post": {
+        "summary": "更新测试步骤顺序",
+        "description": "更新单个测试项内测试步骤的顺序",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "objectId": { "type": "string" },
+                "steps": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "step_number": { "type": "integer" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": { "description": "成功" },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" }
+        },
+        "tags": ["System"]
+      }
+    },
+    "/backup/parse": {
+      "post": {
+        "summary": "备份Parse数据库",
+        "description": "备份Parse数据库到/data目录",
+        "parameters": [],
+        "responses": {
+          "200": { "description": "成功" },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" }
+        },
+        "tags": ["System"]
+      }
     }
   }
 }
