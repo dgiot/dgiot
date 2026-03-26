@@ -1,127 +1,94 @@
 #!/bin/bash
-#
-# UserPromptSubmit Hook - 用户提示提交处理
-# 
-# 在用户提交提示时执行
-# 
-# 输入: { taskId, userPromptSubmit: { prompt: string }, ... }
-# 输出: { cancel: boolean, contextModification?: string, errorMessage?: string }
-# 
-# 使用场景:
-# - 分析用户需求
-# - 检查提示质量
-# - 提供指导建议
-# - 预处理复杂请求
+# UserPromptSubmit Hook - 用户提示提交Hook，检测文档转换需求
 
-# 从标准输入读取JSON输入
-INPUT=$(cat)
+set -e
 
-# 使用jq解析输入
-if command -v jq &> /dev/null; then
-  USER_PROMPT=$(echo "$INPUT" | jq -r '.userPromptSubmit.prompt')
-  TASK_ID=$(echo "$INPUT" | jq -r '.taskId')
-else
-  USER_PROMPT=""
-  TASK_ID="unknown"
+# 读取JSON输入
+INPUT_JSON=$(cat)
+USER_PROMPT=$(echo "$INPUT_JSON" | jq -r '.userPromptSubmit.prompt // ""')
+TASK_ID=$(echo "$INPUT_JSON" | jq -r '.taskId // ""')
+TIMESTAMP=$(echo "$INPUT_JSON" | jq -r '.timestamp // 0')
+
+# 初始化输出
+CANCEL=false
+CONTEXT_MOD=""
+ERROR_MSG=""
+
+# 文档转换技能触发短语
+DOCUMENT_CONVERSION_TRIGGERS=(
+    "文档转换" "pandoc转换" "markdown转html" "文档格式转换"
+    "安装pandoc" "批量文档转换" "markdown转pdf" "文档自动化处理"
+    "office文档" "word转pdf" "excel转html" "ppt转markdown"
+    "文件提取" "内容提取" "文本提取" "格式转换"
+    "大的office文档" "常见文档提取" "文档处理" "批量处理"
+    "pdf转word" "word转markdown" "excel转csv" "ppt转图片"
+)
+
+# 检查是否包含文档转换需求
+check_document_conversion_request() {
+    local prompt="$1"
+    
+    # 转换为小写进行匹配
+    local prompt_lower=$(echo "$prompt" | tr '[:upper:]' '[:lower:]')
+    
+    for trigger in "${DOCUMENT_CONVERSION_TRIGGERS[@]}"; do
+        local trigger_lower=$(echo "$trigger" | tr '[:upper:]' '[:lower:]')
+        if [[ "$prompt_lower" == *"$trigger_lower"* ]]; then
+            return 0  # 匹配到触发短语
+        fi
+    done
+    
+    # 检查文件扩展名
+    if [[ "$prompt_lower" == *".doc"* ]] || [[ "$prompt_lower" == *".docx"* ]] ||
+       [[ "$prompt_lower" == *".pdf"* ]] || [[ "$prompt_lower" == *".xls"* ]] ||
+       [[ "$prompt_lower" == *".xlsx"* ]] || [[ "$prompt_lower" == *".ppt"* ]] ||
+       [[ "$prompt_lower" == *".pptx"* ]] || [[ "$prompt_lower" == *".md"* ]] ||
+       [[ "$prompt_lower" == *".html"* ]] || [[ "$prompt_lower" == *".htm"* ]]; then
+        return 0  # 包含文档文件扩展名
+    fi
+    
+    return 1  # 不匹配
+}
+
+# 主逻辑
+if [ -n "$USER_PROMPT" ]; then
+    echo "[UserPromptSubmit Hook] 用户提示: ${USER_PROMPT:0:100}..." >&2
+    
+    # 检查是否包含文档转换需求
+    if check_document_conversion_request "$USER_PROMPT"; then
+        echo "[UserPromptSubmit Hook] 检测到文档转换需求" >&2
+        
+        # 构建技能调用建议
+        CONTEXT_MOD="检测到文档转换需求，建议使用pandoc_document_converter技能。"
+        CONTEXT_MOD="$CONTEXT_MOD 该技能支持："
+        CONTEXT_MOD="$CONTEXT_MOD 1. Office文档转换 (Word, Excel, PowerPoint)"
+        CONTEXT_MOD="$CONTEXT_MOD 2. PDF与HTML互转"
+        CONTEXT_MOD="$CONTEXT_MOD 3. Markdown格式转换"
+        CONTEXT_MOD="$CONTEXT_MOD 4. 批量文档处理"
+        CONTEXT_MOD="$CONTEXT_MOD 5. 自动部署和安装pandoc"
+        
+        CONTEXT_MOD="$CONTEXT_MOD 触发短语：文档转换、pandoc转换、markdown转html、安装pandoc"
+        CONTEXT_MOD="$CONTEXT_MOD 使用方法：python3 pandoc_converter.py 输入文件 -o 输出文件"
+        
+        # 如果是大的Office文档或常见文档提取
+        if [[ "$USER_PROMPT" == *"大的office文档"* ]] || [[ "$USER_PROMPT" == *"常见文档提取"* ]]; then
+            CONTEXT_MOD="$CONTEXT_MOD 提示：对于大的Office文档，建议先转换为中间格式（如Markdown）再处理。"
+            CONTEXT_MOD="$CONTEXT_MOD 常见文档提取流程：Office文档 → Markdown → 目标格式"
+        fi
+        
+        # 记录到日志
+        LOG_FILE="/tmp/cline_document_conversion_${TASK_ID}.log"
+        echo "$(date -d @$((TIMESTAMP/1000)) '+%Y-%m-%dT%H:%M:%S')|文档转换需求|$USER_PROMPT" >> "$LOG_FILE"
+    fi
 fi
 
-echo "[UserPromptSubmit] 用户提示提交: $TASK_ID" >&2
-echo "[UserPromptSubmit] 提示内容: $USER_PROMPT" >&2
-
-# 分析用户提示是否与编译、日志、中文编码相关
-analyze_user_prompt() {
-  local prompt="$1"
-  
-  local analysis=""
-  local suggestions=""
-  
-  # 检查是否与编译相关
-  if echo "$prompt" | grep -q -i "编译\|compile\|make\|erlc\|构建\|build"; then
-    analysis="$analysis 检测到编译相关需求。"
-    suggestions="$suggestions 编译建议：使用'make compile'进行全量编译，'erlc file.erl'进行单个文件编译。"
-  fi
-  
-  # 检查是否与日志相关
-  if echo "$prompt" | grep -q -i "日志\|log\|logger\|打印\|print\|输出"; then
-    analysis="$analysis 检测到日志相关需求。"
-    suggestions="$suggestions 日志建议：使用dgiot_safe_format:safe_format确保中文正确显示，遵循统一的日志宏定义。"
-  fi
-  
-  # 检查是否与中文编码相关
-  if echo "$prompt" | grep -q -i "中文\|chinese\|编码\|utf8\|乱码\|unicode"; then
-    analysis="$analysis 检测到中文编码相关需求。"
-    suggestions="$suggestions 编码建议：在Erlang中使用<<\"中文\"/utf8>>格式，避免直接使用io:format打印中文。"
-  fi
-  
-  # 检查是否与编程规范相关
-  if echo "$prompt" | grep -q -i "规范\|standard\|最佳实践\|代码质量\|质量"; then
-    analysis="$analysis 检测到编程规范相关需求。"
-    suggestions="$suggestions 规范建议：参考docs/目录下的编程规范文档，遵循Erlang编程思想：简洁、健壮、可扩展。"
-  fi
-  
-  # 检查是否与hook相关
-  if echo "$prompt" | grep -q -i "hook\|钩子\|PreToolUse\|PostToolUse"; then
-    analysis="$analysis 检测到Hook系统相关需求。"
-    suggestions="$suggestions Hook建议：已为您配置完整的Hook系统，支持编译、日志、中文编码、编程规范的实时检查。"
-  fi
-  
-  # 检查提示是否清晰
-  if [[ ${#prompt} -lt 10 ]]; then
-    analysis="$analysis 提示可能过于简略。"
-    suggestions="$suggestions 提示建议：请提供更详细的需求描述，包括具体文件、错误信息、期望结果等。"
-  fi
-  
-  if [[ -z "$analysis" ]]; then
-    analysis="通用任务需求。"
-    suggestions="建议：明确任务目标，提供相关文件路径和具体需求。"
-  fi
-  
-  echo "$analysis|$suggestions"
-}
-
-# 检查提示中的文件路径
-extract_file_paths() {
-  local prompt="$1"
-  
-  local files=()
-  
-  # 提取可能的文件路径（简单正则匹配）
-  while read -r match; do
-    if [[ -n "$match" ]]; then
-      # 检查文件是否存在
-      if [[ -f "$match" ]]; then
-        files+=("✅ $match (存在)")
-      else
-        files+=("❓ $match (未找到)")
-      fi
-    fi
-  done < <(echo "$prompt" | grep -o -E '[a-zA-Z0-9_./-]+\.(erl|hrl|js|html|css|json)' | head -5)
-  
-  if [[ ${#files[@]} -gt 0 ]]; then
-    echo "检测到文件引用:"
-    for file in "${files[@]}"; do
-      echo "  $file"
-    done
-  else
-    echo "未检测到具体文件引用。"
-  fi
-}
-
-# 执行分析
-ANALYSIS_RESULT=$(analyze_user_prompt "$USER_PROMPT")
-ANALYSIS=$(echo "$ANALYSIS_RESULT" | cut -d'|' -f1)
-SUGGESTIONS=$(echo "$ANALYSIS_RESULT" | cut -d'|' -f2)
-
-# 提取文件路径
-FILE_INFO=$(extract_file_paths "$USER_PROMPT")
-
-# 构建上下文修改
-CONTEXT_MOD="用户需求分析：$ANALYSIS\n\n$FILE_INFO\n\n指导建议：$SUGGESTIONS\n\n提示：TaskStart hook会提供更详细的环境检查和任务指导。"
-
-# 返回结果
-echo "{\"cancel\":false,\"contextModification\":\"$CONTEXT_MOD\",\"errorMessage\":\"\"}"
-
-# 记录用户提示
-LOG_FILE="/tmp/cline_user_prompt.log"
-TIMESTAMP=$(date +%s%3N)
-echo "$TIMESTAMP|$TASK_ID|$USER_PROMPT" >> "$LOG_FILE" 2>/dev/null || true
+# 输出JSON结果
+jq -n \
+    --arg cancel "$CANCEL" \
+    --arg contextMod "$CONTEXT_MOD" \
+    --arg errorMsg "$ERROR_MSG" \
+    '{
+        cancel: ($cancel == "true"),
+        contextModification: $contextMod,
+        errorMessage: $errorMsg
+    }'

@@ -21,11 +21,11 @@
 
 -define(SOCKOPTS, [
     {reuseaddr, true},
-    {backlog, 1024},
-    {nodelay, false},
-    {keepalive, false},
-    {send_timeout, 5000},
-    {send_timeout_close, true}
+    {backlog, 512},
+    {nodelay, true},
+    {keepalive, true},
+    {send_timeout, 30000},
+    {send_timeout_close, false}
 ]).
 
 -define(OPTS, [
@@ -41,13 +41,13 @@ get_opts(tcp, Port) ->
     TCPOpts = [
         {backlog, 512},
         {keepalive, true},
-        {send_timeout, 15000},
-        {send_timeout_close, true},
+        {send_timeout, 30000},
+        {send_timeout_close, false},
         {nodelay, true},
         {reuseaddr, true},
         binary,
         {packet, raw},
-        {exit_on_close, true}
+        {exit_on_close, false}
     ],
     Opts = [
         {tcp_options, TCPOpts},
@@ -83,7 +83,7 @@ get_opts(udp, Port) ->
 
 get_opts(tcp, App, _Port) ->
     Opts = application:get_env(App, listeners, ?OPTS),
-    TCPOpts = proplists:get_value(tcp_options, Opts, ?SOCKOPTS) ++ [binary, {packet, raw}, {exit_on_close, true}],
+    TCPOpts = proplists:get_value(tcp_options, Opts, ?SOCKOPTS) ++ [binary, {packet, raw}, {exit_on_close, false}],
     MaxConnections = proplists:get_value(max_connections, Opts, 1024000),
     MaxConnRate = proplists:get_value(max_conn_rate, Opts, 1024000),
     Acceptors = proplists:get_value(acceptors, Opts, 16),
@@ -99,7 +99,7 @@ get_opts(tcp, App, _Port) ->
 
 get_opts(udp, App, _Port) ->
     Opts = application:get_env(App, listeners, ?OPTS),
-    TCPOpts = proplists:get_value(tcp_options, Opts, ?SOCKOPTS) ++ [binary, {packet, raw}, {exit_on_close, true}],
+    TCPOpts = proplists:get_value(tcp_options, Opts, ?SOCKOPTS) ++ [binary, {packet, raw}, {exit_on_close, false}],
     MaxConnections = proplists:get_value(max_connections, Opts, 1024000),
     MaxConnRate = proplists:get_value(max_conn_rate, Opts, 1024000),
     Acceptors = proplists:get_value(acceptors, Opts, 16),

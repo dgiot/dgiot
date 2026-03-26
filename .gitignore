@@ -41,6 +41,7 @@ Mnesia.*/
 _checkouts
 ./rebar.config
 ./rebar.config.erl
+./data/
 rebar.config.rendered
 /rebar3
 rebar.lock
@@ -109,6 +110,7 @@ apps/dgiot_drone/
 apps/dgiot_wpms
 apps/dgiot_cnooc
 apps/dgiot_hikvision
+apps/dgiot_uav
 node_modules/
 package-lock.json
 erlang_ls.config
@@ -129,3 +131,16 @@ erlang_ls.config
 mix.lock
 .gitconfig.tmp
 *.log
+
+# CodeBuddy敏感文件 - 禁止提交到开源库
+.codebuddy/
+.cline/
+
+# 开发环境敏感配置
+*.secret
+*.key
+.env
+.env.local
+apps/*/etc/*.conf
+
+# 无人机项目敏感文件 - 已在上方精确排除

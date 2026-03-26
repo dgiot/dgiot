@@ -1,0 +1,64 @@
+{
+  "metadata": {
+    "generated_at": "2026-01-28T07:47:32Z",
+    "source_files": [
+      "test_items_full.json",
+      "protocol/*.erl",
+      "include/*.hrl"
+    ]
+  },
+  "command_categories": {
+    "remote_control": {
+      "name": "遥控指令",
+      "description": "无人机遥控指令集合",
+      "commands": [
+        {
+          "name": "17",
+          "code": "",
+          "description": "遥控指令: 17",
+          "usage": "通过遥控通道发送"
+        }
+      ]
+    },
+    "telemetry": {
+      "name": "遥测数据",
+      "description": "无人机遥测数据项",
+      "data_items": []
+    },
+    "modbus": {
+      "name": "Modbus指令",
+      "description": "Modbus协议指令",
+      "commands": [
+        {
+          "name": "1551",
+          "code": "1551",
+          "description": "Modbus指令: 1551",
+          "protocol": "Modbus-RTU/TCP"
+        },
+        {
+          "name": "1651",
+          "code": "1651",
+          "description": "Modbus指令: 1651",
+          "protocol": "Modbus-RTU/TCP"
+        },
+        {
+          "name": "D1751",
+          "code": "D1751",
+          "description": "Modbus指令: D1751",
+          "protocol": "Modbus-RTU/TCP"
+        }
+      ]
+    },
+    "protocol": {
+      "name": "协议指令",
+      "description": "底层协议指令定义",
+      "commands": []
+    },
+    "status": {
+      "name": "状态参数",
+      "description": "无人机状态参数",
+      "parameters": []
+    }
+  },
+  "test_scenarios": []
+}

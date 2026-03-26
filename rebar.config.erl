@@ -230,7 +230,7 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_factory, true}
         , {enable_plugin_dgiot_printer, true}
         , {enable_plugin_dgiot_location, true}
-     
+        , {enable_plugin_dgiot_uav, true}
      
         
         , {vm_args_file, VmArgs}
@@ -354,6 +354,7 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_factory
         , dgiot_printer
         , dgiot_location
+        , dgiot_uav
 
     ];
 relx_plugin_apps_per_rel(edge) ->

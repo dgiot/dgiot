@@ -43,6 +43,9 @@ get_value(<<"cookie">>, Name, Req) ->
     Cookies = cowboy_req:parse_cookies(Req),
     {proplists:get_value(Name, Cookies), Req};
 
+%% 处理 formData 参数（转发到 body 处理）
+get_value(<<"formData">>, Name, Req) ->
+    get_value(<<"body">>, Name, Req);
 
 %% 取body时，返回新的Req
 get_value(<<"body">>, Name, Req0) ->
@@ -171,4 +174,3 @@ to_lower(V) when is_list(V) ->
     string:to_lower(V);
 to_lower(V) when is_binary(V) ->
     list_to_binary(string:to_lower(binary_to_list(V))).
-

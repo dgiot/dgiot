@@ -1,209 +1,124 @@
 #!/bin/bash
-#
-# TaskComplete Hook - 主目标达成度评估
-# 
-# 在任务完成时执行，评估主目标达成情况并提供总结
-# 
-# 输入: { taskId, taskComplete: { result: string }, clineVersion, timestamp, ... }
-# 输出: { cancel: boolean, contextModification?: string, errorMessage?: string }
-# 
-# 使用场景:
-# - 评估主目标达成度
-# - 生成任务总结报告
-# - 记录任务完成时间和成果
-# - 提供改进建议
+# TaskComplete Hook - 任务完成Hook，评估文档转换技能使用情况
+
+set -e
 
 # 读取JSON输入
-INPUT=$(cat)
+INPUT_JSON=$(cat)
+TASK_RESULT=$(echo "$INPUT_JSON" | jq -r '.taskComplete.result // ""')
+TASK_ID=$(echo "$INPUT_JSON" | jq -r '.taskId // ""')
+TIMESTAMP=$(echo "$INPUT_JSON" | jq -r '.timestamp // 0')
 
-# 解析输入
-if command -v jq &> /dev/null; then
-  TASK_RESULT=$(echo "$INPUT" | jq -r '.taskComplete.result')
-  TASK_ID=$(echo "$INPUT" | jq -r '.taskId')
-  TIMESTAMP=$(echo "$INPUT" | jq -r '.timestamp')
-else
-  # 如果jq不可用，使用基本解析
-  TASK_RESULT="unknown"
-  TASK_ID="unknown"
-  TIMESTAMP=$(date +%s%3N)
+# 初始化输出
+CANCEL=false
+CONTEXT_MOD=""
+ERROR_MSG=""
+
+# 文档转换技能关键词
+DOCUMENT_CONVERSION_KEYWORDS=(
+    "pandoc" "文档转换" "markdown" "html" "pdf" "docx" "office"
+    "格式转换" "文件提取" "批量转换" "自动部署" "安装pandoc"
+    "deploy_pandoc" "pandoc_converter" "技能创建" "hook集成"
+)
+
+# 检查任务结果中是否包含文档转换相关内容
+check_document_conversion_achievement() {
+    local result="$1"
+    local result_lower=$(echo "$result" | tr '[:upper:]' '[:lower:]')
+    
+    local match_count=0
+    local total_keywords=${#DOCUMENT_CONVERSION_KEYWORDS[@]}
+    
+    for keyword in "${DOCUMENT_CONVERSION_KEYWORDS[@]}"; do
+        local keyword_lower=$(echo "$keyword" | tr '[:upper:]' '[:lower:]')
+        if [[ "$result_lower" == *"$keyword_lower"* ]]; then
+            ((match_count++))
+        fi
+    done
+    
+    # 计算达成度百分比
+    if [ $total_keywords -gt 0 ]; then
+        local achievement_percentage=$((match_count * 100 / total_keywords))
+        echo "$achievement_percentage"
+    else
+        echo "0"
+    fi
+}
+
+# 生成文档转换技能评估报告
+generate_document_conversion_report() {
+    local achievement_percent="$1"
+    
+    local report=""
+    
+    if [ $achievement_percent -ge 80 ]; then
+        report="🎯 文档转换技能使用评估：优秀 ($achievement_percent%)"
+        report="$report\n✅ 技能创建完整，包含自动部署功能"
+        report="$report\n✅ Hook集成完善，支持实时检测"
+        report="$report\n✅ 支持多种文档格式转换"
+        report="$report\n✅ 提供详细的配置和使用说明"
+        
+    elif [ $achievement_percent -ge 60 ]; then
+        report="📊 文档转换技能使用评估：良好 ($achievement_percent%)"
+        report="$report\n✅ 技能基本功能完整"
+        report="$report\n✅ 包含必要的Hook集成"
+        report="$report\n✅ 支持主要文档格式"
+        report="$report\n⚠️  可进一步优化部署脚本和错误处理"
+        
+    elif [ $achievement_percent -ge 40 ]; then
+        report="📈 文档转换技能使用评估：一般 ($achievement_percent%)"
+        report="$report\n✅ 技能框架已创建"
+        report="$report\n⚠️  Hook集成需要完善"
+        report="$report\n⚠️  部署功能需要加强"
+        report="$report\n💡 建议：完善自动部署脚本，增加更多格式支持"
+        
+    else
+        report="📝 文档转换技能使用评估：基础 ($achievement_percent%)"
+        report="$report\n⚠️  技能功能需要扩展"
+        report="$report\n⚠️  Hook集成需要添加"
+        report="$report\n💡 建议：参考pandoc_document_converter技能完善功能"
+    fi
+    
+    echo "$report"
+}
+
+# 主逻辑
+if [ -n "$TASK_RESULT" ]; then
+    echo "[TaskComplete Hook] 任务结果评估..." >&2
+    
+    # 检查文档转换技能使用情况
+    ACHIEVEMENT_PERCENT=$(check_document_conversion_achievement "$TASK_RESULT")
+    
+    if [ $ACHIEVEMENT_PERCENT -gt 0 ]; then
+        echo "[TaskComplete Hook] 文档转换技能使用度: $ACHIEVEMENT_PERCENT%" >&2
+        
+        # 生成评估报告
+        REPORT=$(generate_document_conversion_report "$ACHIEVEMENT_PERCENT")
+        CONTEXT_MOD="$REPORT"
+        
+        # 添加技能使用建议
+        CONTEXT_MOD="$CONTEXT_MOD\n\n📋 文档转换技能使用建议："
+        CONTEXT_MOD="$CONTEXT_MOD\n1. 对于大的Office文档，使用pandoc_document_converter技能"
+        CONTEXT_MOD="$CONTEXT_MOD\n2. 常见文档提取需求，通过Hook自动检测并建议"
+        CONTEXT_MOD="$CONTEXT_MOD\n3. 批量处理使用--batch参数"
+        CONTEXT_MOD="$CONTEXT_MOD\n4. 自定义模板在config/templates/目录"
+        
+        # 记录评估结果
+        LOG_FILE="/tmp/cline_task_assessment_${TASK_ID}.log"
+        echo "$(date -d @$((TIMESTAMP/1000)) '+%Y-%m-%dT%H:%M:%S')|文档转换技能|$ACHIEVEMENT_PERCENT%|$TASK_RESULT" >> "$LOG_FILE"
+    else
+        echo "[TaskComplete Hook] 未检测到文档转换技能使用" >&2
+        CONTEXT_MOD="本次任务未使用文档转换技能。如需处理Office文档、PDF转换等需求，建议使用pandoc_document_converter技能。"
+    fi
 fi
 
-# 主目标达成度评估函数
-evaluate_main_objective_achievement() {
-  local task_result="$1"
-  local task_id="$2"
-  
-  # 定义主目标关键词（与PreToolUse保持一致）
-  MAIN_OBJECTIVE_KEYWORDS=(
-    "dgiot_uav" "无人机" "uav" "protocol" "协议"
-    "tdengine" "时序数据" "存储" "save_td"
-    "channel" "通道" "tcp" "bridge"
-    "skill" "技能" "hook" "钩子"
-    "完成" "成功" "创建" "实现" "优化"
-    "编译" "compile" "make" "erlc" "构建"
-    "日志" "log" "logger" "打印" "输出"
-    "中文" "chinese" "编码" "utf8" "乱码"
-    "规范" "standard" "最佳实践" "代码质量"
-  )
-  
-  # 将任务结果转换为小写用于匹配
-  local result_lower=$(echo "$task_result" | tr '[:upper:]' '[:lower:]')
-  
-  # 计算关键词匹配数量
-  local match_count=0
-  local total_keywords=${#MAIN_OBJECTIVE_KEYWORDS[@]}
-  
-  for keyword in "${MAIN_OBJECTIVE_KEYWORDS[@]}"; do
-    if [[ "$result_lower" == *"$keyword"* ]]; then
-      ((match_count++))
-    fi
-  done
-  
-  # 计算达成度百分比
-  local achievement_percentage=$((match_count * 100 / total_keywords))
-  
-  # 根据百分比评估等级
-  if [ $achievement_percentage -ge 80 ]; then
-    echo "excellent:$achievement_percentage"
-  elif [ $achievement_percentage -ge 60 ]; then
-    echo "good:$achievement_percentage"
-  elif [ $achievement_percentage -ge 40 ]; then
-    echo "fair:$achievement_percentage"
-  else
-    echo "poor:$achievement_percentage"
-  fi
-}
-
-# 执行主目标达成度评估
-ACHIEVEMENT_RESULT=$(evaluate_main_objective_achievement "$TASK_RESULT" "$TASK_ID")
-ACHIEVEMENT_LEVEL=$(echo "$ACHIEVEMENT_RESULT" | cut -d':' -f1)
-ACHIEVEMENT_PERCENT=$(echo "$ACHIEVEMENT_RESULT" | cut -d':' -f2)
-
-# 检查编译、日志、中文编码、编程规范成果
-check_technical_achievements() {
-  local task_result="$1"
-  
-  local achievements=()
-  
-  # 检查编译相关成果
-  if echo "$task_result" | grep -q -i "编译\|compile\|make\|erlc"; then
-    achievements+=("✅ 编译问题解决")
-  fi
-  
-  # 检查日志相关成果
-  if echo "$task_result" | grep -q -i "日志\|log\|logger\|打印\|dgiot_safe_format"; then
-    achievements+=("✅ 日志规范改进")
-  fi
-  
-  # 检查中文编码相关成果
-  if echo "$task_result" | grep -q -i "中文\|chinese\|编码\|utf8\|/utf8"; then
-    achievements+=("✅ 中文编码处理")
-  fi
-  
-  # 检查编程规范相关成果
-  if echo "$task_result" | grep -q -i "规范\|standard\|最佳实践\|代码质量"; then
-    achievements+=("✅ 编程规范遵循")
-  fi
-  
-  # 检查hook相关成果
-  if echo "$task_result" | grep -q -i "hook\|钩子\|PreToolUse\|PostToolUse"; then
-    achievements+=("✅ Hook系统集成")
-  fi
-  
-  echo "${achievements[@]}"
-}
-
-# 生成任务总结报告
-generate_task_summary() {
-  local task_id="$1"
-  local achievement_level="$2"
-  local achievement_percent="$3"
-  local timestamp="$4"
-  local task_result="$5"
-  
-  # 转换时间戳为可读格式
-  local timestamp_iso=$(date -u -d @"$((timestamp/1000))" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u +"%Y-%m-%dT%H:%M:%SZ")
-  
-  # 检查技术成果
-  local tech_achievements=$(check_technical_achievements "$task_result")
-  
-  # 根据达成度等级生成不同的总结
-  case $achievement_level in
-    "excellent")
-      SUMMARY="🎯 主目标达成度：优秀 ($achievement_percent%)"
-      DETAILS="任务成功完成，主目标高度达成。所有关键目标均已实现。技术成果：$tech_achievements"
-      RECOMMENDATION="继续保持高效工作，考虑将成果文档化以便团队共享。"
-      ;;
-    "good")
-      SUMMARY="✅ 主目标达成度：良好 ($achievement_percent%)"
-      DETAILS="任务基本完成，主要目标已实现。部分次要目标可能需要进一步优化。技术成果：$tech_achievements"
-      RECOMMENDATION="回顾任务执行过程，识别可以改进的环节。"
-      ;;
-    "fair")
-      SUMMARY="⚠️ 主目标达成度：一般 ($achievement_percent%)"
-      DETAILS="任务部分完成，部分主目标未完全实现。需要进一步工作来达成全部目标。技术成果：$tech_achievements"
-      RECOMMENDATION="重新评估任务优先级，聚焦于未完成的关键目标。"
-      ;;
-    *)
-      SUMMARY="❌ 主目标达成度：不足 ($achievement_percent%)"
-      DETAILS="任务完成度较低，主要目标未充分实现。需要重新规划或调整策略。技术成果：$tech_achievements"
-      RECOMMENDATION="建议重新分析任务需求，制定更明确的执行计划。"
-      ;;
-  esac
-  
-  # 生成完整报告
-  cat << EOF
-# 任务完成总结报告
-
-## 基本信息
-- **任务ID**: $task_id
-- **完成时间**: $timestamp_iso
-- **评估等级**: $achievement_level
-- **达成度**: $achievement_percent%
-
-## 总结
-$SUMMARY
-
-## 详细评估
-$DETAILS
-
-## 技术成果
-$(for achievement in $tech_achievements; do
-  echo "1. $achievement"
-done)
-
-## 改进建议
-$RECOMMENDATION
-
-## 关键成果
-1. 成功集成了主目标跟踪Hook系统
-2. 实现了任务执行过程的实时监控
-3. 提供了主目标达成度的量化评估
-4. 生成了详细的任务总结报告
-5. 解决了编译、日志、中文编码、编程规范问题
-
-## 后续步骤
-1. 将本次任务成果集成到项目文档中
-2. 根据评估结果优化后续任务规划
-3. 分享最佳实践给团队成员
-4. 持续改进主目标跟踪机制
-5. 应用学到的编译、日志、中文编码、编程规范最佳实践
-EOF
-}
-
-# 生成总结报告
-TASK_SUMMARY=$(generate_task_summary "$TASK_ID" "$ACHIEVEMENT_LEVEL" "$ACHIEVEMENT_PERCENT" "$TIMESTAMP" "$TASK_RESULT")
-
-# 记录任务完成日志
-echo "[TaskComplete] 任务完成评估 - 任务ID: $TASK_ID" >&2
-echo "[TaskComplete] 达成度等级: $ACHIEVEMENT_LEVEL ($ACHIEVEMENT_PERCENT%)" >&2
-echo "[TaskComplete] 生成总结报告..." >&2
-
-# 保存总结报告到文件
-SUMMARY_FILE="/tmp/cline_task_summary_${TASK_ID}.md"
-echo "$TASK_SUMMARY" > "$SUMMARY_FILE"
-echo "[TaskComplete] 总结报告已保存到: $SUMMARY_FILE" >&2
-
-# 返回结果
-CONTEXT_MOD="任务完成！主目标达成度评估：$ACHIEVEMENT_LEVEL ($ACHIEVEMENT_PERCENT%)。详细报告已生成。"
-echo "{\"cancel\":false,\"contextModification\":\"$CONTEXT_MOD\",\"errorMessage\":\"\"}"
+# 输出JSON结果
+jq -n \
+    --arg cancel "$CANCEL" \
+    --arg contextMod "$CONTEXT_MOD" \
+    --arg errorMsg "$ERROR_MSG" \
+    '{
+        cancel: ($cancel == "true"),
+        contextModification: $contextMod,
+        errorMessage: $errorMsg
+    }'

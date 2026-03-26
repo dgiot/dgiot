@@ -348,8 +348,8 @@ parse_frame(StartAddr, FileName, Data, MinAddr) ->
     NewAllData =
         maps:fold(fun
                       (_, {ProductId1, Devaddr1, Ack}, Ncc) ->
-                          CacheAck = dgiot_task:merge_cache_data(ProductId1, Ack, -1),
-                          dgiot_task:save_cache_data(ProductId1, CacheAck),
+                          CacheAck = dgiot_task_dao:merge_cache_data(ProductId1, Ack, -1),
+                          dgiot_task_dao:save_cache_data(ProductId1, CacheAck),
                           Now = dgiot_datetime:now_secs(),
                           case dgiot_data:get({modbus_tcp, Devaddr1, Now}) of
                               not_find ->

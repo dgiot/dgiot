@@ -10,7 +10,7 @@
 -module(dgiot_browser_tools).
 -author("dgiot").
 -include_lib("dgiot/include/logger.hrl").
--include("dgiot.hrl").
+-include_lib("dgiot/include/dgiot.hrl").
 
 %% API 导出
 -export([

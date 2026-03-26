@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试项编排 - 超近距无人机自动检测系统</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0b1c3a 0%, #1a3b5e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+        .app-container { display: flex; flex-direction: column; min-height: 100vh; background: rgba(255,255,255,0.03); backdrop-filter: blur(2px); }
+        .header { background: linear-gradient(90deg,#0a1a2f 0%,#0d2742 100%); color:#fff; padding:10px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #3a6ea5; box-shadow:0 4px 12px rgba(0,20,40,0.6); }
+        .logo { display:flex; align-items:center; gap:10px; }
+        .logo-icon { font-size:24px; color:#ffd966; }
+        .logo-text h1 { font-size:18px; font-weight:600; letter-spacing:1px; }
+        .header-controls { display:flex; align-items:center; gap:15px; }
+        .main-content { flex:1; padding:15px; display:flex; flex-direction:column; gap:15px; }
+        .test-panel { background:#112436; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.5); padding:15px; border:1px solid #2a4b74; }
+        .panel-title { font-size:16px; font-weight:600; color:#ffd966; margin-bottom:12px; padding-bottom:6px; border-bottom:2px solid #3a6ea5; display:flex; align-items:center; justify-content:space-between; }
+        .toolbar { display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap; align-items:center; }
+        .btn { padding:8px 16px; border:none; border-radius:5px; font-weight:500; cursor:pointer; display:flex; align-items:center; gap:5px; font-size:13px; color:white; transition:all 0.2s; }
+        .btn:hover { transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,0,0,0.3); }
+        .btn-primary { background:#1e5a3a; border:1px solid #2e8b57; }
+        .btn-success { background:#2e8b57; border:1px solid #3cb371; }
+        .btn-danger { background:#8b3a3a; border:1px solid #a52a2a; }
+        .btn-info { background:#1a4b7a; border:1px solid #2a6ba5; }
+        .btn-warning { background:#8b6914; border:1px solid #a67c00; }
+        .form-control { padding:8px 12px; background:#0d1f32; border:1px solid #2a4b74; border-radius:5px; color:#fff; font-size:13px; min-width:150px; }
+        .form-control:focus { outline:none; border-color:#ffd966; }
+        
+        /* 测试步骤表格 */
+        .steps-table { width:100%; border-collapse:collapse; background:#0a1c30; border-radius:8px; overflow:hidden; }
+        .steps-table thead { background:#1a314a; }
+        .steps-table th { padding:12px 8px; text-align:left; font-size:12px; font-weight:600; color:#ffd966; border-bottom:2px solid #2a4b74; white-space:nowrap; }
+        .steps-table td { padding:10px 8px; border-bottom:1px solid #2a4b74; font-size:12px; }
+        .steps-table tbody tr:hover { background:#1a314a; }
+        .step-number { font-weight:bold; color:#ffd966; width:40px; text-align:center; }
+        .step-status { padding:4px 8px; border-radius:4px; font-size:11px; font-weight:500; }
+        .status-active { background:#1e5a3a; color:#6bff6b; }
+        .status-inactive { background:#5a3a3a; color:#ff8a8a; }
+        
+        /* 操作按钮 */
+        .action-btn { padding:4px 8px; border:none; border-radius:3px; cursor:pointer; font-size:11px; margin-right:3px; transition:all 0.2s; }
+        .action-btn:hover { transform:scale(1.1); }
+        .btn-up { background:#2a4b74; color:#fff; }
+        .btn-down { background:#2a4b74; color:#fff; }
+        .btn-edit { background:#8b6914; color:#ffd966; }
+        .btn-delete { background:#8b3a3a; color:#ff8a8a; }
+        .btn-test { background:#1e5a3a; color:#6bff6b; }
+        .btn-send { background:#1a4b7a; color:#aaccff; }
+        
+        /* 弹窗样式 */
+        .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:none; justify-content:center; align-items:center; z-index:2000; }
+        .modal-overlay.show { display:flex; }
+        .modal-box { background:#112436; border:2px solid #3a6ea5; border-radius:10px; padding:20px; width:600px; max-width:90%; box-shadow:0 0 20px rgba(0,100,200,0.5); max-height:90vh; overflow-y:auto; }
+        .modal-title { color:#ffd966; font-size:16px; font-weight:600; margin-bottom:15px; display:flex; align-items:center; justify-content:space-between; }
+        .modal-form { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+        .form-full { grid-column:1/-1; }
+        .form-group { display:flex; flex-direction:column; gap:4px; }
+        .form-group label { color:#aaccff; font-size:12px; font-weight:500; }
+        .form-group input, .form-group select, .form-group textarea { padding:8px; background:#0d1f32; border:1px solid #2a4b74; border-radius:5px; color:#fff; font-size:13px; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline:none; border-color:#ffd966; }
+        .form-group textarea { resize:vertical; min-height:80px; }
+        .modal-buttons { display:flex; gap:10px; margin-top:20px; justify-content:flex-end; }
+        .modal-buttons button { flex:1; padding:10px; border:none; border-radius:5px; cursor:pointer; font-size:13px; font-weight:500; max-width:120px; }
+        .btn-cancel { background:#5a2e2e; color:white; }
+        .btn-confirm { background:#1e5a3a; color:white; }
+        
+        /* 提示框 */
+        .toast { position:fixed; bottom:20px; right:20px; background:#1e5a3a; color:white; padding:12px 24px; border-radius:5px; z-index:3000; display:none; box-shadow:0 4px 12px rgba(0,0,0,0.5); }
+        .toast.show { display:block; animation:slideIn 0.3s; }
+        .toast.error { background:#5a2e2e; }
+        @keyframes slideIn { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
+        
+        /* 空状态 */
+        .empty-state { text-align:center; color:#aaccff; padding:60px 20px; }
+        .empty-state i { font-size:48px; color:#2a4b74; margin-bottom:15px; }
+        .empty-state p { font-size:14px; }
+        
+        /* 复选框样式 */
+        .checkbox-wrapper { display:flex; align-items:center; gap:8px; }
+        .checkbox-wrapper input[type="checkbox"] { width:16px; height:16px; cursor:pointer; }
+
+        /* 工位列表样式 */
+        .station-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px; }
+        .station-card { background:#0a1c30; border:1px solid #2a4b74; border-radius:8px; padding:12px; transition:all 0.3s; }
+        .station-card:hover { border-color:#ffd966; box-shadow:0 4px 12px rgba(255,217,102,0.2); }
+        .station-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid #2a4b74; }
+        .station-title { color:#ffd966; font-weight:600; font-size:14px; }
+        .station-status { font-size:12px; }
+        .status-online { color:#6bff6b; }
+        .status-offline { color:#ff8a8a; }
+        .station-info { font-size:12px; color:#aaccff; margin-bottom:6px; }
+        .device-list { margin-top:8px; padding-top:8px; border-top:1px dashed #2a4b74; }
+        .device-item { display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:11px; color:#e0e0e0; }
+        .device-item:last-child { margin-bottom:0; }
+        .device-type { background:#3a6ea5; padding:2px 6px; border-radius:3px; font-size:10px; }
+        .device-address { color:#8899aa; font-family:monospace; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-tasks logo-icon"></i>
+                <div class="logo-text">
+                    <h1>测试项编排</h1>
+                </div>
+            </div>
+            <div class="header-controls">
+                <button class="btn btn-info" onclick="loadAllTestSteps()"><i class="fas fa-sync"></i> 刷新</button>
+                <button class="btn btn-primary" onclick="exportTestSteps()"><i class="fas fa-download"></i> 导出</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- 工位信息面板 -->
+            <div class="test-panel">
+                <div class="panel-title">
+                    <span><i class="fas fa-server"></i> 工位列表</span>
+                    <button class="btn btn-info" onclick="loadStationList()"><i class="fas fa-sync"></i> 刷新</button>
+                </div>
+                <div id="stationListContainer">
+                    <div class="empty-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>加载中...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 测试步骤面板 -->
+            <div class="test-panel">
+                <div class="panel-title">
+                    <span><i class="fas fa-list-ol"></i> 测试步骤列表</span>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <select class="form-control" id="stationSelect" onchange="loadTestSteps()">
+                            <option value="">所有工位</option>
+                            <option value="磁航向">磁航向</option>
+                            <option value="总测">总测</option>
+                            <option value="动力检测">动力检测</option>
+                            <option value="拷机">拷机</option>
+                            <option value="桁架">桁架</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="openAddModal()">
+                            <i class="fas fa-plus"></i> 新增步骤
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="stepsContainer">
+                    <div class="empty-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>加载中...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 新增/编辑测试步骤弹窗 -->
+    <div id="stepModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-title">
+                <span id="modalTitle">新增测试步骤</span>
+                <button class="action-btn btn-delete" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-form">
+                <div class="form-group">
+                    <label>步骤序号 <span style="color:#ff8a8a">*</span></label>
+                    <input type="number" id="stepOrder" placeholder="例如: 1" min="1">
+                </div>
+                <div class="form-group">
+                    <label>步骤类型 <span style="color:#ff8a8a">*</span></label>
+                    <select id="stepType">
+                        <option value="发送">发送</option>
+                        <option value="接收">接收</option>
+                        <option value="操作">操作</option>
+                        <option value="判断">判断</option>
+                        <option value="等待">等待</option>
+                    </select>
+                </div>
+                <div class="form-group form-full">
+                    <label>描述 <span style="color:#ff8a8a">*</span></label>
+                    <textarea id="stepDesc" placeholder="描述该步骤的测试内容，例如:自动测试系统软件向MES发送"总测开始"相关数据"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>目标设备</label>
+                    <select id="stepTarget">
+                        <option value="MES">MES</option>
+                        <option value="PLC">PLC</option>
+                        <option value="无人机">无人机</option>
+                        <option value="扫码枪">扫码枪</option>
+                        <option value="传感器">传感器</option>
+                        <option value="治具">治具</option>
+                        <option value="—">—</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>指令号</label>
+                    <input type="text" id="stepCmdId" placeholder="例如: F045 或 D1100">
+                </div>
+                <div class="form-group">
+                    <label>指令名称</label>
+                    <input type="text" id="stepCmdName" placeholder="例如: 复飞命令">
+                </div>
+                <div class="form-group">
+                    <label>延时(秒)</label>
+                    <input type="number" id="stepDelay" placeholder="例如: 2" min="0" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>状态</label>
+                    <select id="stepStatus">
+                        <option value="active">启用</option>
+                        <option value="inactive">禁用</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>指标数</label>
+                    <input type="number" id="stepMetrics" placeholder="例如: 3" min="0">
+                </div>
+                <div class="form-group">
+                    <label>所属工位</label>
+                    <select id="stepStation">
+                        <option value="磁航向">磁航向</option>
+                        <option value="总测">总测</option>
+                        <option value="动力检测">动力检测</option>
+                        <option value="拷机">拷机</option>
+                        <option value="桁架">桁架</option>
+                        <option value="通用">通用</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal()">取消</button>
+                <button class="btn-confirm" onclick="saveStep()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 指标配置弹窗 -->
+    <div id="metricsModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-title">
+                <span><i class="fas fa-chart-bar"></i> 配置指标</span>
+                <button class="action-btn btn-delete" onclick="closeMetricsModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-form">
+                <div class="form-group form-full">
+                    <label>指标名称</label>
+                    <input type="text" id="metricName" placeholder="例如: 电压值">
+                </div>
+                <div class="form-group">
+                    <label>单位</label>
+                    <input type="text" id="metricUnit" placeholder="例如: V">
+                </div>
+                <div class="form-group">
+                    <label>最小值</label>
+                    <input type="number" id="metricMin" placeholder="例如: 3.0">
+                </div>
+                <div class="form-group">
+                    <label>最大值</label>
+                    <input type="number" id="metricMax" placeholder="例如: 5.0">
+                </div>
+                <div class="form-group form-full">
+                    <label>说明</label>
+                    <textarea id="metricDesc" placeholder="指标说明"></textarea>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeMetricsModal()">取消</button>
+                <button class="btn-confirm" onclick="addMetric()">添加指标</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // 产品ID配置
+        const PRODUCTS = {
+            uav: '6235befb62',       // 超近距无人机
+            fixture: 'bd49cc8272',   // 超近距无人机治具
+            station: '343cf21f82'    // 工位产品(设备)
+        };
+
+        // API基础路径
+        const API_BASE = '/api/unified/iot';
+
+        let testSteps = [];
+        let editingStep = null;
+        let editingMetrics = null;
+
+        // 初始化
+        window.onload = function() {
+            console.log('页面初始化开始...');
+            console.log('API_BASE:', API_BASE);
+            console.log('PRODUCTS:', PRODUCTS);
+
+            // 检查产品ID是否有效
+            checkProductIds().then(() => {
+                console.log('产品ID检查完成');
+                loadStationList();
+                loadAllTestSteps();
+            });
+        };
+
+        // 检查产品ID是否有效
+        async function checkProductIds() {
+            try {
+                console.log('检查产品ID...');
+                const resp = await fetch(`${API_BASE}/classes/Product?limit=10`);
+                const data = await resp.json();
+                console.log('可用的产品列表:', (data.results || []).map(p => ({
+                    name: p.name,
+                    objectId: p.objectId,
+                    id: p.id
+                })));
+            } catch (e) {
+                console.error('获取产品列表失败:', e);
+            }
+        }
+
+        // 加载工位列表
+        async function loadStationList() {
+            try {
+                console.log('开始加载工位列表...');
+                const container = document.getElementById('stationListContainer');
+                if (!container) {
+                    console.error('找不到stationListContainer元素');
+                    return;
+                }
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>加载中...</p></div>';
+
+                // 获取所有工位设备
+                const apiUrl = `${API_BASE}/classes/Device?where={"product":"${PRODUCTS.station}"}&limit=100`;
+                console.log('API URL:', apiUrl);
+
+                const resp = await fetch(apiUrl);
+                console.log('响应状态:', resp.status);
+
+                if (!resp.ok) {
+                    throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+                }
+
+                const data = await resp.json();
+                console.log('响应数据:', data);
+                const devices = data.results || [];
+
+                if (devices.length === 0) {
+                    console.log('没有找到工位设备');
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>暂无工位设备</p>
+                            <p style="font-size:12px; color:#8899aa;">请先在系统中创建工位设备</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                console.log(`找到 ${devices.length} 个工位设备`);
+
+                // 按工位类型分组
+                const stationGroups = {
+                    '磁航向': [],
+                    '总测': [],
+                    '动力检测': [],
+                    '拷机': [],
+                    '桁架': []
+                };
+
+                devices.forEach(device => {
+                    const name = device.name || '';
+                    let matched = false;
+                    for (const type of Object.keys(stationGroups)) {
+                        if (name.includes(type)) {
+                            stationGroups[type].push(device);
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (!matched) {
+                        console.log('未分类设备:', name);
+                    }
+                });
+
+                console.log('工位分组:', stationGroups);
+
+                // 渲染工位卡片
+                let hasStations = false;
+                let html = '<div class="station-grid">';
+                for (const [type, stationDevices] of Object.entries(stationGroups)) {
+                    if (stationDevices.length > 0) {
+                        html += renderStationCard(type, stationDevices);
+                        hasStations = true;
+                    }
+                }
+                html += '</div>';
+
+                if (!hasStations) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <p>没有找到可用的工位</p>
+                            <p style="font-size:12px; color:#8899aa;">请检查工位设备名称是否包含工位类型</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = html;
+                console.log('工位列表加载完成');
+            } catch (e) {
+                console.error('加载工位列表失败:', e);
+                const container = document.getElementById('stationListContainer');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>加载失败</p>
+                            <p style="font-size:12px; color:#ff8a8a;">${e.message}</p>
+                            <button class="btn btn-info" onclick="loadStationList()" style="margin-top:10px;">
+                                <i class="fas fa-redo"></i> 重试
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // 渲染单个工位卡片
+        function renderStationCard(stationType, devices) {
+            const device = devices[0]; // 取第一个设备的信息
+            const content = device.content || {};
+            const status = device.status === 'online' ? '在线' : '离线';
+            const statusClass = device.status === 'online' ? 'status-online' : 'status-offline';
+
+            // 获取设备地址信息
+            const dtuAddr = content.dtuAddr || device.dtuAddr || '';
+            const modbusAddress = content.modbusAddress || '';
+
+            let deviceListHtml = '';
+            devices.forEach((dev, idx) => {
+                const devContent = dev.content || {};
+                const devAddr = devContent.dtuAddr || dev.dtuAddr || dev.addr || '';
+                deviceListHtml += `
+                    <div class="device-item">
+                        <span class="device-type">${dev.name || `设备${idx + 1}`}</span>
+                        ${devAddr ? `<span class="device-address">${devAddr}</span>` : ''}
+                    </div>
+                `;
+            });
+
+            return `
+                <div class="station-card">
+                    <div class="station-header">
+                        <span class="station-title">🏭 ${stationType}</span>
+                        <span class="station-status ${statusClass}">● ${status}</span>
+                    </div>
+                    <div class="station-info">
+                        <div><i class="fas fa-id-card" style="width:16px;"></i> ID: ${device.objectId?.substring(0, 8)}...</div>
+                        <div><i class="fas fa-server" style="width:16px;"></i> 设备数: ${devices.length}台</div>
+                        ${dtuAddr ? `<div><i class="fas fa-network-wired" style="width:16px;"></i> 地址: ${dtuAddr}</div>` : ''}
+                        ${modbusAddress ? `<div><i class="fas fa-microchip" style="width:16px;"></i> Modbus: ${modbusAddress}</div>` : ''}
+                    </div>
+                    <div class="device-list">
+                        ${deviceListHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 加载所有测试步骤
+        async function loadAllTestSteps() {
+            try {
+                console.log('开始加载测试步骤...');
+                const container = document.getElementById('stepsContainer');
+                if (!container) {
+                    console.error('找不到stepsContainer元素');
+                    return;
+                }
+
+                // 从工位产品加载测试步骤
+                const apiUrl = `${API_BASE}/classes/Product/${PRODUCTS.station}?include=content`;
+                console.log('API URL:', apiUrl);
+
+                const resp = await fetch(apiUrl);
+                console.log('响应状态:', resp.status);
+
+                if (!resp.ok) {
+                    throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+                }
+
+                const data = await resp.json();
+                console.log('产品数据:', data);
+                const content = data.content || {};
+                testSteps = content.test_steps || [];
+
+                console.log(`加载到 ${testSteps.length} 个测试步骤`);
+                renderTestSteps();
+            } catch(e) {
+                console.error('加载测试步骤失败:', e);
+                const container = document.getElementById('stepsContainer');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>加载失败</p>
+                            <p style="font-size:12px; color:#ff8a8a;">${e.message}</p>
+                            <button class="btn btn-info" onclick="loadAllTestSteps()" style="margin-top:10px;">
+                                <i class="fas fa-redo"></i> 重试
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // 渲染测试步骤
+        function renderTestSteps() {
+            const container = document.getElementById('stepsContainer');
+            const stationFilter = document.getElementById('stationSelect').value;
+            
+            let filteredSteps = testSteps;
+            if (stationFilter) {
+                filteredSteps = testSteps.filter(step => step.station === stationFilter);
+            }
+            
+            // 按序号排序
+            filteredSteps.sort((a, b) => a.order - b.order);
+            
+            if (!filteredSteps || filteredSteps.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>暂无测试步骤，点击"新增步骤"添加</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<table class="steps-table"><thead><tr>';
+            html += '<th>步骤</th><th>类型</th><th>描述</th><th>目标</th><th>指令号</th><th>指令名称</th>';
+            html += '<th>延时(s)</th><th>状态</th><th>指标数</th><th>操作</th>';
+            html += '</tr></thead><tbody>';
+            
+            filteredSteps.forEach((step, idx) => {
+                const stepIndex = testSteps.indexOf(step);
+                html += '<tr>';
+                html += `<td class="step-number">${step.order || idx + 1}</td>`;
+                html += `<td><span class="step-status ${step.status === 'active' ? 'status-active' : 'status-inactive'}">${step.type}</span></td>`;
+                html += `<td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${step.desc}">${step.desc}</td>`;
+                html += `<td>${step.target}</td>`;
+                html += `<td style="font-family:monospace; color:#ffd966;">${step.cmdId || '—'}</td>`;
+                html += `<td>${step.cmdName || '—'}</td>`;
+                html += `<td>${step.delay || '—'}</td>`;
+                html += `<td><span class="step-status ${step.status === 'active' ? 'status-active' : 'status-inactive'}">${step.status === 'active' ? '启用' : '禁用'}</span></td>`;
+                html += `<td>${step.metrics ? step.metrics.length : 0}</td>`;
+                html += '<td style="white-space:nowrap;">';
+                html += `<button class="action-btn btn-up" onclick="moveStep(${stepIndex}, -1)" title="上移"><i class="fas fa-arrow-up"></i></button>`;
+                html += `<button class="action-btn btn-down" onclick="moveStep(${stepIndex}, 1)" title="下移"><i class="fas fa-arrow-down"></i></button>`;
+                html += `<button class="action-btn btn-edit" onclick="editStep(${stepIndex})" title="编辑"><i class="fas fa-edit"></i></button>`;
+                html += `<button class="action-btn btn-test" onclick="testStep(${stepIndex})" title="测试"><i class="fas fa-play"></i></button>`;
+                html += `<button class="action-btn btn-delete" onclick="deleteStep(${stepIndex})" title="删除"><i class="fas fa-trash"></i></button>`;
+                html += '</td>';
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // 打开新增弹窗
+        function openAddModal() {
+            editingStep = null;
+            document.getElementById('modalTitle').textContent = '新增测试步骤';
+            document.getElementById('stepOrder').value = testSteps.length + 1;
+            document.getElementById('stepType').value = '发送';
+            document.getElementById('stepDesc').value = '';
+            document.getElementById('stepTarget').value = 'MES';
+            document.getElementById('stepCmdId').value = '';
+            document.getElementById('stepCmdName').value = '';
+            document.getElementById('stepDelay').value = '';
+            document.getElementById('stepStatus').value = 'active';
+            document.getElementById('stepMetrics').value = '0';
+            document.getElementById('stepStation').value = '通用';
+            document.getElementById('stepModal').classList.add('show');
+        }
+
+        // 编辑步骤
+        function editStep(idx) {
+            editingStep = idx;
+            const step = testSteps[idx];
+            
+            document.getElementById('modalTitle').textContent = '编辑测试步骤';
+            document.getElementById('stepOrder').value = step.order || idx + 1;
+            document.getElementById('stepType').value = step.type;
+            document.getElementById('stepDesc').value = step.desc;
+            document.getElementById('stepTarget').value = step.target;
+            document.getElementById('stepCmdId').value = step.cmdId || '';
+            document.getElementById('stepCmdName').value = step.cmdName || '';
+            document.getElementById('stepDelay').value = step.delay || '';
+            document.getElementById('stepStatus').value = step.status;
+            document.getElementById('stepMetrics').value = step.metrics ? step.metrics.length : 0;
+            document.getElementById('stepStation').value = step.station || '通用';
+            document.getElementById('stepModal').classList.add('show');
+        }
+
+        // 保存步骤
+        async function saveStep() {
+            const order = parseInt(document.getElementById('stepOrder').value);
+            const type = document.getElementById('stepType').value;
+            const desc = document.getElementById('stepDesc').value.trim();
+            const target = document.getElementById('stepTarget').value;
+            const cmdId = document.getElementById('stepCmdId').value.trim();
+            const cmdName = document.getElementById('stepCmdName').value.trim();
+            const delay = parseFloat(document.getElementById('stepDelay').value) || 0;
+            const status = document.getElementById('stepStatus').value;
+            const station = document.getElementById('stepStation').value;
+            
+            if (!desc) {
+                showToast('请填写步骤描述', 'error');
+                return;
+            }
+            
+            const newStep = {
+                order: order,
+                type: type,
+                desc: desc,
+                target: target,
+                cmdId: cmdId,
+                cmdName: cmdName,
+                delay: delay,
+                status: status,
+                station: station,
+                metrics: editingStep !== null ? (testSteps[editingStep].metrics || []) : []
+            };
+            
+            try {
+                if (editingStep !== null) {
+                    testSteps[editingStep] = newStep;
+                } else {
+                    testSteps.push(newStep);
+                }
+                
+                await updateProduct(PRODUCTS.station, { test_steps: testSteps });
+                closeModal();
+                loadAllTestSteps();
+                showToast('保存成功');
+            } catch(e) {
+                console.error('保存失败:', e);
+                showToast('保存失败: ' + e.message, 'error');
+            }
+        }
+
+        // 删除步骤
+        async function deleteStep(idx) {
+            if (!confirm('确定删除该测试步骤?')) return;
+            
+            try {
+                testSteps.splice(idx, 1);
+                // 重新排序
+                testSteps.forEach((step, i) => step.order = i + 1);
+                
+                await updateProduct(PRODUCTS.station, { test_steps: testSteps });
+                renderTestSteps();
+                showToast('删除成功');
+            } catch(e) {
+                console.error('删除失败:', e);
+                showToast('删除失败', 'error');
+            }
+        }
+
+        // 移动步骤
+        async function moveStep(idx, direction) {
+            const newIdx = idx + direction;
+            if (newIdx < 0 || newIdx >= testSteps.length) return;
+            
+            // 交换步骤
+            [testSteps[idx], testSteps[newIdx]] = [testSteps[newIdx], testSteps[idx]];
+            
+            // 重新排序
+            testSteps.forEach((step, i) => step.order = i + 1);
+            
+            try {
+                await updateProduct(PRODUCTS.station, { test_steps: testSteps });
+                renderTestSteps();
+            } catch(e) {
+                console.error('排序失败:', e);
+                showToast('排序失败', 'error');
+            }
+        }
+
+        // 测试步骤
+        function testStep(idx) {
+            const step = testSteps[idx];
+            showToast(`测试步骤: ${step.desc}`);
+            // TODO: 实现实际测试逻辑
+        }
+
+        // 导出测试步骤
+        function exportTestSteps() {
+            const data = JSON.stringify(testSteps, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'test_steps.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('导出成功');
+        }
+
+        // 更新产品
+        async function updateProduct(productId, data) {
+            const resp = await fetch(`${API_BASE}/classes/Product/${productId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: data })
+            });
+            if (!resp.ok) {
+                const err = await resp.json();
+                throw new Error(err.error || '更新失败');
+            }
+        }
+
+        // 关闭弹窗
+        function closeModal() {
+            document.getElementById('stepModal').classList.remove('show');
+            editingStep = null;
+        }
+
+        // 打开指标配置弹窗
+        function openMetricsModal(stepIdx) {
+            editingMetrics = stepIdx;
+            document.getElementById('metricName').value = '';
+            document.getElementById('metricUnit').value = '';
+            document.getElementById('metricMin').value = '';
+            document.getElementById('metricMax').value = '';
+            document.getElementById('metricDesc').value = '';
+            document.getElementById('metricsModal').classList.add('show');
+        }
+
+        // 关闭指标弹窗
+        function closeMetricsModal() {
+            document.getElementById('metricsModal').classList.remove('show');
+            editingMetrics = null;
+        }
+
+        // 添加指标
+        function addMetric() {
+            const name = document.getElementById('metricName').value.trim();
+            if (!name) {
+                showToast('请填写指标名称', 'error');
+                return;
+            }
+            
+            const metric = {
+                name: name,
+                unit: document.getElementById('metricUnit').value,
+                min: document.getElementById('metricMin').value,
+                max: document.getElementById('metricMax').value,
+                desc: document.getElementById('metricDesc').value
+            };
+            
+            if (editingMetrics !== null) {
+                if (!testSteps[editingMetrics].metrics) {
+                    testSteps[editingMetrics].metrics = [];
+                }
+                testSteps[editingMetrics].metrics.push(metric);
+                
+                updateProduct(PRODUCTS.station, { test_steps: testSteps })
+                    .then(() => {
+                        closeMetricsModal();
+                        loadAllTestSteps();
+                        showToast('指标添加成功');
+                    })
+                    .catch(e => {
+                        showToast('添加失败: ' + e.message, 'error');
+                    });
+            }
+        }
+
+        // 显示提示
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast show' + (type === 'error' ? ' error' : '');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
