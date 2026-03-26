@@ -144,3 +144,4 @@ mix.lock
 apps/*/etc/*.conf
 
 # 无人机项目敏感文件 - 已在上方精确排除
+apps/dgiot_uav/.codebuddy/
