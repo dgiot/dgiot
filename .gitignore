@@ -110,7 +110,7 @@ apps/dgiot_drone/
 apps/dgiot_wpms
 apps/dgiot_cnooc
 apps/dgiot_hikvision
-apps/dgiot_uav
+apps/dgiot_uav/
 node_modules/
 package-lock.json
 erlang_ls.config
