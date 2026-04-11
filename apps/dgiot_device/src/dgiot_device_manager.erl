@@ -109,17 +109,20 @@ update_device(DeviceId, Updates) when is_binary(DeviceId), is_map(Updates) ->
 %% @doc 删除设备 - 通过设备ID
 -spec delete_device(DeviceId :: binary()) -> ok | {error, term()}.
 delete_device(DeviceId) ->
-    ?LOG(info, "Deleting device: ~p", [DeviceId]),
     case dgiot_parsex:del_object(<<"Device">>, DeviceId) of
         {ok, _Result} ->
-            ?LOG(info, "Device deleted successfully: ~p", [DeviceId]),
             ok;
-        {error, {<<"Error">>, #{<<"code">> := 101, <<"error">> := <<"Object not found.">>}}} ->
-            ?LOG(warning, "Device not found: ~p", [DeviceId]),
-            {error, device_not_found};
         {error, Reason} ->
-            ?LOG(error, "Failed to delete device ~p: ~p", [DeviceId, Reason]),
-            {error, Reason}
+            case Reason of
+                #{<<"code">> := 101} ->
+                    %% Object not found - 幂等删除，静默成功
+                    ok;
+                {<<"Error">>, #{<<"code">> := 101}} ->
+                    ok;
+                _ ->
+                    ?LOG(error, "Failed to delete device ~p: ~p", [DeviceId, Reason]),
+                    {error, Reason}
+            end
     end.
 
 

@@ -241,7 +241,7 @@ handle_info({send, _PayLoad}, #dclient{userdata = #connect_state{socket = undefi
 
 %% 发送数据到TCP服务器
 handle_info({send, PayLoad}, #dclient{userdata = #connect_state{socket = Socket}} = Dclient) ->
-    ?LOG(debug, "tcp send ~p ~p ", [self(), PayLoad]),
+    ?LOG(info, "[TCP_SEND] Socket=~p | 报文=~w | 长度=~p", [Socket, PayLoad, byte_size(PayLoad)]),
     gen_tcp:send(Socket, PayLoad),  %% 同步发送
     dgiot_metrics:inc(dgiot, <<"tcpc_send">>, 1),  %% 更新发送统计
     {noreply, Dclient, hibernate};
@@ -249,6 +249,7 @@ handle_info({send, PayLoad}, #dclient{userdata = #connect_state{socket = Socket}
 %% 接收TCP服务器数据
 handle_info({tcp, Socket, Binary}, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
     dgiot_metrics:inc(dgiot, <<"tcpc_recv">>, 1),  %% 更新接收统计
+    ?LOG(info, "[TCP_RECV] Socket=~p | 报文=~w | 长度=~p", [Socket, Binary, byte_size(Binary)]),
     
     %% 二进制数据优化处理（防止内存碎片）
     NewBin =
