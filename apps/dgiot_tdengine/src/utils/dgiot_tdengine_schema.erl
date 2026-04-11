@@ -75,17 +75,15 @@ create_stable_by_columns(ChannelId, ProductId, Database, TableName, AllColumns) 
         true ->
             ExistingColumns = get_existing_columns(ChannelId, Database, TableName),
             NewColumnsToAdd = [Col || {Name, _}=Col <- UniqueList, not lists:keymember(Name, 1, ExistingColumns)],
-            ?LOG(info, ">>> Table exists, existing columns: ~p, new columns to add: ~p", 
-                 [length(ExistingColumns), length(NewColumnsToAdd)]),
+            ?LOG(debug, ">>> Table exists, existing: ~p, new: ~p", [length(ExistingColumns), length(NewColumnsToAdd)]),
             add_columns(ChannelId, Database, TableName, NewColumnsToAdd);
         false ->
-            ?LOG(info, ">>> Table does not exist, creating base table with createdat and first column..."),
+            ?LOG(info, ">>> Table does not exist, creating base table..."),
             % 选择第一列作为基表的附加列
             [FirstColTuple | _] = UniqueList,
             BaseColumnsDef = list_columns_def([FirstColTuple]),
             BaseSql = <<"CREATE STABLE IF NOT EXISTS ", TableName/binary,
                         " (createdat TIMESTAMP, ", BaseColumnsDef/binary, ") TAGS (devaddr NCHAR(64));">>,
-            ?LOG(error, ">>> Executing base SQL: ~s", [BaseSql]),
             case dgiot_tdengine:batch_sql(ChannelId, Database, BaseSql) of
                 {ok, _Result} ->
                     ?LOG(info, ">>> Base table created successfully, now adding remaining columns..."),
@@ -126,18 +124,19 @@ add_columns(ChannelId, Database, TableName, [{Name, #{<<"type">> := Type}} | Res
 
 %% 检查表是否存在（通过 SHOW STABLES LIKE）
 table_exists(ChannelId, Database, TableName) ->
-    ?LOG(debug, ">>> Checking existence of table ~s in database ~s", [TableName, Database]),
     Sql = <<"SHOW STABLES LIKE '", TableName/binary, "';">>,
     case dgiot_tdengine:batch_sql(ChannelId, Database, Sql) of
         {ok, #{<<"results">> := [_|_]}} ->
-            ?LOG(debug, ">>> Table exists"),
             true;
         {ok, _} ->
-            ?LOG(debug, ">>> Table does not exist"),
             false;
+        {error, #{<<"code">> := Code}} when Code == 1850 ->
+            %% Query memory exhausted - 临时故障，不应触发建表，等下一次数据上报时重试
+            ?LOG(warning, ">>> TDengine内存不足(code=1850)，跳过表检查: ~s", [TableName]),
+            {error, memory_exhausted};
         {error, Reason} ->
-            ?LOG(error, ">>> Error checking table existence: ~p", [Reason]),
-            false
+            ?LOG(warning, ">>> Error checking table existence: ~p", [Reason]),
+            {error, Reason}
     end.
 
 %% 获取现有列名（通过 DESCRIBE，TDengine 3.x 返回的键是小写）

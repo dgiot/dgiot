@@ -44,14 +44,73 @@
 %% LOG宏单参数版本
 -define(LOG(Level, Format), ?LOG(Level, Format, [])).
 
-%% LOG宏双参数版本
+%% LOG宏双参数版本 - 增强版（支持进程字典控制）
+%% 
+%% 基于进程字典的日志控制，支持多维度控制：
+%% 1. 系统日志级别：优先级最高，遵循系统配置
+%% 2. 全局开关：控制所有日志
+%% 3. 模块开关：控制特定模块的日志
+%% 4. 行号开关：控制特定模块特定行的日志
+%% 5. 级别开关：控制特定级别的日志
+%% 6. 频率控制：限制日志打印频率
+%% 7. 次数控制：限制日志打印次数
+%%
+%% 重要说明：进程字典作用域
+%% - 所有控制函数都在**调用进程**的进程字典中操作
+%% - 每个进程独立控制，互不影响
+%%
+%% 使用方式（三种方法）：
+%%
+%% 方法1：进程初始化时设置（推荐）
+%%   init([]) ->
+%%       dgiot_log_control:disable_level(debug),
+%%       dgiot_log_control:set_interval(?MODULE, 60),
+%%       {ok, #state{}}.
+%%
+%% 方法2：直接操作进程字典（轻量级）
+%%   put(dgiot_log_disabled, true),
+%%   put({dgiot_log_interval, ?MODULE}, 30),
+%%
+%% 方法3：通过进程消息控制（动态调整）
+%%   handle_info({log_control, disable_module, Module}, State) ->
+%%       dgiot_log_control:disable_module(Module),
+%%       {noreply, State}.
+%%
+%% API函数：
+%%   dgiot_log_control:disable_all()              %% 禁用所有日志
+%%   dgiot_log_control:disable_module(?MODULE)    %% 禁用模块日志
+%%   dgiot_log_control:disable_line(?MODULE, 123) %% 禁用行号日志
+%%   dgiot_log_control:disable_level(debug)       %% 禁用debug级别日志
+%%   dgiot_log_control:set_interval(?MODULE, 30)  %% 设置模块频率(秒)
+%%   dgiot_log_control:set_limit(?MODULE, 10)     %% 设置模块次数限制
+%%
+%% 控制优先级：
+%%   系统日志级别 -> 全局开关 -> 模块开关 -> 行号开关 -> 级别开关 -> 频率限制 -> 次数限制
+%%
 -define(LOG(Level, Format, Args),
     begin
-        (logger:log(Level, #{}, #{
-            report_cb => fun(_) -> { (Format), (Args)} end,
-            domain => [dgiot_public],
-            mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},
-            line => ?LINE}))
+        %% 检查日志开关（多级控制：全局 -> 模块 -> 行号 -> 级别）
+        case dgiot_log_control:should_log(?MODULE, ?LINE, Level) of
+            true ->
+                %% 打印日志（所有变量计算都在report_cb内部，避免作用域问题）
+                logger:log(Level, #{}, #{
+                    report_cb => fun(_) ->
+                        %% 转换Format为字符串（避免二进制格式问题）
+                        FormatStr = case is_binary(Format) of
+                            true -> unicode:characters_to_list(Format);
+                            false -> Format
+                        end,
+                        %% 获取标签前缀
+                        TagPrefix = dgiot_log_control:format_log_tags(),
+                        %% 返回格式化后的日志
+                        {TagPrefix ++ FormatStr, (Args)}
+                    end,
+                    domain => [dgiot_public],
+                    mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},
+                    line => ?LINE});
+            false ->
+                ok
+        end
     end).
 
 %% LOG宏三参数版本（带ACL）
@@ -62,6 +121,36 @@
             domain => ACL,
             mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},
             line => ?LINE}))
+    end).
+
+%% ====================================================================
+%% 首次打印日志宏（LOG_ONCE）- 便捷函数
+%% ====================================================================
+
+%% LOG_ONCE宏 - 只打印首次（默认只打印1次）
+%% 使用示例：
+%%   ?LOG_ONCE(info, "无人机首次上线: ~p", [DeviceId]).
+%%   ?LOG_ONCE(error, "EB90帧首次识别: ~p", [FrameInfo]).
+%%
+-define(LOG_ONCE(Level, Format, Args),
+    begin
+        %% 动态设置行号限制为1次
+        dgiot_log_control:set_limit(?MODULE, ?LINE, 1),
+        %% 调用标准LOG宏
+        ?LOG(Level, Format, Args)
+    end).
+
+%% LOG_N次宏 - 只打印前N次
+%% 使用示例：
+%%   ?LOG_N(info, 5, "EB90遥测帧: ~p bytes", [Size]).
+%%   ?LOG_N(error, 3, "PLC指令下发: ~p", [Command]).
+%%
+-define(LOG_N(Level, MaxCount, Format, Args),
+    begin
+        %% 动态设置行号限制为N次
+        dgiot_log_control:set_limit(?MODULE, ?LINE, MaxCount),
+        %% 调用标准LOG宏
+        ?LOG(Level, Format, Args)
     end).
 
 %% ====================================================================
