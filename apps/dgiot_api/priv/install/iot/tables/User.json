@@ -1,0 +1,16 @@
+[
+  {
+    "className": "_User",
+    "fields": {
+      "nick": {
+        "type": "String"
+      },
+      "phone": {
+        "type": "String"
+      },
+      "tag": {
+        "type": "Object"
+      }
+    }
+  }
+]

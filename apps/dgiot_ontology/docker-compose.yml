@@ -1,0 +1,76 @@
+version: '3.8'
+services:
+  # ========== L0/L1 Erlang 实时执行层 ==========
+  erlang:
+    build:
+      context: .
+      dockerfile: Dockerfile.erlang
+    ports: ["5000:5000", "1883:1883"]
+    volumes:
+      - ./src:/app/src
+      - ./priv:/app/priv
+      - erlang_data:/app/data
+    environment:
+      - ERL_MAX_PORTS=65536
+      - ERL_PROCESS_LIMIT=1000000
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/ontology/definition"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ========== L2 Java OWL推理层 (可选·降级不影响L0/L1) ==========
+  java:
+    build:
+      context: ./java
+      dockerfile: Dockerfile.java
+    ports: ["8081:8081"]
+    environment:
+      - JAVA_OPTS=-Xmx256m -Xms128m
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/api/reasoner"]
+      interval: 60s
+      timeout: 10s
+      retries: 2
+
+  # ========== L3 Python 深度学习层 (可选·降级不影响L0/L1) ==========
+  python:
+    build:
+      context: ./python
+      dockerfile: Dockerfile.python
+    ports: ["8082:8082"]
+    volumes:
+      - ./models:/app/models
+    environment:
+      - ONNX_MODEL_DIR=/app/models
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/api/inference/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 2
+
+  # ========== 时序数据库 (可选) ==========
+  tdengine:
+    image: tdengine/tdengine:3.3.0.0
+    ports: ["6030:6030", "6041:6041"]
+    volumes:
+      - tdengine_data:/var/lib/taos
+    restart: unless-stopped
+
+  # ========== 知识图谱 (可选) ==========
+  neo4j:
+    image: neo4j:5-community
+    ports: ["7474:7474", "7687:7687"]
+    environment:
+      - NEO4J_AUTH=neo4j/dgiot2024
+    volumes:
+      - neo4j_data:/data
+    restart: unless-stopped
+
+volumes:
+  erlang_data:
+  tdengine_data:
+  neo4j_data:

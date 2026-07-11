@@ -1,0 +1,413 @@
+{
+  "tags": [],
+  "definitions": {
+    "Token": {
+      "type": "object",
+      "properties": {
+        "appid": {
+          "description": "app secret",
+          "type": "string",
+          "example": "gEsTiaPAjv"
+        },
+        "secret": {
+          "description": "app secret",
+          "type": "string",
+          "example": "VzY0Mjc5NDQxNTg1ODI4NDk1MzYx"
+        }
+      }
+    },
+    "App": {
+      "type": "object",
+      "properties": {
+        "secret": {
+          "type": "string",
+          "description": "访问密钥"
+        },
+        "config": {
+          "type": "object",
+          "properties": {
+            "expires": {
+              "type": "number",
+              "description": "token过期时间,单位秒"
+            }
+          }
+        },
+        "desc": {
+          "type": "string",
+          "description": "描述"
+        }
+      }
+    },
+    "ClassLevel": {
+      "type": "object",
+      "properties": {
+        "addField": {
+          "type": "object",
+          "description": " objectId role:RoleName 或 *(表示所有)",
+          "example": {
+            "*": true
+          }
+        },
+        "create": {
+          "type": "object",
+          "description": " objectId role:RoleName 或 *(表示所有)",
+          "example": {
+            "role:RoleName": true
+          }
+        },
+        "delete": {
+          "type": "object",
+          "description": " objectId role:RoleName 或 *(表示所有)",
+          "example": {
+            "aSaMpLeUsErId": true
+          }
+        },
+        "find": {
+          "type": "object",
+          "description": " objectId role:RoleName 或 *(表示所有)",
+          "example": {
+            "role:RoleName": true
+          }
+        },
+        "get": {
+          "type": "object",
+          "description": " objectId role:RoleName 或 *(表示所有)",
+          "example": {
+            "role:RoleName": true
+          }
+        },
+        "update": {
+          "type": "object",
+          "description": " objectId role:RoleName 或 *(表示所有)",
+          "example": {
+            "role:RoleName": true
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/batch": {
+      "post": {
+        "summary": "数据批处理",
+        "description": "为了减少网络往返的时间，可以使用批处理端点在一次调用中创建、更新或删除多达50个对象。",
+        "position": 0,
+        "parameters": [
+          {
+            "in": "body",
+            "name": "batch",
+            "description": "批处理",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "requests": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "method": {
+                        "type": "string",
+                        "enum": [
+                          "POST",
+                          "DELETE",
+                          "PUT",
+                          "GET"
+                        ]
+                      },
+                      "path": {
+                        "type": "string"
+                      },
+                      "body": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {}
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Basic"
+        ]
+      }
+    },
+    "/functions": {
+      "post": {
+        "summary": "云函数",
+        "description": "云函数",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "func",
+            "required": true,
+            "description": "函数名称",
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "func",
+            "description": "提交内容",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/tree": {
+      "post": {
+        "summary": "获取类树",
+        "description": "获取类树",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "获取类树",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "class": {
+                  "required": true,
+                  "description": "类表名",
+                  "type": "string",
+                  "example": "Device"
+                },
+                "parent": {
+                  "required": true,
+                  "description": "父字段名",
+                  "type": "string",
+                  "example": "parentId"
+                },
+                "filter": {
+                  "description": "过滤条件 {\"keys\":[\"parentId\",\"name\"],\"where\":{\"$or\":[{\"parentId\":\"lgtDJDEZlW\"},{\"objectId\":\"lgtDJDEZlW\"}]}}",
+                  "type": "object",
+                  "example": "{\"keys\":[\"parentId\",\"name\"]}"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/graphql": {
+      "post": {
+        "summary": "graphql",
+        "description": "graphql",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "graphql",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "security": [],
+        "summary": "health",
+        "description": "检测是启动",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Basic"
+        ]
+      }
+    },
+    "/upgrade": {
+      "get": {
+        "security": [],
+        "summary": "数据库升级",
+        "description": "数据库升级",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Basic"
+        ]
+      },
+      "post": {
+        "summary": "版本升级",
+        "description": "版本升级",
+        "parameters": [
+          {
+            "description": "升级类型",
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "type": "string",
+            "default": "dgiot",
+            "enum": [
+              "all",
+              "dgiot",
+              "amis",
+              "admin",
+              "tdengine",
+              "postgres",
+              "gofastd",
+              "parse",
+              "erlang"
+            ]
+          },
+          {
+            "in": "body",
+            "name": "info",
+            "description": "版本信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "description": "软件名称",
+                  "type": "string",
+                  "example": "dgiot_edge_v10.tar.gz"
+                },
+                "md5": {
+                  "description": "校验码",
+                  "type": "array"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Basic"
+        ]
+      }
+    }
+  }
+}

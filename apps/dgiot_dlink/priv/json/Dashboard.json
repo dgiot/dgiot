@@ -1,0 +1,129 @@
+{
+  "dashboard": [
+    {
+      "dataType": "map",
+      "vuekey": "baiduMap",
+      "table": "Device",
+      "query": {
+        "count": "objectId",
+        "keys": [
+          "objectId",
+          "name",
+          "location",
+          "status"
+        ]
+      }
+    },
+    {
+      "dataType": "card",
+      "vuekey": "app_count",
+      "table": "App",
+      "query": {
+        "limit": 1,
+        "count": "objectId",
+        "keys": [
+          "objectId"
+        ],
+        "where": {}
+      }
+    },
+    {
+      "dataType": "card",
+      "vuekey": "product_count",
+      "table": "Product",
+      "query": {
+        "count": "objectId",
+        "keys": [
+          "objectId"
+        ],
+        "where": {}
+      }
+    },
+    {
+      "dataType": "card",
+      "vuekey": "dev_online_count",
+      "table": "Device",
+      "query": {
+        "order": "-updatedAt",
+        "limit": 15,
+        "count": "objectId",
+        "keys": [
+          "objectId"
+        ],
+        "where": {
+          "status": "ONLINE"
+        }
+      }
+    },
+    {
+      "dataType": "card",
+      "vuekey": "dev_off_count",
+      "table": "Device",
+      "query": {
+        "limit": 15,
+        "order": "-updatedAt",
+        "count": "objectId",
+        "keys": [
+          "objectId"
+        ],
+        "where": {
+          "status": "OFFLINE"
+        }
+      }
+    },
+    {
+      "dataType": "card",
+      "vuekey": "project_count",
+      "table": "Project",
+      "query": {
+        "limit": 1,
+        "count": "objectId",
+        "keys": [
+          "objectId"
+        ],
+        "where": {}
+      }
+    },
+    {
+      "dataType": "card",
+      "vuekey": "ChartStatus",
+      "table": "ChartStatus",
+      "query": {
+        "limit": 1,
+        "count": "objectId",
+        "keys": [
+          "objectId"
+        ],
+        "where": {}
+      }
+    },
+    {
+      "dataType": "card",
+      "vuekey": "device_count",
+      "table": "Device",
+      "query": {
+        "count": "objectId",
+        "keys": [
+          "objectId",
+          "name",
+          "location",
+          "status"
+        ],
+        "where": {}
+      }
+    },
+    {
+      "dataType": "card",
+      "vuekey": "warn_count",
+      "table": "Notification",
+      "query": {
+        "limit": 1,
+        "count": "objectId",
+        "keys": [
+          "objectId"
+        ],
+        "where": {}
+      }
+    }
+  ]
+}

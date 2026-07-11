@@ -1,0 +1,14 @@
+{application, dgiot_api,
+    [{description, "DGIOT API"},
+        {vsn, "4.3.0"},
+        {registered, []},
+        {mod, {dgiot_api_app, []}},
+        {applications,[kernel, stdlib, jesse, dgiot, dgiot_parse]},
+        {env, []},
+        {modules, []},
+        {licenses, ["Apache-2.0"]},
+        {maintainers, ["DGIOT Team"]},
+        {links, [{"Homepage", "https://www.dgiotcloud.cn/"},
+            {"Github", "https://github.com/dgiot/dgiot"}
+        ]}
+    ]}.

@@ -1,0 +1,8 @@
+[
+  {
+    "name": "parse_save_cache",
+    "help": "parse缓存统计",
+    "type": "gauge",
+    "labels": []
+  }
+]

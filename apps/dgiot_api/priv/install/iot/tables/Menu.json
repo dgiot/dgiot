@@ -1,0 +1,49 @@
+[
+  {
+    "className": "Menu",
+    "classLevelPermissions": {
+      "count":{
+        "*":true
+      },
+      "get": {
+        "*": true
+      },
+      "find": {
+        "*": true
+      },
+      "create": {
+        "*": true
+      },
+      "update": {
+        "*": true
+      },
+      "delete": {
+        "*": true
+      },
+      "addField": {
+        "role:root": true
+      }
+    },
+    "fields": {
+      "name": {
+        "type": "String"
+      },
+      "icon": {
+        "type": "String"
+      },
+      "orderBy": {
+        "type": "Number"
+      },
+      "url": {
+        "type": "String"
+      },
+      "parent": {
+        "targetClass": "Menu",
+        "type": "Pointer"
+      },
+      "meta": {
+        "type": "Object"
+      }
+    }
+  }
+]

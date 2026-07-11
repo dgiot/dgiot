@@ -1,0 +1,331 @@
+{
+  "tags": [
+    {
+      "name": "Dlink",
+      "description": "Dlink协议"
+    }
+  ],
+  "definitions": {
+  },
+  "paths": {
+    "/head": {
+      "post": {
+        "description": "获取表头",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "productid": {
+                  "required": true,
+                  "type": "string",
+                  "example": "ecfd3a227c"
+                },
+                "items": {
+                  "required": true,
+                  "type": "array",
+                  "example": [
+                    "GCU331_YJ.p_L_1",
+                    "GCU331_YJ.SX_PZ96_U_55"
+                  ]
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "获取表头",
+        "tags": [
+          "Dlink"
+        ]
+      }
+    },
+    "/protocol": {
+      "get": {
+        "security": [],
+        "summary": "获取协议列表",
+        "description": "获取协议列表",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "type": "string",
+            "description": "协议类型",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Dlink"
+        ]
+      }
+    },
+    "/dlinkjson": {
+      "get": {
+        "security": [],
+        "summary": "获取json信息",
+        "description": "获取json信息",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "type": "string",
+            "description": "Json Templete",
+            "required": true,
+            "enum": [
+              "Views",
+              "Amis",
+              "Konva",
+              "default",
+              "Thing",
+              "Table",
+              "Menu",
+              "Topic",
+              "Dashboard",
+              "Unit",
+              "ThingUnit",
+              "ChartType",
+              "rule-engine",
+              "Category",
+              "thing-tsl",
+              "thing-lite",
+              "swaggerTree",
+              "arp"
+            ]
+          },
+          {
+            "in": "query",
+            "name": "subtype",
+            "type": "string",
+            "description": "子类型",
+            "default": "all",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Dlink"
+        ]
+      }
+    },
+    "/topic": {
+      "post": {
+        "summary": "订阅topic",
+        "description": "订阅topic",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "topic": {
+                  "required": true,
+                  "type": "string",
+                  "example": "$dg/user/router/"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Dlink"
+        ]
+      }
+    },
+    "/thingecho": {
+      "get": {
+        "summary": "物模型",
+        "description": "物模型回显",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "productid",
+            "type": "string",
+            "description": "产品id",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "identifier",
+            "type": "string",
+            "description": "物模型标识符",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Dlink"
+        ]
+      }
+    },
+    "/cookie": {
+      "post": {
+        "summary": "cookie存储",
+        "description": "cookie存储",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "UserSession": {
+                  "required": true,
+                  "type": "string",
+                  "example": "usersession"
+                },
+                "cookie": {
+                  "required": true,
+                  "type": "string",
+                  "example": "{}"
+                }
+              }
+            }
+          }
+        ],
+
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Dlink"
+        ]
+      }
+    },
+    "/third_party_push": {
+      "post": {
+        "security": [],
+        "summary": "third_party_push",
+        "description": "第三方推送",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Dlink"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "name": "tcp_server",
+    "help": "TCP Server连接数据统计",
+    "type": "gauge",
+    "labels": []
+  },
+  {
+    "name": "tcp_server_send",
+    "help": "TCP Server发包数据统计",
+    "type": "gauge",
+    "labels": []
+  },
+  {
+    "name": "tcp_server_recv",
+    "help": "TCP Server收包数据统计",
+    "type": "gauge",
+    "labels": []
+  }
+]

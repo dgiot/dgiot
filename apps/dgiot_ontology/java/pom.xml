@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.dgiot</groupId>
+    <artifactId>dgiot-ontology-reasoner</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+    <name>DG-IoT Ontology Reasoner (L2)</name>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.5</version>
+    </parent>
+
+    <dependencies>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency>
+        <!-- OWL DL推理: Pellet -->
+        <dependency><groupId>com.github.galigator.openllet</groupId><artifactId>openllet-owlapi</artifactId><version>2.6.5</version></dependency>
+        <!-- SPARQL查询: Jena -->
+        <dependency><groupId>org.apache.jena</groupId><artifactId>jena-arq</artifactId><version>5.0.0</version></dependency>
+        <!-- SHACL验证 -->
+        <dependency><groupId>org.apache.jena</groupId><artifactId>jena-shacl</artifactId><version>1.3.5</version></dependency>
+        <!-- SWRL规则: Drools -->
+        <dependency><groupId>org.drools</groupId><artifactId>drools-core</artifactId><version>9.44.0.Final</version></dependency>
+    </dependencies>
+</project>

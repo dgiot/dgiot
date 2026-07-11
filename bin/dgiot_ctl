@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# -*- tab-width:4;indent-tabs-mode:nil -*-
+# ex: ts=4 sw=4 et
+
+THIS_DIR="$(cd "$(dirname "$(readlink "$0" || echo "$0")")" || true; pwd -P)"
+exec "$THIS_DIR/dgiot" ctl "$@"

@@ -1,0 +1,1086 @@
+{
+  "tags": [
+    {
+      "name": "configuration",
+      "description": "通知配置"
+    }
+  ],
+  "definitions": {
+  },
+  "paths": {
+    "/configuration": {
+      "get": {
+        "summary": "获取配置",
+        "description": "获取配置",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Server Internal error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "tags": [
+          "configuration"
+        ]
+      },
+      "post": {
+        "summary": "编辑配置",
+        "description": "编辑配置",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "user",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "sms": {
+                  "schema": {
+                    "description": "模板内容",
+                    "properties": {
+                      "appid": {
+                        "description": "appid",
+                        "example": "1400635630",
+                        "required": true,
+                        "type": "string"
+                      },
+                      "appkey": {
+                        "description": "appkey",
+                        "example": "40d9609b9e6212cbff051b4f1d4cabfc",
+                        "required": true,
+                        "type": "string"
+                      },
+                      "sign": {
+                        "description": "sign",
+                        "example": "dgiota",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "required": true,
+                    "type": "object"
+                  }
+                },
+                "mail": {
+                  "schema": {
+                    "properties": {},
+                    "required": true,
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Server Internal error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "tags": [
+          "configuration"
+        ]
+      }
+    },
+    "/sendsms_msg": {
+      "post": {
+        "summary": "发送短信",
+        "description": "发送短信",
+        "consumes": [
+          "application/json",
+          "*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "phones": {
+                  "required": true,
+                  "type": "string",
+                  "description": "电话号码 ',' 隔开",
+                  "example": ""
+                },
+                "tplid": {
+                  "required": true,
+                  "type": "string",
+                  "description": "模板id",
+                  "example": "1473069"
+                },
+                "params": {
+                  "required": true,
+                  "type": "array",
+                  "description": "发送内容",
+                  "example": [
+                    "测试1",
+                    "测试2",
+                    "测试3",
+                    "测试4",
+                    "测试5",
+                    "测试6"
+                  ]
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Server Internal error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/warnsendsms": {
+      "post": {
+        "summary": "短信告警发送",
+        "description": "短信告警发送",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "user",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "objectId": {
+                  "required": true,
+                  "type": "string",
+                  "example": "dasssd54"
+                },
+                "department": {
+                  "type": "string",
+                  "required": true,
+                  "example": "部门"
+                },
+                "dailyWorksId": {
+                  "type": "string",
+                  "example": "每天工单编号"
+                },
+                "branchId": {
+                  "required": true,
+                  "type": "string",
+                  "example": "9256b5cf2e"
+                },
+                "docnumber": {
+                  "required": true,
+                  "type": "string",
+                  "example": "MO000015"
+                },
+                "datetimes": {
+                  "required": true,
+                  "type": "string",
+                  "example": "2022-12-15,14:20"
+                },
+                "username": {
+                  "required": true,
+                  "type": "string",
+                  "example": "张三"
+                },
+                "workshop": {
+                  "type": "string",
+                  "example": "车间1-1"
+                },
+                "level": {
+                  "required": true,
+                  "type": "string",
+                  "example": "1"
+                },
+                "desc": {
+                  "type": "string",
+                  "example": "desc"
+                },
+                "file": {
+                  "type": "string",
+                  "example": "img"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Server Internal error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/wechat": {
+      "get": {
+        "security": [],
+        "description": "wechat登陆",
+        "parameters": [
+          {
+            "name": "jscode",
+            "in": "query",
+            "type": "string",
+            "default": "JVANH8bf5n",
+            "description": "jscode"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "wechat登陆",
+        "tags": [
+          "Notification"
+        ]
+      },
+      "post": {
+        "security": [],
+        "summary": "wechat绑定",
+        "description": "wechat绑定",
+        "hidden": true,
+        "position": 0,
+        "consumes": [
+          "text/plain"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "user",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "username": {
+                  "required": true,
+                  "type": "string",
+                  "example": "dgiot_admin"
+                },
+                "password": {
+                  "required": true,
+                  "type": "string",
+                  "example": "dgiot_admin"
+                },
+                "openid": {
+                  "required": true,
+                  "type": "string",
+                  "example": "openIdopsKlr9NtrNqDC9oP8yHiE"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Server Internal error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/wechat_unbind": {
+      "get": {
+        "description": "wechat解绑",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "wechat解绑",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/wechat_index": {
+      "get": {
+        "description": "小程序总控台",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "小程序总控台",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/wechat_map": {
+      "get": {
+        "description": "微信设备地图",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "微信设备地图",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/device_info": {
+      "get": {
+        "description": "设备详情",
+        "parameters": [
+          {
+            "name": "deviceid",
+            "in": "query",
+            "type": "string",
+            "default": "d357f550ca",
+            "description": "deviceid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "设备详情",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/notification": {
+      "get": {
+        "description": "告警列表",
+        "parameters": [
+          {
+            "name": "productid",
+            "in": "query",
+            "type": "string",
+            "default": "all",
+            "description": "all,产品id 设备类型"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "type": "string",
+            "default": "createdAt",
+            "description": "排序方式, 负为降序, eg: score,-name"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "type": "string",
+            "default": "10",
+            "description": "limit, 显示多少条记录，显示100条记录 eg:100"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "type": "string",
+            "default": "0",
+            "description": "skip,第几页"
+          },
+          {
+            "name": "isprocess",
+            "in": "query",
+            "type": "string",
+            "default": "all",
+            "description": "all, 0 未处理, 1 已处理, 2 误报 是否处理"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "告警列表",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/sendsubscribe": {
+      "post": {
+        "basePath": "/",
+        "description": "发送订阅消息",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "roleid": {
+                  "type": "string",
+                  "required": true,
+                  "example": "9Fmc0vtA7v",
+                  "description": "部门id"
+                },
+                "templateid": {
+                  "type": "string",
+                  "required": true,
+                  "example": "9Fmc0vtA7vnh_HtoVtXJy6Y4_GgjqM821MU8HzojUy8",
+                  "description": "模板id"
+                },
+                "page": {
+                  "type": "string",
+                  "example": "/index",
+                  "description": "跳转页面"
+                },
+                "miniprogramstate": {
+                  "type": "string",
+                  "required": true,
+                  "example": "formal",
+                  "description": "小程序类型"
+                },
+                "lang": {
+                  "type": "string",
+                  "required": true,
+                  "example": "zh_CN",
+                  "description": "语言类型"
+                },
+                "data": {
+                  "schema": {
+                    "description": "模板内容",
+                    "properties": {},
+                    "required": true,
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "发送订阅消息",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/sendemail": {
+      "post": {
+        "basePath": "/",
+        "description": "发送邮件",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "to": {
+                  "type": "array",
+                  "example": "demo@dgiot.com,demo@dgiot.com",
+                  "description": "收件人邮箱,多个按','分隔"
+                },
+                "subject": {
+                  "type": "string",
+                  "required": true,
+                  "example": "测试邮件",
+                  "description": "主题"
+                },
+                "fromdes": {
+                  "type": "string",
+                  "required": true,
+                  "example": "demo@dgiot.com",
+                  "description": "发件人描述"
+                },
+                "todes": {
+                  "type": "string",
+                  "required": true,
+                  "example": "demo@dgiot.com",
+                  "description": "收件人描述"
+                },
+                "data": {
+                  "type": "string",
+                  "required": true,
+                  "example": "发件内容",
+                  "description": "发件内容"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "发送邮件",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/jwtlogin": {
+      "get": {
+        "security": [],
+        "description": "jwt回调地址",
+        "parameters": [
+          {
+            "name": "id_token",
+            "in": "query",
+            "type": "string",
+            "default": "JVANH8bf5n",
+            "description": "id_token"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "jwt回调",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/maintenance": {
+      "post": {
+        "basePath": "/",
+        "description": "创建工单",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "required": true,
+                  "example": "故障工单",
+                  "description": "工单类型"
+                },
+                "productid": {
+                  "type": "string",
+                  "required": true,
+                  "example": "8e5d6be6ac",
+                  "description": "产品id"
+                },
+                "productname": {
+                  "type": "string",
+                  "required": true,
+                  "example": "电表",
+                  "description": "产品名称"
+                },
+                "deviceid": {
+                  "type": "string",
+                  "required": true,
+                  "example": "8d7bdaff69",
+                  "description": "设备id"
+                },
+                "devicename": {
+                  "type": "string",
+                  "required": true,
+                  "example": "电表_001",
+                  "description": "设备名称"
+                },
+                "description": {
+                  "type": "string",
+                  "required": true,
+                  "example": "电表跳闸断电",
+                  "description": "工单描述"
+                },
+                "id": {
+                  "type": "string",
+                  "required": true,
+                  "example": "7c9odaff69",
+                  "description": "工单编号"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "创建工单",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/maintenancefinish": {
+      "get": {
+        "description": "工单结束发送",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "query",
+            "type": "string",
+            "default": "1646117781",
+            "description": "工单编号"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "工单结束发送",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/operations": {
+      "get": {
+        "summary": "获取运维管理列表",
+        "description": "获取运维管理列表",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Notification"
+        ]
+      },
+      "post": {
+        "basePath": "/",
+        "description": "修改运维管理列表",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "schema": {
+                    "description": "运维数据",
+                    "properties": {},
+                    "required": true,
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "修改运维管理列表",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/triggeralarm": {
+      "post": {
+        "basePath": "/",
+        "description": "触发告警",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "deviceid": {
+                  "type": "string",
+                  "required": true,
+                  "example": "8d7bdaff69",
+                  "description": "设备id"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "触发告警",
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/sendsms_code": {
+      "post": {
+        "security": [],
+        "consumes": [
+          "*"
+        ],
+        "summary": "发送短信验证码",
+        "description": "发送短信,短信验证码发送成功后,则会在缓存中以mobile为键写入, 用户下一步提交时，可以根据此键查询验证通过",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "nationcode",
+            "type": "string",
+            "description": "国家/地区",
+            "enum": [
+              "+86/中国",
+              "+886/中国台湾",
+              "+852/中国香港",
+              "+91/India",
+              "+244/Angola",
+              "+54/Argentina",
+              "+1/American Samoa",
+              "+880/Bangladesh",
+              "+56/Chile",
+              "+855/Cambodia",
+              "+20/Egypt",
+              "+33/France",
+              "+49/Germany",
+              "+62/Indonesia",
+              "+353/Ireland",
+              "+972/Israel",
+              "+39/Italy",
+              "+81/Japan",
+              "+60/Malaysia",
+              "+63/Philippines",
+              "+92/Pakistan",
+              "+82/South Korea",
+              "+46/Sweden",
+              "+65/Singapore",
+              "+27/South Africa",
+              "+66/Thailand",
+              "+971/United Arab Emirates",
+              "+44/United Kingdom",
+              "+84/Vietnam",
+              "+967/Yemen",
+              "+260/Zambia"
+            ],
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "account",
+            "type": "string",
+            "description": "大陆手机号码",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "expire": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/verify_code": {
+      "post": {
+        "security": [],
+        "summary": "验证手机号/邮箱是否通过",
+        "description": "验证手机号/邮箱是否通过",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Action",
+            "type": "string",
+            "description": "验证操作类型",
+            "enum": [
+              "login",
+              "register",
+              "passwordreset",
+              "modifyuser"
+            ],
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "account",
+            "type": "string",
+            "description": "邮箱或手机号",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "code",
+            "type": "integer",
+            "description": "验证码",
+            "required": true
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+              }
+            },
+            "description": "扩展参数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "302": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/excel": {
+      "post": {
+        "summary": "上传excel",
+        "description": "上传excel到指定通道",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "type": "string",
+            "description": "通道id",
+            "required": true
+          },
+          {
+            "in": "body",
+            "name": "data",
+            "schema": {
+              "type": "object",
+              "properties": {
+              }
+            },
+            "description": "exel内容"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "302": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    }
+  }
+}
