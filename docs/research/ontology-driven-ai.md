@@ -2,7 +2,43 @@
 
 ## 原则
 
-**本体是唯一真相源。AI 读本体，生成代码。本体变，代码自动变。**
+**本体是唯一真相源。需求→本体→AI→代码→日志验证。本体变，代码自动变，日志判对错。**
+
+## 闭环
+
+```
+企业需求 (合规·SLA·安全策略·业务规则)
+  │
+  ▼
+本体 (Single Source of Truth)
+  │  thing_model · ProductTemplet · Channel · ACL · Rules
+  │  Site/Gateway/Device/Point topology
+  │  Modbus registers · MQTT topics · TDengine schema
+  │
+  ▼
+AI 编程 (Claude / Copilot)
+  │  ├── 生成 .erl (gen_statem + rules)
+  │  ├── 生成 .py (bridge + protocol)
+  │  └── 生成 SQL (schema + migration)
+  │
+  ▼
+测试验证
+  │  ├── 单元测试: gen_statem state transitions
+  │  ├── 集成测试: MQTT pub/sub chain
+  │  └── 日志验证: TDengine INSERT confirmed
+  │
+  ▼
+生产 (确定性代码)
+  │  ├── gen_statem evaluate
+  │  ├── dgiot_tdengine:INSERT
+  │  └── MQTT publish
+  │
+  ▼
+日志 → 反馈回本体
+     错误日志 → 修正本体定义
+     性能日志 → 优化规则阈值
+     审计日志 → 合规验证
+```
 
 ## 流程
 
