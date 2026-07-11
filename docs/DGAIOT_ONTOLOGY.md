@@ -40,14 +40,28 @@ Data      ├──────────────────────�
 | Evidence | 附件 | device_id, file_url, type |
 | Instruct | 指令 | device_id, command, params, status |
 
-### TDengine 时序
+### TDengine 时序 (基于 dgiot_tdengine 源码)
 
 ```
-唯一性链:
-  Database   = dgiot_{ChannelId}                 channel级隔离
-  SuperTable = dgiot_{ProductId}                 product级隔离
-  SubTable   = dgiot_{MD5(productId + devaddr)}  设备级隔离
-  Row        = ts + TAGS(device_id, point_id)    时间+点位唯一
+宏:
+  Database   = _{ChannelId}                    (或 _{ProductId}, ETS缓存)
+  SuperTable = _{ProductId}                     (列=properties, 标签=tags+devaddr)
+
+ETS 映射:
+  {tdengine_db, ChannelId, ProductId} -> DB
+  {ProductId, "TD"} -> ChannelId
+  {td, ProductId, DeviceId} -> SubTable
+  {ProductId, describe_table} -> [Columns]
+
+devaddr 强制标签:
+  proplists:get_value(<<"devaddr">>, Tags) == undefined
+    -> Tags ++ [{<<"devaddr">>, NCHAR(50)}]
+
+创建流程:
+  1. create_database:  CREATE DATABASE IF NOT EXISTS _{Id} KEEP 10
+  2. create_table(ST):  CREATE TABLE IF NOT EXISTS _{ProductId} (cols) TAGS(devaddr NCHAR(50),...)
+  3. create_table(SUB): CREATE TABLE IF NOT EXISTS ... USING _{ProductId} TAGS(...)
+  4. alter_table:       对比 ETS 缓存列定义, 自动 ADD/DROP COLUMN
 ```
 
 ### dgiot_lite 对齐
@@ -261,3 +275,166 @@ Model → Ontology → Device Access → TimeSeries → Rules → Dashboard
 | Vue3 前端 (12页7组) | ✅ |
 | 设备影子 (state machine) | ⚠️ 待实现 |
 | 规则引擎增强 | ⚠️ 待实现 |
+| 131 IO Server 本体建模 | ✅ 2026-07-11 |
+
+---
+
+## 八、131 IO Server 本体实例 (2026-07-11 WinRM 深度扫描)
+
+> 通过本体论方法论，将 131 力控 IoMonitor 服务器的完整架构建模为可查询、可推理、可执行的五层本体。
+
+### Step 1: 盘点到齐 — 25 个实体
+
+#### Data 层 (14 实体)
+
+| 实体 | 类型 | 标识 | 状态 |
+|------|------|------|------|
+| IoMonitor.exe | 进程 | PID 18400, 63MB | ✅ 运行中 |
+| IoCommit.exe | 进程 | 数据提交引擎 | ✅ 活跃 |
+| CommBridge.exe | 进程 | 通信网桥 | ⚠️ 频繁崩溃 |
+| IOMan.exe | 进程 | IO 管理器 | ⛔ 大量崩溃(2026-03) |
+| IM_A11_RTU | 协议驱动 | ioapi.dll | ✅ A11 采油厂协议 |
+| OPC_FC_Client | 协议驱动 | ioapi.dll | ✅ OPC DA 客户端 |
+| Standard_Umodbus | 协议驱动 | PORTCONF.DAT | ✅ Modbus |
+| A11SQLSERVICE.exe | 转储服务 | RTUSql 目录 | ✅ A11→Oracle |
+| eForceCon DB | 数据库 | 力控自研 | ⛔ 已停用 |
+| pSpace | 实时库 | 力控实时数据库 | ⛔ 2022年停 |
+| Oracle 11.2.0.1 | 数据库 | 11.66.12.129:1521/orcl | ✅ 活跃 |
+| OPCDAAuto.dll | COM组件 | SysWOW64 | ✅ 已注册(32位) |
+| OPC Core Components 2.00 | SDK | D:\OPC Core Components...msi | ✅ 已安装 |
+| TagID_IOCommitDB*.dat | 映射文件 | E:\IO ServerOnLine\run\ | ✅ 实时更新 |
+
+#### Logic 层 (5 实体)
+
+| 实体 | 来源 | 关键参数 |
+|------|------|---------|
+| IoMonitor.ini | 采集规则 | CommitRealSpan=300ms, CommitHisSpan=500ms |
+| IoChannelCfg.ini | 通道配置 | SYNCH×1, CommBridge×3, TCP×1 |
+| Device.ini | 设备定义 | 12类保护继电器 + 计算公式 |
+| SqlFilSet.ini | Oracle连接 | Provider=OraOLEDB.Oracle.1; DQYTPROD@orcl |
+| OPCClientCfg.ini | OPC客户端 | 4个OPC Server配置 |
+
+#### Action 层 (4 实体)
+
+| 实体 | 参数 | 语义 |
+|------|------|------|
+| 实时提交管线 | 300ms + 15,000点/批 | 测点值→IoCommit→Oracle |
+| 历史提交管线 | 500ms + 15,000点/批 | 历史曲线写入 |
+| A11 SQL 管线 | F:\TRANgo\...\RTUSql | A11 RTU→SQL→Oracle |
+| OPC 采集管线 | DCOM :135 | OPC Server→力控Client→IoMonitor |
+
+#### Security 层 (2 实体)
+
+| 实体 | 值 |
+|------|-----|
+| Oracle 凭据 | DQYTPROD / dqyta11_PASS |
+| WinRM 入口 | Administrator / 5985 |
+
+### Step 2: 连线成网 — 关系矩阵
+
+```
+                      Field Layer (物理世界)
+                      ─────────────────────
+  井口RTU (20+)           OPC Server ×4           Modbus RTU
+  11.248.x.x             .9.23 .18.194            11.248.x.x
+  A11 TCP :8889          .26.6.3 .21.14.192      TCP :53001
+       │                       │                       │
+       │ A11协议               │ DCOM                  │ Modbus TCP
+       ▼                       ▼                       ▼
+  ┌────────────────────────────────────────────────────────┐
+  │                  IO Layer (131 服务器)                   │
+  │  IM_A11_RTU      OPC_FC_Client      Standard_Umodbus   │
+  │  ioapi.dll       ioapi.dll          PORTCONF.DAT       │
+  │       │               │                  │              │
+  │       └───────────────┼──────────────────┘              │
+  │                       ▼                                │
+  │               IoMonitor.exe (PID 18400)                 │
+  │               实时采集 · 状态管理 · 事件检测              │
+  │                       │                                │
+  │                       ▼                                │
+  │               IoCommit.exe                              │
+  │               TagID 映射 · 批量提交                      │
+  └───────────────────────┬────────────────────────────────┘
+                          │
+              ┌───────────┼───────────┐
+              ▼           ▼           ▼
+         Oracle :1521  pSpace      eForceCon DB
+         (活跃)       (停用)       (停用)
+```
+
+**关系类型统计:**
+| 关系 | 数量 | 示例 |
+|------|------|------|
+| protocol_driver → gateway | 6 | ch_opc_da, ch_a11_rtu... |
+| channel → device | 14 | 12 relay + 1 OPC + 1 Modbus |
+| device → point | 6+ | Ia,Ib,Ic,Ua,F,P (sample) |
+| gateway → datasource | 3 | Oracle, pSpace, eForceCon |
+| constraint → channel | 6 | 实时提交/批量/超时/连接池 |
+| gateway → opc_server | 4 | 172.23.9.23/.3/.18.194/.26.6.3 |
+
+### Step 3: 设卡立规 — 6 条约束
+
+| ID | 约束 | 严重度 | 来源 |
+|----|------|--------|------|
+| c_commit_real | 实时数据提交延迟 ≤ 300ms | info | IoMonitor.ini |
+| c_commit_batch | 单次提交上限 15000点 | warning | IoMonitor.ini |
+| c_io_timeout | IO设备 30s 无响应 → 离线 | danger | IoChannelCfg.ini |
+| c_ado_pool | Oracle 连接池上限 4 | warning | SqlFilSet.ini |
+| c_current_overload | Ia/Ib/Ic > 5A + 持续 >1s → 过流告警 | danger | Device.ini |
+| c_voltage_abnormal | U < 198V or U > 260V + 持续 >10s → 电压异常 | danger | Device.ini |
+
+### Step 4: 闭环验证 — 活性证据
+
+```
+TagID_IOCommitDB3_CY1C8K.dat → 2026-07-11 21:45 (385KB) ✅ 活跃
+TagID_IOCommitDB5_CY1C8K.dat → 2026-07-11 22:52 (319KB) ✅ 活跃
+IoMonitor.exe → 11.66.12.129:1521 ESTABLISHED          ✅ Oracle连通
+131 → 11.66.12.130:8889 ×7 ESTABLISHED                  ✅ A11连通
+131 → 20+ 11.248.x.x:53001 ESTABLISHED                  ✅ Modbus连通
+131 → 172.23.9.23:135 ESTABLISHED                       ✅ OPC DA连通
+```
+
+### 五层本体结构总览
+
+```
+Site:    dqyt_c1 (大庆采油厂)
+  └─ Gateway: gw_131 (WIN-NJ7VP96R2NM, 11.66.12.131)
+       ├─ Channel: ch_opc_da       → OPC DA Client → 4 OPC Servers
+       ├─ Channel: ch_a11_rtu      → A11 采油厂协议 → 130:8889
+       ├─ Channel: ch_modbus_tcp   → Modbus → 20+ RTU
+       ├─ Channel: ch_oracle       → Oracle 数据出口 → 129:1521
+       ├─ Channel: ch_pspace       → pSpace (已停)
+       └─ Channel: ch_eforcecon    → eForceCon DB (已停)
+            │
+            ├─ Device: dev_relay_00~110 (12类保护继电器)
+            ├─ Device: dev_opc_device_1
+            └─ Device: dev_rtu_wellhead
+                 │
+                 └─ Point: pt_ia, pt_ib, pt_ic, pt_ua, pt_freq, pt_power
+```
+
+### 本体引擎 API 使用
+
+```python
+from src.ontology import build_131_ontology
+
+engine = build_131_ontology()
+
+# 完整性校验
+print(engine.validate())
+# {"valid": true, "counts": {"sites":1,"gateways":1,"channels":6,"devices":14,"points":6,"constraints":6,"datasources":3}}
+
+# 树形导出
+tree = engine.tree("dqyt_c1")
+
+# MQTT 路径
+engine.get_path("pt_ia")
+# → dgiot/dqyt_c1/gw_131/ch_a11_rtu/dev_relay_00/pt_ia
+
+# 推送到 MQTT
+engine.push_point("pt_ia", 2.35)
+# → dgiot/dqyt_c1/gw_131/ch_a11_rtu/dev_relay_00/pt_ia/data {"ts":...,"v":2.35,"q":192}
+
+# 同步到 SQLite
+engine.sync_to_parse("default")
+```

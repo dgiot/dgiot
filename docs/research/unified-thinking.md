@@ -110,25 +110,27 @@ critical/offline(cast, {mqtt, heartbeat}, Device) →
 ### 4. 时序数据 (TDengine) — 记录"发生了什么"
 
 ```sql
-CREATE DATABASE oil_field_01;
-CREATE STABLE iot_telemetry (
-    ts TIMESTAMP,
-    value FLOAT,
-    quality INT
-) TAGS (
-    device_id BINARY(64),
-    point_id BINARY(64),
-    unit BINARY(16)
-);
-```
+-- 源码: dgiot_tdengine_schema.erl, dgiot_tdengine.hrl
+-- 宏: ?Database(Name) = "_" ++ Name
 
-```sql
--- 影子进程每次 push_point 都会写入
-INSERT INTO dgiot_oil_field_01_gw_131_rtu_001
+CREATE DATABASE IF NOT EXISTS _5392ccb3d7 KEEP 10;
+
+CREATE TABLE IF NOT EXISTS _2de1b3e1b8 (
+    createdat TIMESTAMP,
+    oil_pressure FLOAT,
+    temperature FLOAT
+) TAGS (
+    devaddr NCHAR(50)     -- 强制标签
+);
+
+-- 影子进程每次 push_point 写入
+INSERT INTO _5392ccb3d7._2de1b3e1b8
+  USING _2de1b3e1b8
+  TAGS ('02110120089')
   VALUES (NOW, 2.35, 192);
 ```
 
-**TDengine 的 supertable/subtable 模型天然匹配本体的 Device/Point 结构。每个 Device+Point 组合 = 一张子表。**
+**所有对象名以下划线开头。devaddr 标签强制存在（不存在则自动添加 NCHAR(50)）。**
 
 ---
 
