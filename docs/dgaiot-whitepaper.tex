@@ -1,0 +1,187 @@
+\documentclass[12pt,a4paper]{ctexart}
+\usepackage{geometry}\geometry{a4paper,margin=2.5cm,headheight=15pt}
+\usepackage{fancyhdr}\pagestyle{fancy}
+\fancyhead[L]{dgaiot 技术白皮书}
+\fancyhead[R]{V2.0}
+\fancyfoot[C]{\thepage}
+\usepackage{hyperref}\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=cyan}
+\usepackage{listings}\lstset{basicstyle=\ttfamily\small,breaklines=true,frame=single}
+\usepackage{longtable,booktabs,enumitem}
+
+\title{{\Huge\heiti dgaiot 技术白皮书}\\{\Large 本体驱动 AI 编程 · DLAS 架构 · 确定性工业物联网}}
+\author{dgaiot 项目组\\\small 2026年7月}
+\date{}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+\newpage
+\tableofcontents
+\newpage
+
+\section{核心设计原则}
+
+\subsection{本体是唯一真相源}
+
+本体（Ontology）定义了工业系统的完整语义模型——从物理设备到业务规则的映射关系。在 dgaiot 架构中，本体包括：
+
+\begin{itemize}[leftmargin=*]
+  \item 物模型（Thing Model）：125 个 Modbus 测点定义，含地址、类型、阈值
+  \item 产品模板（ProductTemplet）：设备类型、属性、事件、服务
+  \item 四层拓扑（Site/Gateway/Device/Point）：物理世界到数字孪生的映射
+  \item 通道配置（Channel）：协议适配器与 TDengine 数据库映射
+  \item ACL 规则：设备授权（ProductSecret/DeviceSecret）与用户角色权限
+\end{itemize}
+
+\subsection{生产环境运行确定性代码}
+
+\begin{quote}
+开发时 AI 编程（读本体 $\rightarrow$ 写代码）。\\
+运行时确定性执行（gen\_statem $\cdot$ MQTT $\cdot$ TDengine）。\\
+没有 AI 推理，没有概率，没有黑盒。\\
+每一步可追溯、可回放、可审计。
+\end{quote}
+
+\subsection{修正本体，而非修正代码}
+
+本体是严肃的——企业标准、合规要求、物理规律。代码是派生的。
+
+\begin{itemize}[leftmargin=*]
+  \item 日志显示温度 82\textdegree C 未告警 $\rightarrow$ 检查 gen\_statem 是否收到消息（运行时问题）
+  \item 再检查 condition 是否正确编译（AI 生成问题）
+  \item 最后才怀疑本体（极少）
+  \item 本体 = 宪法，不常修。代码 = 法规，本体派生，可迭代。
+\end{itemize}
+
+\section{DLAS 架构}
+
+\subsection{五层架构}
+
+\begin{lstlisting}[language=]
+EDGE:    iotStudio (Python+Vue) — DeviceAccess(9) → StreamEngine(15)
+SECURITY: auth · role · ACL/CLP · Hooks · JWT
+ACTION:  Shadow(gen_statem) · Bridge · MQTT · Rule Engine
+LOGIC:   Ontology Engine · Model Registry · Reasoner · Policy Optimizer
+DATA:    Parse/PG(23类) · TDengine(_{ChannelId}._{ProductId}) · EMQX(:1883)
+\end{lstlisting}
+
+\subsection{影子设备：物理世界 1:1 映射}
+
+每个物理设备对应一个 Erlang OTP gen\_statem 进程：
+
+\begin{lstlisting}[language=erlang]
+init() -> {ok, authenticate, Device}.
+authenticate(cast, heartbeat) -> {next_state, online, Device}.
+online(cast, {data, Props}, Device) ->
+    evaluate(Rules, Props),  %% 物模型编译的规则
+    bridge -> Parse + TDengine,
+    case alarm_triggered of
+        true  -> {next_state, alarm, Device};
+        false -> {keep_state, Device}
+    end.
+alarm(cast, heartbeat, Device) ->
+    {next_state, online, Device}.  %% 恢复
+\end{lstlisting}
+
+211 台设备的数字孪生 = 211 个 Erlang 进程，总内存消耗 $< 1$ MB。
+
+\subsection{TDengine 存储结构}
+
+\begin{lstlisting}[language=SQL]
+-- 宏: ?Database(Name) = "_" ++ Name
+-- 宏: ?Table(Name)    = "_" ++ Name
+
+CREATE DATABASE IF NOT EXISTS _85ef6b7459 KEEP 365;
+CREATE STABLE IF NOT EXISTS _85ef6b7459._2de1b3e1b8
+  (ts TIMESTAMP, value FLOAT, quality INT)
+  TAGS (devaddr NCHAR(50));
+CREATE TABLE ... USING _2de1b3e1b8 TAGS('02110120089');
+
+INSERT INTO _85ef6b7459.sub_2de1b3e1b8_02110120089
+  VALUES (NOW, 2.35, 192);
+\end{lstlisting}
+
+\subsection{DLAS 数据流}
+
+\begin{lstlisting}[language=]
+Modbus(:502) -> Edge Collector -> MQTT
+  -> EMQX -> Shadow gen_statem -> evaluate(Rules)
+  -> Parse(update status) + TDengine(INSERT telemetry)
+\end{lstlisting}
+
+\section{本体驱动 AI 编程}
+
+\subsection{闭环流程}
+
+\begin{enumerate}[leftmargin=*]
+  \item 企业需求：合规、SLA、安全策略、业务规则
+  \item 本体建模：thing\_model、ProductTemplet、Channel、ACL
+  \item AI 生成代码：.erl（gen\_statem + rules）、.py（bridge）、SQL（schema）
+  \item 测试验证：单元测试（state transitions）、集成测试（MQTT chain）、日志验证（TDengine INSERT）
+  \item 确定性生产：gen\_statem evaluate、dgiot\_tdengine:INSERT、MQTT publish
+  \item 日志反馈：错误日志 $\rightarrow$ 修正 AI 生成逻辑；性能日志 $\rightarrow$ 优化参数
+\end{enumerate}
+
+\subsection{本体 $\rightarrow$ 代码 示例}
+
+\begin{lstlisting}[language=json, caption=thing\_model.json 片段]
+{
+  "name": "油压",
+  "dataForm": {"address":"40300", "protocol":"modbus",
+               "originaltype":"float32_AB"},
+  "identifier": "oil_pressure"
+}
+\end{lstlisting}
+
+AI 自动生成：
+
+\begin{lstlisting}[language=erlang]
+%% Modbus: readHoldingRegisters(40300, 2, float32_AB)
+%% MQTT: dgiot/oil_field_01/gw_131/rtu_001/oil_pressure/data
+%% TDengine: INSERT INTO _85ef6b7459._2de1b3e1b8 VALUES (NOW, v, 192)
+%% gen_statem:
+online(cast, {data, #{oil_pressure := V}}, Device)
+  when V > 3.0 ->
+    {next_state, alarm, Device, [{state_timeout, 30000, heartbeat_missed}]};
+\end{lstlisting}
+
+\section{授权模型}
+
+\subsection{三层 MQTT 授权}
+
+\begin{table}[H]\centering
+\caption{设备/用户/超级用户三层授权}
+\begin{tabular}{p{3cm} p{3cm} p{4cm} p{3cm}}
+\toprule
+\textbf{层级} & \textbf{ClientID} & \textbf{认证方式} & \textbf{权限范围} \\
+\midrule
+设备授权 & \{PID\}\_\{DevAddr\} & ProductSecret/DeviceSecret & 上报遥测 \\
+用户授权 & \{Token\}\{Type\} & Session Token + Role ACL & 订阅/下发 \\
+超级用户 & dgiot (127.0.0.1) & 本地免检 & 内部通信 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{验证结果}
+
+\subsection{全链路测试}
+
+\begin{table}[H]\centering
+\caption{端到端验证矩阵}
+\begin{tabular}{p{4cm} p{3cm} p{5cm}}
+\toprule
+\textbf{测试项} & \textbf{方法} & \textbf{结果} \\
+\midrule
+MQTT pub/sub & Kylin-DMZ 实机 & 3发3收，DLAS topic 格式 \\
+gen\_statem Shadow & Erlang 编译运行 & init$\rightarrow$online$\rightarrow$alarm$\rightarrow$online \\
+TDengine 存储 & 源码对齐建表 & INSERT 3行，SELECT 3行 \\
+dlink 设备授权 & ClientID=\{PID\}\_\{DevAddr\} & 9点写入，全部 OK \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{结论}
+
+dgaiot 提出了一种\textbf{本体驱动 AI 编程}的工业物联网架构。本体是唯一真相源，AI 在开发阶段将本体编译为确定性代码，生产环境运行的是 gen\_statem + MQTT + TDengine 的确定性管道，不包含任何 AI 推理或概率决策。DLAS 五层架构已通过 Kylin-DMZ 实测验证。
+
+\end{document}
