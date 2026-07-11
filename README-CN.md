@@ -1,49 +1,99 @@
-# dgaiot — 工业物联网大汇聚引擎
+# dgaiot
 
-Erlang/OTP 高性能物联网平台。海量设备汇聚，影子设备 + 本体论 + 状态机。
+**Industrial IoT Aggregation Engine**
 
-## 产品矩阵
+Erlang/OTP · Million Devices · Shadow · Ontology · State Machine
 
-| 角色 | 技术栈 | 定位 |
-|------|--------|------|
-| iotStudio | Python + Vue | 边缘代理 & 应用前端 |
-| dgaiot | Erlang/OTP | 大汇聚 & 大集中 |
+---
 
-## 核心功能
-
-| 组件 | 说明 |
-|------|------|
-| 影子设备 | 物理设备 1:1 gen_statem 进程 |
-| 本体论 | Site > Gateway > Device > Point 4层模型 |
-| 状态机 | init → auth → online → {normal, alarm, offline} |
-| MQTT 汇聚 | 千万级设备并发接入 |
-
-## 架构
-
-iotStudio(边缘) --MQTT--> dgaiot(汇聚) <--HTTP-- iotStudio(应用)
-
-## apps
+## Architecture
 
 ```
-dgiot/           核心引擎 (EMQX + 规则 + 告警)
-dgiot_ontology/  4层本体论
-dgiot_parse/     Parse Server 客户端
-dgiot_task/      影子设备 / 任务调度
-dgiot_device/    设备管理 / 物模型
-dgiot_bridge/    桥接框架
-dgiot_dlink/     数据链路
-dgiot_api/       管理 API
-dgiot_http/      HTTP 服务
-dgiot_tdengine/  TDengine 时序
+                   PROTOCOL ADAPTERS (iotStudio)
+                   Modbus · OPC · A11 · S7 · MQTT
+                          │
+                          ▼
+   ┌──────────────────────────────────────────────────┐
+   │                dgaiot PLATFORM                    │
+   │                                                   │
+   │  ┌─────────┐  ┌──────────┐  ┌─────────────────┐  │
+   │  │ Shadow  │  │ Ontology │  │  State Machine  │  │
+   │  │ Device  │  │ 4-Layer  │  │ gen_statem OTP  │  │
+   │  │ 1:1 OTP │  │ Site>Gw  │  │ init→auth→online│  │
+   │  │ Process │  │ >Dev>Pt  │  │ →alarm→offline  │  │
+   │  └────┬────┘  └────┬─────┘  └───────┬─────────┘  │
+   │       └────────────┼────────────────┘             │
+   │                    ▼                              │
+   │  ┌─────────────────────────────────────────────┐  │
+   │  │              EMQX MQTT Broker                │  │
+   │  │      Million-Device Concurrent Access        │  │
+   │  │      :1883 (MQTT) :8083 (WS) :8081 (API)    │  │
+   │  └─────────────────────────────────────────────┘  │
+   │                    │                              │
+   │       ┌────────────┼────────────┐                 │
+   │       ▼            ▼            ▼                 │
+   │  ┌─────────┐ ┌──────────┐ ┌──────────┐           │
+   │  │ Parse   │ │ TDengine │ │   PG     │           │
+   │  │ :1337   │ │  :6041   │ │  :7432   │           │
+   │  │ REST API│ │ Timeseries│ │Business DB│          │
+   │  └─────────┘ └──────────┘ └──────────┘           │
+   └──────────────────────────────────────────────────┘
+                          │
+                          ▼
+              APPLICATION LAYER (iotStudio)
+              Vue3 · amis · 2D/3D Dashboard
 ```
 
-## 构建
+## Apps
+
+```
+dgiot/           Core engine (EMQX + rules + alarms)
+dgiot_ontology/  4-layer ontology
+dgiot_parse/     Parse Server client
+dgiot_task/      Shadow device / task worker
+dgiot_device/    Device management
+dgiot_bridge/    Bridge framework
+dgiot_dlink/     Data link
+dgiot_api/       Management API
+dgiot_http/      HTTP service
+dgiot_tdengine/  TDengine timeseries
+```
+
+## Ontology (4-Layer)
+
+```
+Site ──→ Gateway ──→ Device ──→ Point
+
+  oil_field     gw_131      rtu_001     oil_pressure
+                   │
+          protocols: modbus_tcp, a11, opc_da
+          processes: IoProject, LegacyComm
+          devices:  206 RTUs
+
+MQTT Topic: dgiot/{site}/{gateway}/{device}/{point}/data
+Payload:    {ts, v, q}
+```
+
+## State Machine
+
+```
+       ┌──────┐   heartbeat    ┌────────┐
+  ────→│ auth │──────────────→│ online │←──────┐
+       └──┬───┘               └───┬────┘       │
+          │ fail                  │ error×3    │ heartbeat
+          ▼                       ▼            │
+       ┌────────┐              ┌───────┐       │
+       │ offline│              │ alarm │───────┘
+       └────────┘              └───────┘
+```
+
+## Quick Start
 
 ```bash
 export PATH=/usr/local/erlang_24.3/bin:$PATH
 make
 ```
 
-## 许可证
+## License
 
 Apache 2.0
