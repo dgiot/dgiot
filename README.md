@@ -2,13 +2,21 @@
 
 Erlang/OTP 高性能物联网平台。海量设备汇聚，影子设备 + 本体论 + 状态机。
 
-## 核心
+## 产品矩阵
+
+| 角色 | 技术栈 | 定位 |
+|------|--------|------|
+| iotStudio | Python + Vue | 边缘代理 & 应用前端 |
+| dgaiot | Erlang/OTP | 大汇聚 & 大集中 |
+
+## 核心功能
 
 | 组件 | 说明 |
 |------|------|
 | 影子设备 | 物理设备 1:1 gen_statem 进程 |
-| 本体论 | Site > Gateway > Device > Point 4层 |
-| 状态机 | init -> auth -> online -> {normal, alarm, offline} |
+| 本体论 | Site > Gateway > Device > Point 4层模型 |
+| 状态机 | init → auth → online → {normal, alarm, offline} |
+| MQTT 汇聚 | 千万级设备并发接入 |
 
 ## 架构
 
@@ -31,7 +39,7 @@ dgiot_tdengine/  TDengine 时序
 
 ## 构建
 
-```
+```bash
 export PATH=/usr/local/erlang_24.3/bin:$PATH
 make
 ```
