@@ -1,110 +1,63 @@
-# Ontology Storage Architecture
+# Ontology Storage Architecture (based on dgiot source)
+
+> Source: `dgiot_tdengine_schema.erl`, `dgiot_tdengine.hrl`, `dgiot_tdengine_channel.erl`
+
+## Macros
+
+```erlang
+-define(PRE, <<"_">>).
+-define(Database(Name), <<"_", Name/binary>>).
+-define(Table(Name),    <<"_", Name/binary>>).
+```
 
 ## Three-Layer Storage
 
-| Layer | Engine | Data | Speed |
-|-------|--------|------|-------|
-| Real-time | ETS | Shadow state, compiled rules | <1us |
-| Relational | Parse/PG (JSONB) | 23 classes, ontology, ACL | ~10ms |
-| Time-series | TDengine | telemetry (ts, value, quality) | ~5ms |
+| Layer | Engine | Object | Key | Speed |
+|-------|--------|--------|-----|-------|
+| Memory | ETS/dgiot_data | Instance state, compiled rules | {td, ProductId, DeviceId} | <1us |
+| Relational | Parse/PG JSONB | 23 classes, ontology, ACL | objectId | ~10ms |
+| Time-series | TDengine | Telemetry | _{ChannelId}._{ProductId} | ~5ms |
 
-## Layer 1: Parse/PG — 23 Classes as JSONB
-
-```sql
-CREATE TABLE "Device" (
-    "objectId"  TEXT PRIMARY KEY,
-    "data"      JSONB,
-    "createdAt" TIMESTAMP,
-    "updatedAt" TIMESTAMP,
-    "ACL"       JSONB
-);
-```
-
-```json
-// Device/rtu_001
-{
-  "objectId": "rtu_001",
-  "data": {
-    "name": "02110120089",
-    "gateway": {"__type":"Pointer", "className":"Gateway", "objectId":"gw_131"},
-    "product":  {"__type":"Pointer", "className":"Product",  "objectId":"oil_well_rtu"},
-    "type": "oil_well_rtu",
-    "protocol": "modbus",
-    "slaveid": 1,
-    "status": "online",
-    "basedata": {"points":["oil_pressure","temperature"], "registers":{"oil_pressure":40300}}
-  }
-}
-```
+## TDengine Storage
 
 ```
-23 Classes:
-  Ontology (4):  Site, Gateway, Device, Point
-  Thing Model (2): Product, ProductTemplet
-  Config (4): Channel, Dict, Category, Timescale
-  System (5): _User, _Role, _Session, Menu, View
-  Operations (5): Instruct, Notification, Log, Evidence, _SCHEMA
+Database   = _{ChannelId}          (or _{ProductId} if configured, cached in ETS)
+SuperTable = _{ProductId}           (cols = thing.properties, tags = thing.tags + devaddr)
+SubTable   = INSERT INTO _{DB}._{ProductId} USING _{ProductId} TAGS(devaddr=..., ...)
 ```
 
-## Layer 2: ETS — In-Memory Cache
+## ETS Mapping Keys
 
-```
-ETS 1: dgiot_ontology_model   {Class -> properties[], relations[], rules[]}
-ETS 2: dgiot_ontology_instance {DeviceId -> class, model, pid, status, created}
-ETS 3: dgiot_ontology_rules    {RuleId -> when, then, severity}
+| Key | Value | Description |
+|-----|-------|-------------|
+| {tdengine_db, ChannelId, ProductId} | DatabaseName | DB name cache |
+| {ProductId, "TD"} | ChannelId | Product to Channel mapping |
+| {td, ProductId, DeviceId} | SubTableName | Device to SubTable |
+| {ProductId, describe_table} | [Columns] | Column defs for alter_table |
+| {ProductId, fields_table} | [Fields] | Field cache |
+| {last_data, DeviceId} | Data | Last received data |
 
-Lookup: O(1), ~1 microsecond
-Memory: 211 devices x 3KB = 0.6MB
-```
+## Create Flow
 
-## Layer 3: TDengine — Time-Series
+1. Channel -> Database: `CREATE DATABASE IF NOT EXISTS _{ChannelId} KEEP 10`
+2. Product -> SuperTable: `CREATE TABLE IF NOT EXISTS _{ProductId} (cols) TAGS (devaddr NCHAR(50), ...)`
+3. Device -> INSERT: `INSERT INTO _{DB}._{ProductId} USING _{ProductId} TAGS(...) VALUES (NOW, v, q)`
 
-```sql
--- SuperTable: 每个产品一张 (productId 全局唯一)
-CREATE STABLE dgiot_2de1b3e1b8 (
-    ts      TIMESTAMP,
-    value   FLOAT,
-    quality INT
-) TAGS (
-    device_id  BINARY(64),    -- 设备地址 (如 02110120089)
-    point_id   BINARY(64),    -- 点名 (如 oil_pressure)
-    unit       BINARY(16)     -- 单位 (如 MPa)
-);
+## Mandatory devaddr Tag
 
--- SubTable: MD5(productId + devaddr) 保证全局唯一
-CREATE TABLE dgiot_e8f3a9c2 
-USING dgiot_2de1b3e1b8 
-TAGS ('02110120089', 'oil_pressure', 'MPa');
-
--- 数据行: (ts, value, quality) + TAGS (device_id, point_id, unit)
-INSERT INTO dgiot_e8f3a9c2 VALUES (NOW, 2.35, 192);
+```erlang
+%% dgiot_tdengine_schema.erl:62-67
+proplists:get_value(<<"devaddr">>, NewTags) == undefined
+  -> NewTags ++ [{<<"devaddr">>, #{<<"type">> => <<"NCHAR(50)">>}}]
 ```
 
-```
-唯一性保证:
-  Database   = dgiot_{ChannelId}           channel级隔离
-  SuperTable = dgiot_{ProductId}           product级隔离
-  SubTable   = dgiot_{MD5(ProductId+devaddr)}  设备级隔离
-  Row        = ts + TAGS(device, point)    时间+点位唯一
-```
+Every subtable MUST have a `devaddr` tag. Auto-added as NCHAR(50) if missing.
 
-## Query Paths
-
-| Path | Engine | Use Case | Latency |
-|------|--------|----------|---------|
-| ETS instance | gen_statem PID | Real-time state | <1us |
-| MQTT topic | EMQX subscribe | Streaming data | <10ms |
-| Parse REST | PG JSONB | Configuration | ~10ms |
-| TDengine SQL | Columnar TSDB | Historical trends | ~5ms |
-
-## Data Flow
+## Uniqueness Chain
 
 ```
-Physical Register (Modbus 40300)
-  -> Edge Collector (readHoldingRegisters)
-  -> MQTT (dgiot/oil_field_01/gw_131/rtu_001/oil_pressure/data)
-  -> Shadow gen_statem (evaluate Rules -> state transition)
-  -> Parse (update Device.status)
-  -> TDengine (INSERT telemetry)
-  -> ETS (update instance state)
+Database:   {tdengine_db, ChannelId, ProductId}  -> ETS key
+SuperTable: ProductId (Parse ObjectId)            -> globally unique
+SubTable:   {td, ProductId, DeviceId}             -> ETS key
+devaddr:    mandatory TAG (NCHAR 50)              -> per-device unique
 ```
