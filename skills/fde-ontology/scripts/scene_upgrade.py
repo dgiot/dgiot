@@ -70,16 +70,48 @@ def analyze_scene(thing_model_path, tdengine_url=None):
                 'action': f"Add gen_statem rule: IF {name}=0 THEN notify+pump_stop"
             })
 
-    # 5. Dedup and rank
+    # 5. Dedup, group, rank
     seen = set()
     ranked = []
     for s in suggestions:
-        key = f"{s['type']}:{s.get('property','')}:{s['detail'][:50]}"
+        key = f"{s['type']}:{s.get('property','')}:{s['detail'][:60]}"
         if key not in seen:
             seen.add(key)
             ranked.append(s)
 
-    return ranked
+    # 6. Group similar suggestions
+    correlations = [s for s in ranked if s['type'] == 'CORRELATION']
+    trends = [s for s in ranked if s['type'] == 'TREND_DETECT']
+    alarms = [s for s in ranked if s['type'] == 'ADD_ALARM']
+    others = [s for s in ranked if s['type'] not in ('CORRELATION', 'TREND_DETECT', 'ADD_ALARM')]
+
+    # Group: CORRELATION by protocol
+    corr_groups = {}
+    for c in correlations:
+        proto = 'modbus'
+        key = f"corr_{proto}"
+        if key not in corr_groups:
+            corr_groups[key] = {'type': 'CORRELATION_GROUP', 'count': 0, 'detail': f'Adjacent register correlations on {proto}', 'action': f'Add cross-alarm rules for {proto} registers'}
+        corr_groups[key]['count'] += 1
+
+    # Group: TREND_DETECT by prefix
+    trend_groups = {}
+    for t in trends:
+        name = t.get('property','')
+        base = name.replace('A相','X').replace('B相','X').replace('C相','X').replace('0','X').replace('1','X').replace('2','X')
+        x_name = base.replace('X','[ABC]')
+        if base not in trend_groups:
+            trend_groups[base] = {'type': 'TREND_DETECT_GROUP', 'count': 0,
+                'detail': f'{name} type properties need sudden_change',
+                'action': f'Add EdgeStreamEngine: sudden_change for {x_name}'}
+        trend_groups[base]['count'] += 1
+
+    # 7. Rank
+    priority = {'ADD_ALARM': 5, 'CORRELATION_GROUP': 4, 'AUTO_RESPONSE': 3, 'TREND_DETECT_GROUP': 2, 'TREND_DETECT': 1}
+    final = list(corr_groups.values()) + list(trend_groups.values()) + alarms + others
+    final.sort(key=lambda s: (-priority.get(s['type'], 0), -s.get('count', 1)))
+
+    return final[:10]  # Top 10 only
 
 if __name__ == '__main__':
     path = sys.argv[1] if len(sys.argv) > 1 else None
