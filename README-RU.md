@@ -1,139 +1,25 @@
- http://localhost http://localhost http://localhost#  DGIOT
+# dgaiot — Промышленный IoT-движок агрегации
 
-[![GitHub Release](https://img.shields.io/github/release/dgiot/dgiot?color=brightgreen)](https://github.com/dgiot/dgiot/releases)
-[![Build Status](https://travis-ci.org/dgiot/dgiot.svg)](https://travis-ci.org/dgiot/dgiot)
-[![Coverage Status](https://coveralls.io/repos/github/dgiot/dgiot/badge.svg)](https://coveralls.io/github/dgiot/dgiot)
-[![Docker Pulls](https://img.shields.io/docker/pulls/dgiot/dgiot)](https://hub.docker.com/r/dgiot/dgiot)
-[![Community](https://img.shields.io/badge/Community-DGIOT-yellow)](https://www.dgiotcloud.cn/)
+Высокопроизводительная IoT-платформа на Erlang/OTP.
 
-[English](./README.md) | [简体中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)
+## Ключевые компоненты
 
-**DGIOT**  первая легкая промышленная платформа непрерывной интеграции Интернета вещей с открытым исходным кодом в Китае
+- Теневое устройство: gen_statem 1:1
+- Онтология: Site > Gateway > Device > Point
+- Конечный автомат: init -> auth -> online -> {normal, alarm, offline}
 
-До 2016 года команда Shuwa много лет ползла по Интернету и мобильному Интернету. В 2016 году он начал ползать в Интернет вещей. Он надеется поделиться многолетним опытом сканирования с помощью этой платформы с открытым исходным кодом и упростить многопрофильные промышленные интернет-проекты.
-   + Позвольте богатым инженерам выполнять промышленные интернет-проекты с более простыми требованиями через оконное взаимодействие
-   + Позвольте большинству младших интерфейсных инженеров выполнять промышленные интернет-проекты с более сложными требованиями бессерверным методом
-   + Позвольте младшим инженерам Python, Java, Go и C выполнять сложные промышленные интернет-проекты через каналы разработки веб-программирования
+## Архитектура
 
-# Зрение
-  Команда DGIOT надеется достичь следующих видений с помощью платформы непрерывной интеграции Shuwa Industrial Internet.
-  + Через инженеров, интерфейсных инженеров и младших инженеров бэк-офиса для фактического завершения малых и средних промышленных интернет-проектов не более чем за 1 месяц
-  + Обеспечение высококачественной доставки с помощью различных методов, таких как открытый исходный код, бесплатное программное обеспечение, совместное использование документов, техническая сертификация, сертификация продукции, хостинг для эксплуатации и обслуживания и т. Д.
-  + Эксперты в технической области продолжают интегрировать превосходную техническую базу отрасли, а эксперты в области бизнеса продолжают оптимизировать бизнес-модели и процессы и создавать междисциплинарную открытую платформу
-  + Платформа IoT, наконец, может быть простой и удобной в использовании, возвращаясь к сути инструментов
+iotStudio(край) --MQTT--> dgaiot(агрегация) <--HTTP-- iotStudio(приложение)
 
-![dgiot_family.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiot_family.png)
+## Модули
 
-# Строительство
+dgiot/ ядро | dgiot_ontology/ онтология | dgiot_parse/ Parse | dgiot_task/ тени | dgiot_device/ устройства | dgiot_bridge/ мост | dgiot_dlink/ канал | dgiot_api/ API | dgiot_http/ HTTP | dgiot_tdengine/ временные ряды
 
-  Bulid * DGIOT * Требуется Erlang/OTP R24+, [linux](https://github.com/erlang/otp/releases/download/OTP-24.3.4.2/otp_src_24.3.4.2.tar.gz) загрузка Windows [msys64](https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/msys64.zip), После загрузки распакуйте его в корневой каталог диска D, и работайте строго в соответствии со следующим рисунком ：
-![dgiotdevtools.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiotdevtools.png)
+## Сборка
 
-+ Скачать исходный код за границу
-    ```bash
-     git clone -b master https://github.com/dgiot/iotStudio.git
-     git clone -b master https://github.com/dgiot/iotView.git
-     git clone -b master https://github.com/dgiot/iotApp.git
-     git clone -b master https://github.com/dgiot/iotWechat.git
-     git clone https://github.com/dgiot/dgiot.git
-    ```
+export PATH=/usr/local/erlang_24.3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Users/Administrator/bin:/mnt/c/Program Files/Git/mingw64/bin:/mnt/c/Program Files/Git/usr/local/bin:/mnt/c/Program Files/Git/usr/bin:/mnt/c/Program Files/Git/usr/bin:/mnt/c/Program Files/Git/mingw64/bin:/mnt/c/Program Files/Git/usr/bin:/mnt/c/Users/Administrator/bin:/mnt/c/Python314/Scripts:/mnt/c/Python314:/mnt/d/Program Files/ffmpeg-7.1.1-essentials_build/bin:/mnt/d/miniconda3/condabin:/mnt/c/WINDOWS/system32:/mnt/c/WINDOWS:/mnt/c/WINDOWS/System32/Wbem:/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0:/mnt/c/WINDOWS/System32/OpenSSH:/mnt/c/Program Files/TortoiseSVN/bin:/mnt/c/Program Files/PuTTY:/mnt/c/Program Files (x86)/NVIDIA Corporation/PhysX/Common:/mnt/c/ProgramData/chocolatey/bin:/mnt/c/Program Files/dotnet:/mnt/c/Program Files/NVIDIA Corporation/NVIDIA app/NvDLISR:/mnt/d/miniconda3/condabin:/mnt/c/Program Files/Git/cmd:/mnt/c/Users/Administrator/.cargo/bin:/mnt/c/Users/Administrator/AppData/Roaming/local/bin:/mnt/c/Users/Administrator/AppData/Local/Microsoft/WindowsApps:/mnt/c/Program Files/JetBrains/IntelliJ IDEA Community Edition 2023.2/bin:/mnt/c/Users/Administrator/AppData/Local/Programs/Ollama:/mnt/d/msys64/data/bin/erlang/bin:/mnt/c/Users/Administrator/.lmstudio/bin:/mnt/d/miniconda3/condabin:/mnt/c/TDengine:/mnt/c/Users/Administrator/.local/bin:/mnt/d/Program Files/nodejs:/mnt/c/Program Files/MiKTeX/miktex/bin/x64:/mnt/c/Users/Administrator/AppData/Local/Programs/Python/Python311/Scripts:/mnt/c/Users/Administrator/AppData/Local/Programs/Python/Python311:/mnt/c/Users/Administrator/.local/bin:/mnt/c/Users/Administrator/AppData/Local/Microsoft/WindowsApps:/mnt/c/Program Files/JetBrains/IntelliJ IDEA Community Edition 2023.2/bin:/mnt/c/Users/Administrator/AppData/Local/Programs/Ollama:/mnt/d/msys64/data/bin/erlang/bin:/mnt/c/Users/Administrator/.lmstudio/bin:/mnt/d/miniconda3/condabin:/mnt/c/Users/Administrator/AppData/Local/Pandoc:/mnt/c/Users/Administrator/.local/bin:/mnt/d/Program Files/CodeBuddy CN/bin:/mnt/d/Program Files/Microsoft VS Code/bin:/mnt/c/Users/Administrator/AppData/Roaming/npm:/mnt/c/Users/Administrator/AppData/Local/Python/bin:/mnt/c/Program Files/Git/usr/bin/vendor_perl:/mnt/c/Program Files/Git/usr/bin/core_perl && make
 
-+ Китай скачать исходный код
-    ```bash
-      git clone -b master https://gitee.com/dgiot/iotStudio.git
-      git clone -b master https://gitee.com/dgiot/iotView.git
-      git clone -b master https://gitee.com/dgiot/iotApp.git
-      git clone -b master https://gitee.com/dgiot/iotWechat.git
-      git clone https://gitee.com/dgiiot/dgiot.git
-    ```
+## Лицензия
 
-+ Китайская Linux / Unix / Mac / Windows Build
-   ```bash
-    cd dgiot-dashboard
-    git pull
-    pnpm install
-    pnpm build
-    cd ./dist/
-    wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/dgiot_dashboard.tar.gz &> /dev/null
-    tar xf dgiot_dashboard.tar.gz &> /dev/null
-    wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/dgiot_file.tar.gz &> /dev/null
-    tar xf dgiot_file.tar.gz &> /dev/null
-    wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/dgiot_swagger.tar.gz &> /dev/null
-    tar xf dgiot_swagger.tar.gz &> /dev/null
-    rm -rf dgiot_swagger.tar.gz dgiot_file.tar.gz dgiot_dashboard.tar.gz
-    cd ../../dgiot
-    git pull
-    rm ./apps/dgiot_api/priv/www -rf
-    cp ../dgiot-dashboard/dist/ ./apps/dgiot_api/priv/www -rf
-    make run
-   ```
-  + Make Debug
-   ```
-    make DIAGNOSTIC=1
-   ```
-    *DGIOT* start, you can use a browser to visit http://localhost:5080 to view Dashboard.。
-
-   - Полный список новых функций см. [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
-   - Для получения дополнительной информации, пожалуйста, посетите [DGIOT Website](https://www.dgiotcloud.cn/)。
-   ## Установка и развертывание
-
-    + **centos 7.6**
-
-   ```
-   wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_install.sh
-   ```
-
-
-## Сообщество
-
-### FAQ
-
-Visit [DGIOT FAQ](https://www.dgiotcloud.cn/?page_id=12) to get help on frequently asked questions
-
-### FAQ
-
-[GitHub Discussions](https://github.com/dgiot/dgiot_server/discussions)
-[DGIOT Chinese Q&A Community](https://www.dgiotcloud.cn/)
-
-### Участвовал в дизайне
-
-Если у вас есть предложения по улучшению DGIOT, вы можете отправить PR и ISSUE на [EIP](https://github.com/dgiot/eip)
-
-### Plug-in development
-
-Если вы хотите интегрировать или разработать собственный плагин, обратитесь к [lib-extra/README.md](./lib-extra/README.md)
-
-Вы можете отправлять любые ошибки, проблемы и запросы функций по адресу [dgiot/dgiot](https://github.com/dgiot/dgiot/issues)。
-
-### О нас
-| contact details       | address                                                                                      |
-| -------------- | ----------------------------------------------------------------------------------------- |
-| github         | [https://github.com/dgiot](https://github.com/dgiot?from=git)                             |
-| gitee          | [https://gitee.com/dgiot](https://gitee.com/dgiiot?from=git)                              |
-| Official website           | [https://www.dgiotcloud.cn](https://www.dgiotcloud.cn)                                 |
-| Blog           | [https://www.dgiotcloud.cn/?cat=19](https://www.dgiotcloud.cn/?cat=19)                               |
-| IoT access platform | [https://prod.dgiotcloud.cn](https://prod.dgiotcloud.cn)                             |
-| The public         | ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png) |
-| We chat group      | <img src="https://dgiot-web-1306147891.cos.ap-nanjing.myqcloud.com/wechat.png" width = "50%" />|
-| QQ group             | 346566935   |
-
-### Связаться с нами
-Вы можете связаться с сообществом DGIOT и разработчиками по следующим каналам:
-- [official](https://www.dgiotcloud.cn/)
-- [ask](https://www.dgiotcloud.cn/?page_id=12)
-- [Blog](https://www.dgiotcloud.cn/?cat=19)
-- [Twitter](https://twitter.com/)
-- [Facebook](https://www.facebook.com/)
-- [Reddit](https://www.reddit.com/)
-- [Weibo](https://weibo.com)
-
-
-## Адрес для предварительного просмотра
-[Tencent Cloud preview address](https://dgiotdashboard-8gb17b3673ff6cdd-1253666439.ap-shanghai.app.tcloudbase.com?ftom=git)
-
-## Предварительный просмотр кода сканирования
-![dgiot_dashboard.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/dgiot_dashboard.png)
-
-
-## Лицензия с открытым исходным кодом
-Apache License 2.0, Смотрите подробности [LICENSE](./LICENSE)。
+Apache 2.0
