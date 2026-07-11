@@ -1,0 +1,9 @@
+FROM erlang:26-alpine
+RUN apk add --no-cache curl
+WORKDIR /app
+COPY src/ src/
+COPY include/ include/
+COPY priv/ priv/
+RUN erlc -o ebin src/*.erl src/statem/*.erl
+EXPOSE 5000 1883
+CMD ["erl", "-pa", "ebin", "-s", "dgiot_ontology_app", "start"]

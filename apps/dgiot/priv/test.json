@@ -1,0 +1,23 @@
+{
+  "type": "page",
+  "body": [
+    {
+      "type": "form",
+      "title": "{{title}}",
+      "body": [
+        {
+          "label": "{{label}}",
+          "type": "{{switch}}",
+          "name": "switch",
+          "age": {{lsxage}}
+        }
+      ],
+      "id": "u:034a41e37c72",
+      "api": {
+        "method": "put",
+        "url": "/iotapi/amis/Device/${obejctId}",
+        "requestAdaptor": "let data = api.data\r\nreturn {\r\n  data:{\r\n    profile:data\r\n  }\r\n  msg:\"ok\",\r\n  status:0,\r\n}"
+      }
+    }
+  ]
+}

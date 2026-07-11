@@ -1,0 +1,476 @@
+-module('rebar.config').
+
+-export([do/2]).
+
+do(Dir, CONFIG) ->
+    case iolist_to_binary(Dir) of
+        <<".">> ->
+            {HasElixir, C1} = deps(CONFIG),
+            Config = dialyzer(C1),
+            maybe_dump(Config ++ [{overrides, overrides()}] ++ coveralls() ++ config(HasElixir));
+        _ ->
+            CONFIG
+    end.
+
+bcrypt() ->
+    {bcrypt, {git, "https://gitee.com/fastdgiot/erlang-bcrypt.git", {branch, "0.6.0"}}}.
+
+deps(Config) ->
+    {deps, OldDeps} = lists:keyfind(deps, 1, Config),
+    MoreDeps = case provide_bcrypt_dep() of
+        true -> [bcrypt()];
+        false -> []
+    end,
+    {HasElixir, ExtraDeps} = extra_deps(),
+    {HasElixir, lists:keystore(deps, 1, Config, {deps, OldDeps ++ MoreDeps ++ ExtraDeps})}.
+
+extra_deps() ->
+    {ok, Proplist} = file:consult("lib-extra/plugins"),
+    ErlPlugins0 = proplists:get_value(erlang_plugins, Proplist),
+    ExPlugins0 = proplists:get_value(elixir_plugins, Proplist),
+    Filter = string:split(os:getenv("DGIOT_EXTRA_PLUGINS", ""), ",", all),
+    ErlPlugins = filter_extra_deps(ErlPlugins0, Filter),
+    ExPlugins = filter_extra_deps(ExPlugins0, Filter),
+    {ExPlugins =/= [], ErlPlugins ++ ExPlugins}.
+
+filter_extra_deps(AllPlugins, ["all"]) ->
+    AllPlugins;
+filter_extra_deps(AllPlugins, Filter) ->
+    filter_extra_deps(AllPlugins, Filter, []).
+filter_extra_deps([], _, Acc) ->
+    lists:reverse(Acc);
+filter_extra_deps([{Plugin, _} = P | More], Filter, Acc) ->
+    case lists:member(atom_to_list(Plugin), Filter) of
+        true ->
+            filter_extra_deps(More, Filter, [P | Acc]);
+        false ->
+            filter_extra_deps(More, Filter, Acc)
+    end.
+
+overrides() ->
+    [ {add, [ {extra_src_dirs, [{"etc", [{recursive,true}]}]}
+            , {erl_opts, [{compile_info, [{emqx_vsn, get_vsn()}]}]}
+            ]}
+    , {add, relx, [{erl_opts, [{d, 'RLX_LOG', rlx_log}]}]}
+    , {add, snabbkaffe,
+       [{erl_opts, common_compile_opts()}]}
+    ] ++ community_plugin_overrides().
+
+community_plugin_overrides() ->
+    [{add, App, [ {erl_opts, [{i, "include"}]}]} || App <- relx_plugin_apps_extra()].
+
+config(HasElixir) ->
+    [ {cover_enabled, is_cover_enabled()}
+    , {profiles, profiles()}
+    , {project_app_dirs, project_app_dirs()}
+    , {plugins, plugins(HasElixir)}
+    | [ {provider_hooks, [ {pre,  [{compile, {mix, find_elixir_libs}}]}
+                         , {post, [{compile, {mix, consolidate_protocols}}]}
+                         ]} || HasElixir ]
+    ].
+
+is_cover_enabled() ->
+    case os:getenv("ENABLE_COVER_COMPILE") of
+        "1"-> true;
+        "true" -> true;
+        _ -> false
+    end.
+
+is_enterprise() ->
+    filelib:is_regular("EMQX_ENTERPRISE").
+
+project_app_dirs() ->
+    ["apps/*"].
+
+plugins(HasElixir) ->
+    [{relup_helper, {git, "https://gitee.com/fastdgiot/relup_helper", {tag, "2.1.0"}}}
+        , {pc, {git, "https://gitee.com/fastdgiot/port_compiler.git", {tag, "v1.11.1"}}}
+    | [ {rebar_mix, "v0.4.0"} || HasElixir ]
+    ]
+    ++ test_plugins().
+
+test_plugins() ->
+    [rebar3_proper,
+        {coveralls, {git, "https://gitee.com/fastdgiot/coveralls-erl", {tag, "v2.2.0-emqx-1"}}}
+    ].
+
+test_deps() ->
+    [{bbmustache, "1.10.0"}
+        , {emqx_ct_helpers, {git, "https://gitee.com/fastdgiot/emqx-ct-helpers", {tag, "1.3.11"}}}
+        , meck
+    ].
+
+common_compile_opts() ->
+    [debug_info
+    , {compile_info, [{emqx_vsn, get_vsn()}]}
+    , {d, snk_kind, msg}
+    ] ++
+        [{d, 'EMQX_ENTERPRISE'} || is_enterprise()] ++
+        [{d, 'EMQX_BENCHMARK'} || os:getenv("EMQX_BENCHMARK") =:= "1"].
+
+prod_compile_opts() ->
+    [compressed
+        , deterministic
+        , warnings_as_errors
+        | common_compile_opts()
+    ].
+
+prod_overrides() ->
+    [{add, [ {erl_opts, [deterministic]}]}].
+
+profiles() ->
+    Vsn = get_vsn(),
+    [ {check,           [ {erl_opts, common_compile_opts()}
+                        ]}
+    , {test,            [ {deps, test_deps()}
+                        , {erl_opts, common_compile_opts() ++ erl_opts_i()}
+                        , {extra_src_dirs, [{"test", [{recursive,true}]}]}
+                        ]}
+    ] ++ ee_profiles(Vsn).
+
+relx(Vsn, RelType, PkgType) ->
+    IsEnterprise = is_enterprise(),
+    [ {include_src,false}
+    , {include_erts, true}
+    , {extended_start_script,false}
+    , {generate_start_script,false}
+    , {sys_config,false}
+    , {vm_args,false}
+    , {release, {dgiot, Vsn}, relx_apps(RelType)}
+    , {overlay, relx_overlay(RelType)}
+    , {overlay_vars, [ {built_on_platform, built_on()}
+                     , {dgiot_description, dgiot_description(RelType, IsEnterprise)}
+                     | overlay_vars(RelType, PkgType, IsEnterprise)]}
+    ].
+
+built_on() ->
+    On = rebar_utils:get_arch(),
+    case distro() of
+        false -> On;
+        Distro -> On ++ "-" ++ Distro
+    end.
+
+distro() ->
+    case os:type() of
+        {unix, _} -> string:strip(os:cmd("scripts/get-distro.sh"), both, $\n);
+        _ -> false
+    end.
+
+dgiot_description(cloud, true) -> "DGAIOT Enterprise";
+dgiot_description(cloud, false) -> "DGAIOT Platform";
+dgiot_description(edge, _) -> "DGAIOT Edge".
+
+overlay_vars(_RelType, PkgType, true) ->
+    ee_overlay_vars(PkgType);
+overlay_vars(RelType, PkgType, false) ->
+    overlay_vars_rel(RelType) ++ overlay_vars_pkg(PkgType).
+
+overlay_vars_rel(RelType) ->
+    VmArgs = case RelType of
+                 cloud -> "vm.args";
+                 edge -> "vm.args.edge"
+             end,
+    %% dgiot base plugin
+    [{enable_plugin_dgiot, true}
+    , {enable_plugin_dgiot_bridge, true}
+    , {enable_plugin_dgiot_parse, true}
+    , {enable_plugin_dgiot_api, true}
+    , {enable_plugin_dgiot_tdengine, true}
+    , {enable_plugin_dgiot_task, true}
+    , {enable_plugin_dgiot_device, true}
+    , {enable_plugin_dgiot_http, true}
+    , {enable_plugin_dgiot_topo, true}
+    , {enable_plugin_dgiot_bamis, true}
+    , {enable_plugin_dgiot_dlink, true}
+    , {enable_plugin_dgiot_evidence, true}
+    , {enable_plugin_dgiot_opc, true}
+    , {enable_plugin_dgiot_meter, true}
+    , {enable_plugin_dgiot_modbus, true}
+    , {enable_plugin_dgiot_ffmpeg, true}
+    , {enable_plugin_dgiot_gb26875, true}
+    , {enable_plugin_dgiot_hjt212, true}
+    , {enable_plugin_dgiot_bacnet, true}
+    , {enable_plugin_dgiot_factory, true}
+    , {enable_plugin_dgiot_printer, true}
+    , {enable_plugin_dgiot_location, true}
+    , {vm_args_file, VmArgs}
+    ].
+
+overlay_vars_pkg(bin) ->
+    [ {platform_bin_dir, "bin"}
+    , {platform_data_dir, "data"}
+    , {platform_etc_dir, "etc"}
+    , {platform_lib_dir, "lib"}
+    , {platform_log_dir, "log"}
+    , {platform_plugins_dir,  "etc/plugins"}
+    , {runner_bin_dir, "$RUNNER_ROOT_DIR/bin"}
+    , {runner_etc_dir, "$RUNNER_ROOT_DIR/etc"}
+    , {runner_lib_dir, "$RUNNER_ROOT_DIR/lib"}
+    , {runner_log_dir, "$RUNNER_ROOT_DIR/log"}
+    , {runner_data_dir, "$RUNNER_ROOT_DIR/data"}
+    , {runner_user, ""}
+    ];
+overlay_vars_pkg(pkg) ->
+    [ {platform_bin_dir, ""}
+    , {platform_data_dir, "/var/lib/dgiot"}
+    , {platform_etc_dir, "/etc/dgiot"}
+    , {platform_lib_dir, ""}
+    , {platform_log_dir, "/var/log/dgiot"}
+    , {platform_plugins_dir, "/var/lib/dgiot/plugins"}
+    , {runner_bin_dir, "/usr/bin"}
+    , {runner_etc_dir, "/etc/dgiot"}
+    , {runner_lib_dir, "$RUNNER_ROOT_DIR/lib"}
+    , {runner_log_dir, "/var/log/dgiot"}
+    , {runner_data_dir, "/var/lib/dgiot"}
+    , {runner_user, "dgiot"}
+    ].
+
+relx_apps(ReleaseType) ->
+    relx_otp_apps() ++
+    [   redbug
+        , cuttlefish
+        , jsx
+        , jesse
+        , jwerl
+        , odbc
+        , erlydtl
+        , erlport
+        , ecpool
+        , grpc
+        , gpb
+        , poolboy
+        , ibrowse
+        , dgiot
+        , {mnesia, load}
+        , {ekka, load}
+        , observer_cli
+    ]
+    ++ [emqx_license || is_enterprise()]
+    ++ [bcrypt || provide_bcrypt_release(ReleaseType)]
+    ++ relx_apps_per_rel(ReleaseType)
+    ++ [{N, load} || N <- relx_plugin_apps(ReleaseType)].
+
+relx_otp_apps() ->
+    {ok, [Apps]} = file:consult("scripts/rel_otp_apps.eterm"),
+    true = is_list(Apps),
+    Apps.
+
+relx_apps_per_rel(cloud) ->
+    [
+      {observer, load} || is_app(observer)
+    ];
+relx_apps_per_rel(edge) ->
+    [].
+
+is_app(Name) ->
+    case application:load(Name) of
+        ok -> true;
+        {error,{already_loaded, _}} -> true;
+        _ -> false
+    end.
+
+relx_plugin_apps(ReleaseType) ->
+    relx_plugin_apps_per_rel(ReleaseType)
+    ++ relx_plugin_apps_enterprise(is_enterprise())
+    ++ relx_plugin_apps_extra().
+
+relx_plugin_apps_per_rel(cloud) ->
+    [ dgiot
+    , dgiot_api
+    , dgiot_parse
+    , dgiot_bridge
+    , dgiot_device
+    , dgiot_tdengine
+    , dgiot_http
+    , dgiot_task
+    , dgiot_dlink
+    , dgiot_topo
+    , dgiot_bamis
+    , dgiot_evidence
+    , dgiot_opc
+    , dgiot_meter
+    , dgiot_modbus
+    , dgiot_ffmpeg
+    , dgiot_gb26875
+    , dgiot_hjt212
+    , dgiot_bacnet
+    , dgiot_factory
+    , dgiot_printer
+    , dgiot_location
+    ];
+relx_plugin_apps_per_rel(edge) ->
+    [].
+
+relx_plugin_apps_enterprise(true) ->
+    [list_to_atom(A) || A <- filelib:wildcard("*", "lib-ee"),
+                        filelib:is_dir(filename:join(["lib-ee", A]))];
+relx_plugin_apps_enterprise(false) -> [].
+
+relx_plugin_apps_extra() ->
+    {_HasElixir, ExtraDeps} = extra_deps(),
+    [Plugin || {Plugin, _} <- ExtraDeps].
+
+relx_overlay(ReleaseType) ->
+    [ {mkdir, "log/"}
+    , {mkdir, "data/"}
+    , {mkdir, "data/mnesia"}
+    , {mkdir, "data/configs"}
+    , {mkdir, "data/patches"}
+    , {mkdir, "data/scripts"}
+    , {mkdir, "data/backup"}
+    , {template, "data/loaded_plugins.tmpl", "data/loaded_plugins"}
+    , {template, "data/dgiot_vars", "releases/dgiot_vars"}
+    , {copy, "bin/dgiot", "bin/dgiot"}
+    , {copy, "bin/dgiot_ctl", "bin/dgiot_ctl"}
+    , {copy, "bin/node_dump", "bin/node_dump"}
+    , {copy, "bin/dgiot", "bin/dgiot-{{release_version}}"}
+    , {copy, "bin/dgiot_ctl", "bin/dgiot_ctl-{{release_version}}"}
+    , {copy, "bin/nodetool", "bin/nodetool"}
+    , {copy, "bin/nodetool", "bin/nodetool-{{release_version}}"}
+    , {copy, "_build/default/lib/cuttlefish/cuttlefish", "bin/cuttlefish"}
+    , {copy, "_build/default/lib/cuttlefish/cuttlefish", "bin/cuttlefish-{{release_version}}"}
+    , {copy, "priv/emqx.schema", "releases/{{release_version}}/"}
+    ] ++ case is_enterprise() of
+             true -> ee_etc_overlay(ReleaseType);
+             false -> etc_overlay(ReleaseType)
+         end.
+
+etc_overlay(ReleaseType) ->
+    PluginApps = relx_plugin_apps(ReleaseType),
+    Templates = dgiot_etc_overlay(ReleaseType) ++
+                lists:append([plugin_etc_overlays(App) || App <- PluginApps]) ++
+                [community_plugin_etc_overlays(App) || App <- relx_plugin_apps_extra()],
+    [ {mkdir, "etc/"}
+    , {mkdir, "etc/plugins"}
+    , {template, "etc/BUILT_ON", "releases/{{release_version}}/BUILT_ON"}
+    , {copy, "{{base_dir}}/lib/dgiot/etc/certs","etc/"}
+    ] ++
+    lists:map(
+      fun({From, To}) -> {template, From, To};
+         (FromTo)     -> {template, FromTo, FromTo}
+      end, Templates)
+    ++ extra_overlay(ReleaseType).
+
+extra_overlay(cloud) ->
+    [];
+extra_overlay(edge) ->
+    [].
+
+dgiot_etc_overlay(cloud) ->
+    dgiot_etc_overlay_common() ++
+    [ {"etc/dgiot_cloud/vm.args","etc/vm.args"}
+    ];
+dgiot_etc_overlay(edge) ->
+    dgiot_etc_overlay_common() ++
+    [ {"etc/dgiot_edge/vm.args","etc/vm.args"}
+    ].
+
+dgiot_etc_overlay_common() ->
+    ["etc/acl.conf", "etc/dgiot.conf", "etc/ssl_dist.conf",
+     {"etc/acl.conf.paho", "etc/plugins/acl.conf.paho"}].
+
+plugin_etc_overlays(App0) ->
+    App = atom_to_list(App0),
+    ConfFiles = find_conf_files(App),
+    [{"{{base_dir}}/lib/"++ App ++"/etc/" ++ F, "etc/plugins/" ++ F}
+     || F <- ConfFiles].
+
+community_plugin_etc_overlays(App0) ->
+    App = atom_to_list(App0),
+    {"{{base_dir}}/lib/"++ App ++"/etc/" ++ App ++ ".conf", "etc/plugins/" ++ App ++ ".conf"}.
+
+find_conf_files(App) ->
+    Dir1 = filename:join(["apps", App, "etc"]),
+    filelib:wildcard("*.conf", Dir1).
+
+env(Name, Default) ->
+    case os:getenv(Name) of
+        "" -> Default;
+        false -> Default;
+        Value -> Value
+    end.
+
+get_vsn() ->
+    PkgVsn = case env("PKG_VSN", false) of
+                 false -> os:cmd("./pkg-vsn.sh");
+                 Vsn -> Vsn
+             end,
+    re:replace(PkgVsn, "\n", "", [{return ,list}]).
+
+maybe_dump(Config) ->
+    is_debug() andalso file:write_file("rebar.config.rendered", [io_lib:format("~p.\n", [I]) || I <- Config]),
+    Config.
+
+is_debug() -> is_debug("DEBUG") orelse is_debug("DIAGNOSTIC").
+
+is_debug(VarName) ->
+    case os:getenv(VarName) of
+        false -> false;
+        "" -> false;
+        _ -> true
+    end.
+
+provide_bcrypt_dep() ->
+    case os:type() of
+        {win32, _} -> false;
+        _ -> true
+    end.
+
+provide_bcrypt_release(ReleaseType) ->
+    provide_bcrypt_dep() andalso ReleaseType =:= cloud.
+
+erl_opts_i() ->
+    [{i, "apps"}] ++
+    [{i, Dir}  || Dir <- filelib:wildcard(filename:join(["apps", "*", "include"]))].
+
+dialyzer(Config) ->
+    {dialyzer, OldDialyzerConfig} = lists:keyfind(dialyzer, 1, Config),
+
+    AppsToAnalyse = case os:getenv("DIALYZER_ANALYSE_APP") of
+        false ->
+            [];
+        Value ->
+            [ list_to_atom(App) || App <- string:tokens(Value, ",")]
+    end,
+
+    AppNames = list_dir("apps"),
+
+    KnownApps = [Name ||  Name <- AppsToAnalyse, lists:member(Name, AppNames)],
+
+    AppsToExclude = AppNames -- KnownApps,
+
+    case length(AppsToAnalyse) > 0 of
+        true ->
+            lists:keystore(dialyzer, 1, Config, {dialyzer, OldDialyzerConfig ++ [{exclude_apps, AppsToExclude}]});
+        false ->
+            Config
+    end.
+
+coveralls() ->
+    case {os:getenv("GITHUB_ACTIONS"), os:getenv("GITHUB_TOKEN")} of
+      {"true", Token} when is_list(Token) ->
+        Cfgs = [{coveralls_repo_token, Token},
+                {coveralls_service_job_id, os:getenv("GITHUB_RUN_ID")},
+                {coveralls_commit_sha, os:getenv("GITHUB_SHA")},
+                {coveralls_coverdata, "_build/test/cover/*.coverdata"},
+                {coveralls_service_name, "github"}],
+        case os:getenv("GITHUB_EVENT_NAME") =:= "pull_request"
+            andalso string:tokens(os:getenv("GITHUB_REF"), "/") of
+            [_, "pull", PRNO, _] ->
+                [{coveralls_service_pull_request, PRNO} | Cfgs];
+            _ ->
+                Cfgs
+        end;
+      _ ->
+        []
+    end.
+
+list_dir(Dir) ->
+    {ok, Names} = file:list_dir(Dir),
+    [list_to_atom(Name) || Name <- Names, filelib:is_dir(filename:join([Dir, Name]))].
+
+%% ==== Enterprise supports below ==================================================================
+
+ee_profiles(_Vsn) -> [].
+ee_etc_overlay(_) -> [].
+ee_overlay_vars(_PkgType) -> [].

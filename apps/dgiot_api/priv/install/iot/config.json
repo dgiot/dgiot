@@ -1,0 +1,15 @@
+{
+  "desc": "数蛙物联网平台",
+  "tables": {
+    "Project": [
+      "Application.json"
+    ],
+    "Dict": [
+      "unit.json",
+      "category.json",
+      "AbilityProp.json",
+      "property.json",
+      "decoder.json"
+    ]
+  }
+}

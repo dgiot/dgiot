@@ -1,0 +1,182 @@
+%%--------------------------------------------------------------------
+%% 阿里云配置
+%%--------------------------------------------------------------------
+{mapping, "aliyun.accessKeyId", "dgiot_http.aliyun_accessKeyId", [
+{datatype, string}
+]}.
+
+{mapping, "aliyun.accessKeySecret", "dgiot_http.aliyun_accessKeySecret", [
+{datatype, string}
+]}.
+
+%%--------------------------------------------------------------------
+%% 阿里云工业互联网
+%%--------------------------------------------------------------------
+{mapping, "inplat.host", "dgiot_http.inplat_host", [
+{datatype, string}
+]}.
+
+{mapping, "inplat.appkey", "dgiot_http.inplat_appkey", [
+{datatype, string}
+]}.
+
+{mapping, "inplat.appsecret", "dgiot_http.inplat_appsecret", [
+{datatype, string}
+]}.
+
+%%--------------------------------------------------------------------
+%% 阿里云oss
+%%--------------------------------------------------------------------
+
+{mapping, "aliyun.uploadCallbackUrl", "dgiot_http.aliyun_uploadCallbackUrl", [
+{datatype, string}
+]}.
+
+{mapping, "aliyun.uploadHost", "dgiot_http.aliyun_uploadHost", [
+{datatype, string}
+]}.
+
+%%--------------------------------------------------------------------
+%% 百度地图配置
+%%--------------------------------------------------------------------
+
+{mapping, "baidumap.appkey", "dgiot_http.baidumap_appkey", [
+{default, "fnc5Z92jC7CwfBGz8Dk36E9sXEIYZ6TG"},
+{datatype, string}
+]}.
+
+%%--------------------------------------------------------------------
+%% 百度地图纠偏值
+%%--------------------------------------------------------------------
+
+{mapping, "baidumap.lngoffset", "dgiot_http.baidumap_lngoffset", [
+{default, "0.00002"},
+{datatype, string}
+]}.
+
+{mapping, "baidumap.latoffset", "dgiot_http.baidumap_latoffset", [
+{default, "0.00001"},
+{datatype, string}
+]}.
+
+%%--------------------------------------------------------------------
+%% 友盟消息推送配置
+%%--------------------------------------------------------------------
+
+{mapping, "umeng.appkey", "dgiot_http.umeng_appkey", [
+{default, "5f8bfc1780455951e4ad0482"},
+{datatype, string}
+]}.
+
+{mapping, "umeng.masterkey", "dgiot_http.umeng_masterkey", [
+{default, "ilkx2mnd2sc9u2t1h77qnx0bopy46bso"},
+{datatype, string}
+]}.
+
+%%--------------------------------------------------------------------
+%% 微信小程序
+%%--------------------------------------------------------------------
+
+{mapping, "wechat.appid", "dgiot_http.wechat_appid", [
+{default, "wxdafafdqb0584"},
+{datatype, string}
+]}.
+
+{mapping, "wechat.secret", "dgiot_http.wechat_secret", [
+{default, "14a79843fdasfafaf0ab6490ff"},
+{datatype, string}
+]}.
+
+%%--------------------------------------------------------------------
+%% 微信公众号
+%%--------------------------------------------------------------------
+
+{mapping, "wechatpublic.appid", "dgiot_http.wechatpublic_appid", [
+{default, "wxfdasfafdqb0584"},
+{datatype, string}
+]}.
+
+{mapping, "wechatpublic.secret", "dgiot_http.wechatpublic_secret", [
+{default, "14a798dsafasfaf90ff"},
+{datatype, string}
+]}.
+
+%%--------------------------------------------------------------------
+%% 服务商户号
+%%--------------------------------------------------------------------
+
+{mapping, "wechat.sp_mchid", "dgiot_http.wechat_sp_mchid", [
+{default, "1230000109"},
+{datatype, string}
+]}.
+
+%%--------------------------------------------------------------------
+%% 子商户号
+%%--------------------------------------------------------------------
+
+{mapping, "wechat.sub_mchid", "dgiot_http.wechat_sub_mchid", [
+{default, "1230000109"},
+{datatype, string}
+]}.
+
+
+%%--------------------------------------------------------------------
+%% 商户API证书序列号
+%%--------------------------------------------------------------------
+
+{mapping, "wechat.serial_no", "dgiot_http.wechat_serial_no", [
+{default, "31dfafafasdfdadfafdadfBC47D6E84B7C24"},
+{datatype, string}
+]}.
+
+
+%%--------------------------------------------------------------------
+%% 商户API v3密钥
+%%--------------------------------------------------------------------
+
+{mapping, "wechat.apiv3", "dgiot_http.wechat_apiv3", [
+{default, "8291DL3414684E9A9459KP8AYV647371"},
+{datatype, string}
+]}.
+
+
+%%--------------------------------------------------------------------
+%% jwt
+%%--------------------------------------------------------------------
+
+{mapping, "jwt.algorithm", "dgiot_http.jwt_algorithm", [
+{default, "rs256"},
+{datatype, string}
+]}.
+
+
+%%--------------------------------------------------------------------
+%% bridge
+%%--------------------------------------------------------------------
+{mapping, "dgiot_api.isbridge", "dgiot_http.isbridge", [
+{default, true},
+{datatype, {enum, [true, false]}}
+]}.
+
+{mapping, "dgiot_api.bridge_url", "dgiot_http.bridge_url", [
+{default, "https://demo.dgiot.com"},
+{datatype, string}
+]}.
+
+%%--------------------------------------------------------------------
+%% onenet
+%%--------------------------------------------------------------------
+{mapping, "onenet.server", "dgiot_http.onenet_server", [
+{default, "https://prod.dgiotcloud.cn/"},
+{datatype, string}
+]}.
+
+{mapping, "onenet.appid", "dgiot_http.onenet_appid", [
+{default, "c95cca6ec7"},
+{datatype, string}
+]}.
+
+{mapping, "onenet.secret", "dgiot_http.onenet_secret", [
+{default, "TTY4NDMyMTExNjAyNTU1ODI4MTc5"},
+{datatype, string}
+]}.

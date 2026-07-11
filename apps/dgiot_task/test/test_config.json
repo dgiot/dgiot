@@ -1,0 +1,89 @@
+{
+  "test_config": {
+    "module": "dgiot_task",
+    "description": "任务统计模块测试配置",
+    "version": "1.0.0",
+    "test_types": ["unit", "integration", "performance"],
+    "test_data": {
+      "product_id": "test_product",
+      "device_addr": "test_device",
+      "sensor_data": {
+        "temperature": 25.5,
+        "humidity": 60.0,
+        "pressure": 1013.25
+      },
+      "protocols": ["MODBUSRTU", "TEST_PROTOCOL", "EXTERNAL_PROTOCOL"]
+    },
+    "test_coverage": {
+      "data_saving": true,
+      "thing_model": true,
+      "statistics": true,
+      "utilities": true,
+      "protocol_handling": true,
+      "rule_engine": true,
+      "task_scheduling": true
+    },
+    "performance_requirements": {
+      "max_response_time_ms": 100,
+      "min_throughput_per_second": 100,
+      "max_memory_mb": 50
+    }
+  },
+  "test_cases": [
+    {
+      "name": "数据保存测试",
+      "description": "测试数据保存到TDengine的功能",
+      "functions": ["save_td", "smart_save_td", "save_td_no_match"],
+      "expected_results": ["返回map结构", "数据格式正确", "无错误"]
+    },
+    {
+      "name": "物模型处理测试",
+      "description": "测试物模型属性解析和计算",
+      "functions": ["get_props", "get_collection", "get_calculated", "get_storage", "get_control", "get_instruct"],
+      "expected_results": ["属性列表正确", "采集数据完整", "计算值准确", "存储格式正确"]
+    },
+    {
+      "name": "统计计算测试",
+      "description": "测试统计计算和比较功能",
+      "functions": ["get_statistic", "get_last_value", "compare"],
+      "expected_results": ["统计结果正确", "历史值查询正常", "比较逻辑准确"]
+    },
+    {
+      "name": "工具函数测试",
+      "description": "测试字符串转换等工具函数",
+      "functions": ["string2value"],
+      "expected_results": ["数值转换正确", "边界条件处理正常", "错误处理完善"]
+    },
+    {
+      "name": "协议处理测试",
+      "description": "测试协议解析和钩子调用",
+      "functions": ["needs_protocol_parsing", "call_protocol_hook"],
+      "expected_results": ["协议判断准确", "钩子调用成功", "错误处理完善"]
+    },
+    {
+      "name": "规则引擎测试",
+      "description": "测试规则注册和转换功能",
+      "functions": ["rule_engine_transform", "register_rule", "get_rules"],
+      "expected_results": ["规则转换正确", "规则注册成功", "规则查询正常"]
+    },
+    {
+      "name": "任务编排测试",
+      "description": "测试任务调度和参数解析",
+      "functions": ["schedule_tasks_from_thing_model", "parse_task_parameters", "stop_tasks"],
+      "expected_results": ["任务调度成功", "参数解析正确", "任务停止正常"]
+    }
+  ],
+  "test_environment": {
+    "erlang_version": ">= 24",
+    "dgiot_version": ">= 4.3.0",
+    "tdengine_required": true,
+    "mqtt_broker_required": true,
+    "test_timeout_seconds": 30
+  },
+  "test_execution": {
+    "unit_test_command": "make eunit MODULE=dgiot_task",
+    "integration_test_command": "./apps/dgiot_task/test/run_tests.sh",
+    "coverage_report_command": "make cover MODULE=dgiot_task",
+    "cleanup_command": "make clean-test"
+  }
+}

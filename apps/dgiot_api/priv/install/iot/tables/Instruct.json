@@ -1,0 +1,71 @@
+[
+  {
+    "className": "Instruct",
+    "fields": {
+      "enable": {
+        "type": "Boolean"
+      },
+      "order": {
+        "type": "String"
+      },
+      "product": {
+        "targetClass": "Product",
+        "type": "Pointer"
+      },
+      "device": {
+        "targetClass": "Device",
+        "type": "Pointer"
+      },
+      "pn": {
+        "type": "String"
+      },
+      "di": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      },
+      "op": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "Number"
+      },
+      "interval": {
+        "type": "Number"
+      },
+      "rotation": {
+        "type": "String"
+      },
+      "other": {
+        "type": "Object"
+      }
+    },
+    "classLevelPermissions": {
+      "find": {
+        "*": true
+      },
+      "get": {
+        "*": true
+      },
+      "count": {
+        "*": true
+      },
+      "create": {
+        "*": true
+      },
+      "update": {
+        "*": true
+      },
+      "delete": {
+        "*": true
+      },
+      "addField": {
+        "role:root": true
+      },
+      "protectedFields": {
+        "*": []
+      }
+    }
+  }
+]

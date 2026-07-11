@@ -1,0 +1,57 @@
+[
+  {
+    "className": "Channel",
+    "classLevelPermissions": {
+      "count":{
+        "*":true
+      },
+      "get": {
+        "*": true
+      },
+      "find": {
+        "*": true
+      },
+      "create": {
+        "*": true
+      },
+      "update": {
+        "*": true
+      },
+      "delete": {
+        "*": true
+      },
+      "addField": {
+        "role:root": true
+      }
+    },
+    "fields": {
+      "name": {
+        "type": "String",
+        "required": true
+      },
+      "cType":{
+        "type":"String",
+        "required": true
+      },
+      "type": {
+        "type": "String"
+      },
+      "isEnable": {
+        "type": "Boolean"
+      },
+      "desc": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      },
+      "config": {
+        "type": "Object"
+      },
+      "product": {
+        "targetClass": "Product",
+        "type": "Relation"
+      }
+    }
+  }
+]

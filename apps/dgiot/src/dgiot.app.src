@@ -1,0 +1,15 @@
+{application, dgiot,
+    [
+        {description, "DGIOT"},
+        {vsn, "4.3.0"},
+        {modules, [dgiot_udp_sdk]},
+        {registered, [dgiot_sup]},
+        {applications, [kernel, stdlib, prometheus, gproc, mnesia, ekka]},
+        {mod, {dgiot_app, []}},
+        {licenses, ["Apache-2.0"]},
+        {maintainers, ["DGIOT Team"]},
+        {links, [{"Homepage", "https://www.dgiotcloud.cn/"},
+            {"Github", "https://github.com/dgiot/dgiot"}
+        ]}
+    ]
+}.

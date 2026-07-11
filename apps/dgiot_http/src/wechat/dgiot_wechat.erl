@@ -1,0 +1,468 @@
+%%--------------------------------------------------------------------
+%% Copyright (c) 2020-2021 DGIOT Technologies Co., Ltd. All Rights Reserved.
+%%
+%% Licensed under the Apache License, Version 2.0 (the "License");
+%% you may not use this file except in compliance with the License.
+%% You may obtain a copy of the License at
+%%
+%%     http://www.apache.org/licenses/LICENSE-2.0
+%%
+%% Unless required by applicable law or agreed to in writing, software
+%% distributed under the License is distributed on an "AS IS" BASIS,
+%% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+%% See the License for the specific language governing permissions and
+%% limitations under the License.
+%%--------------------------------------------------------------------
+
+
+%% 集成指南 https://developer.umeng.com/docs/67966/detail/149296#h1--i-9
+%% 常见错误码 https://developer.umeng.com/docs/67966/detail/149332
+
+-module(dgiot_wechat).
+-author("jonhl").
+
+-include_lib("dgiot/include/logger.hrl").
+
+-export([
+    post_sns/3,
+    get_sns/1,
+    get_public_sns/1,
+    unbind_sns/1,
+    get_wechat_index/1,
+    sendSubscribe/4,
+    sendTemplate/0,
+    get_wechat_map/1,
+    get_device_info/2,
+    get_notification/6,
+    sendSubscribe_test/2,
+    getToken/4,
+    get_paySign/4,
+    getAccessToken/0,
+    sign/1
+]).
+
+%% https://api.weixin.qq.com/sns/jscode2session?appid=APPID&secret=SECRET&js_code=JSCODE&grant_type=authorization_code
+%% wechat绑定
+post_sns(UserName, Password, OpenId) ->
+%%    case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"tag.wechat.openid">> => OpenId}}) of
+%%        {ok, #{<<"results">> := [#{<<"objectId">> := _UserId, <<"username">> := Name} | _]}} ->
+%%            {ok, UserInfo} = dgiot_parse_auth:create_session(UserId, dgiot_auth:ttl(), Name),
+%%            {error, <<OpenId/binary, " is bind ", Name/binary>>};
+%%        _ ->
+    case dgiot_parse_auth:login(UserName, Password) of
+%%                {ok, #{<<"objectId">> := _UserId, <<"tag">> := #{<<"wechat">> := #{<<"openid">> := OPENID}}}} when size(OPENID) > 0 ->
+%%                    {error, <<UserName/binary, "is bind">>};
+        {ok, #{<<"objectId">> := UserId, <<"tag">> := Tag} = UserInfo} ->
+            dgiot_parse:update_object(<<"_User">>, UserId, #{<<"tag">> => Tag#{<<"wechat">> => #{<<"openid">> => OpenId}}}),
+            {ok, UserInfo#{<<"tag">> => Tag#{<<"wechat">> => #{<<"openid">> => OpenId}}}};
+        {error, Msg} ->
+            {error, Msg}
+    end.
+%%    end.
+
+
+%% wechat解绑
+unbind_sns(UserId) ->
+    NewTag =
+        case dgiot_parse:get_object(<<"_User">>, UserId) of
+            {ok, #{<<"tag">> := Tag}} ->
+                Tag;
+            _ -> #{}
+        end,
+    dgiot_parse:update_object(<<"_User">>, UserId, #{<<"tag">> => NewTag#{<<"wechat">> => #{<<"openid">> => <<"">>}}}),
+    {ok, #{<<"msg">> => <<"succeed">>}}.
+
+%% 获取小程序openid
+get_sns(Jscode) ->
+    inets:start(),
+    AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_appid, <<"">>)),
+    Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_secret, <<"">>)),
+    Url = "https://api.weixin.qq.com/sns/jscode2session?appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret) ++
+        "&js_code=" ++ dgiot_utils:to_list(Jscode) ++ "&grant_type=authorization_code",
+    case dgiot_http_client:request(get, {Url, []}) of
+        {ok, #{<<"openid">> := OPENID, <<"session_key">> := _SESSIONKEY}} ->
+            case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"tag.wechat.openid">> => OPENID}}) of
+                {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
+                    [#{<<"objectId">> := UserId, <<"username">> := Name} | _] = Results,
+                    {ok, UserInfo} = dgiot_parse_auth:create_session(UserId, dgiot_auth:ttl(), Name),
+                    {ok, UserInfo#{<<"openid">> => OPENID, <<"status">> => <<"bind">>}};
+                _ ->
+                    {ok, #{<<"openid">> => OPENID, <<"status">> => <<"unbind">>}}
+            end;
+        _Error ->
+            _Error
+    end.
+
+%% 获取公众号openid
+get_public_sns(Code) ->
+    inets:start(),
+    AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechatpublic_appid, <<"">>)),
+    Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechatpublic_secret, <<"">>)),
+    Url = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret) ++
+        "&code=" ++ dgiot_utils:to_list(Code) ++ "&grant_type=authorization_code",
+%%    io:format("~s ~p Url = ~p.~n", [?FILE, ?LINE, Url]),
+    case dgiot_http_client:request(get, {Url, []}) of
+        {ok, #{<<"openid">> := OPENID, <<"access_token">> := _}} ->
+            case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"tag.wechat.openid">> => OPENID}}) of
+                {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
+                    [#{<<"objectId">> := UserId, <<"username">> := Name} | _] = Results,
+                    {ok, UserInfo} = dgiot_parse_auth:create_session(UserId, dgiot_auth:ttl(), Name),
+                    {ok, UserInfo#{<<"openid">> => OPENID, <<"status">> => <<"bind">>}};
+                _ ->
+                    {ok, #{<<"openid">> => OPENID, <<"status">> => <<"unbind">>}}
+            end;
+        _Error ->
+            _Error
+    end.
+
+%% 发送小程序订阅消息
+%% Data 小程序订阅消息内容
+%% page       要跳转到小程序的页面
+%% templateId 模板消息编号
+%% touser     消息接收者openId
+%% POST https://api.weixin.qq.com/cgi-bin/message/wxopen/template/uniform_send?access_token=ACCESS_TOKEN
+%% dgiot_wechat:sendSubscribe().
+sendSubscribe(UserId, Template_id, Data, Page) ->
+    case dgiot_parse:get_object(<<"_User">>, UserId) of
+        {ok, #{<<"tag">> := #{<<"wechat">> := #{<<"openid">> := OpenId}}}} when size(OpenId) > 0 ->
+            case getAccessToken() of
+                {ok, AccessToken} ->
+                    SubscribeUrl = "https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=" ++ dgiot_utils:to_list(AccessToken),
+                    Subscribe = #{<<"touser">> => OpenId,
+                        <<"template_id">> => Template_id,
+                        <<"page">> => Page,
+                        <<"miniprogram_state">> => <<"formal">>,
+                        <<"lang">> => <<"zh_CN">>,
+                        <<"data">> => Data},
+%%                    io:format("~s ~p Subscribe = ~p.~n", [?FILE, ?LINE, Subscribe]),
+                    Data1 = dgiot_utils:to_list(jiffy:encode(Subscribe)),
+                    %% io:format("~s ~p SubscribeUrl = ~p.~n", [?FILE, ?LINE, SubscribeUrl]),
+                    %% io:format("~s ~p Subscribe = ~p.~n", [?FILE, ?LINE, Subscribe]),
+                    _R = httpc:request(post, {SubscribeUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
+%%                    io:format("~s ~p R = ~p.~n", [?FILE, ?LINE, R]),
+                    dgiot_parse:create_object(<<"Log">>, #{
+                        <<"clientid">> => UserId,
+                        <<"mfa">> => SubscribeUrl,
+                        <<"msg">> => jiffy:encode(Subscribe)
+                    }),
+                    {ok, UserId};
+                _Result ->
+                    {error, <<"not find access_token">>}
+            end;
+        _ -> {error, <<UserId/binary, " unbind openid">>}
+    end.
+
+%% dgiot_wechat:getAccessToken().
+getAccessToken() ->
+    AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_appid, <<"">>)),
+    Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_secret, <<"">>)),
+    Url = "https://api.weixin.qq.com/cgi-bin/stable_token",
+    Body = #{
+        <<"grant_type">> => <<"client_credential">>,
+        <<"appid">> => AppId,
+        <<"secret">> => Secret,
+        <<"force_refresh">> => false
+    },
+    case dgiot_http_client:request(post, {Url, [], "application/json", dgiot_json:encode(Body)}) of
+        {ok, #{<<"access_token">> := AccessToken}} ->
+            {ok, AccessToken};
+        _ ->
+            not_find
+    end.
+
+%% 发送小程序订阅消息
+%% Data 小程序订阅消息内容
+%% page       要跳转到小程序的页面
+%% templateId 模板消息编号
+%% touser     消息接收者openId
+%% POST https://api.weixin.qq.com/cgi-bin/message/wxopen/template/uniform_send?access_token=ACCESS_TOKEN
+%% dgiot_wechat:sendSubscribe().
+sendSubscribe_test(UserId, #{<<"data">> := Data,
+    <<"lang">> := Lang,
+    <<"miniprogramstate">> := Miniprogramstate,
+    <<"page">> := Page,
+    <<"templateid">> := Templateid} = _Args) ->
+%%    io:format("~s ~p UserId = ~p.~n", [?FILE, ?LINE, UserId]),
+%%    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
+    case dgiot_parse:get_object(<<"_User">>, UserId) of
+        {ok, #{<<"tag">> := #{<<"wechat">> := #{<<"openid">> := OpenId}}}} when size(OpenId) > 0 ->
+            AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_appid, <<"">>)),
+            Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_secret, <<"">>)),
+%%            io:format("~s ~p AppId = ~p.~n", [?FILE, ?LINE, AppId]),
+            Url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret),
+            case httpc:request(Url) of
+                {ok, {{_Version, 200, _ReasonPhrase}, _Headers, Body}} ->
+                    Json = list_to_binary(Body),
+                    case jsx:is_json(Json) of
+                        true ->
+                            case jsx:decode(Json, [{labels, binary}, return_maps]) of
+                                #{<<"access_token">> := AccessToken, <<"expires_in">> := _ExpiresIn} ->
+                                    SubscribeUrl = "https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=" ++ dgiot_utils:to_list(AccessToken),
+                                    ?LOG(debug, "SubscribeUrl ~p", [SubscribeUrl]),
+                                    Subscribe = #{<<"touser">> => OpenId,
+                                        <<"template_id">> => Templateid,
+                                        <<"page">> => Page,
+                                        <<"miniprogram_state">> => Miniprogramstate,
+                                        <<"lang">> => Lang,
+                                        <<"data">> => Data},
+                                    Data1 = dgiot_utils:to_list(jiffy:encode(Subscribe)),
+%%                                    io:format("~s ~p SubscribeUrl = ~p.~n", [?FILE, ?LINE, SubscribeUrl]),
+%%                                    io:format("~s ~p Subscribe = ~p.~n", [?FILE, ?LINE, Subscribe]),
+                                    R = httpc:request(post, {SubscribeUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
+                                    io:format("~s ~p R = ~p.~n", [?FILE, ?LINE, R]);
+                                _Result ->
+                                    {error, <<"not find access_token">>}
+                            end;
+                        false -> {error, <<"not find access_token">>}
+                    end;
+                _Error ->
+                    _Error
+            end;
+        _ -> {error, <<"user unbind openid">>}
+    end.
+
+%% 总控台
+get_wechat_index(SessionToken) ->
+    case dgiot_parse:query_object(<<"Device">>, #{<<"count">> => <<"objectId">>, <<"limit">> => 1000000}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"count">> := Count, <<"results">> := Results}} ->
+            {ONLINE, OFFLINE} =
+                lists:foldl(fun(X, {Online, Offline}) ->
+                    case X of
+                        #{<<"status">> := <<"ONLINE">>} ->
+                            {Online ++ [X], Offline};
+                        #{<<"status">> := <<"OFFLINE">>} ->
+                            {Online, Offline ++ [X]};
+                        _ ->
+                            {Online, Offline}
+                    end
+                            end, {[], []}, Results),
+            NotificationCount =
+                case dgiot_parse:query_object(<<"Notification">>, #{<<"count">> => <<"objectId">>, <<"limit">> => 1}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+                    {ok, #{<<"count">> := NotCount, <<"results">> := _}} ->
+                        NotCount;
+                    _ ->
+                        0
+                end,
+            UnPanalarmCount =
+                case dgiot_parse:query_object(<<"Notification">>, #{<<"count">> => <<"objectId">>, <<"limit">> => 1, <<"where">> => #{<<"status">> => 0}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+                    {ok, #{<<"count">> := UnCount, <<"results">> := _}} ->
+                        UnCount;
+                    _ ->
+                        0
+                end,
+            Carousel =
+                case dgiot_parse:query_object(<<"Dict">>, #{<<"limit">> => 20, <<"where">> => #{<<"type">> => <<"57e4f8154e">>}}) of
+                    {ok, #{<<"results">> := Dicts}} ->
+                        lists:foldl(fun(X, Acc) ->
+                            case X of
+                                #{<<"data">> := #{<<"imgurl">> := Imgurl, <<"webUrl">> := WebUrl}} ->
+                                    Acc ++ [#{<<"imgurl">> => Imgurl, <<"webUrl">> => WebUrl}];
+                                _ ->
+                                    Acc
+                            end
+                                    end, [], Dicts);
+                    _ ->
+                        []
+                end,
+            {ok, #{<<"deviceCount">> => Count, <<"devicelist">> => Results,
+                <<"onlineCount">> => length(ONLINE), <<"onlinelist">> => ONLINE,
+                <<"offlineCount">> => length(OFFLINE), <<"offlinelist">> => OFFLINE,
+                <<"notificationCount">> => NotificationCount, <<"unPanalarmCount">> => UnPanalarmCount,
+                <<"carousel">> => Carousel}};
+        _ ->
+            {error, <<"no device">>}
+    end.
+
+
+%% 发送模板消息
+%% Data 消息内容
+%% templateId 模板消息编号
+%% touser     消息接收者openId
+%% POST https://api.weixin.qq.com/cgi-bin/message/wxopen/template/uniform_send?access_token=ACCESS_TOKEN
+sendTemplate() ->
+    AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_appid, <<"">>)),
+    Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_secret, <<"">>)),
+%%  "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=wx62de5b17388a361f&secret=bd71815d6ff657b0f8a0032848c9079b",
+    Url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret),
+    case httpc:request(Url) of
+        {ok, {{_Version, 200, _ReasonPhrase}, _Headers, Body}} ->
+            Json = list_to_binary(Body),
+            case jsx:is_json(Json) of
+                true ->
+                    case jsx:decode(Json, [{labels, binary}, return_maps]) of
+                        #{<<"access_token">> := AccessToken, <<"expires_in">> := _ExpiresIn} ->
+                            TemplateUrl = "https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=" ++ dgiot_utils:to_list(AccessToken),
+                            Data = #{<<"touser">> => <<"o_8aC4mM0KhYpIe7ddDV8_0NZUZY">>,
+                                <<"template_id">> => <<"">>,
+                                <<"url">> => <<"www.baidu.com">>,
+                                <<"data">> => #{<<"first">> => #{<<"value">> => <<"thing2">>, <<"color">> => <<"#173177">>},
+                                    <<"thing3">> => #{<<"value">> => <<"thing3">>, <<"color">> => <<"#173177">>},
+                                    <<"thing4">> => #{<<"value">> => <<"thing4">>, <<"color">> => <<"#173177">>},
+                                    <<"thing5">> => #{<<"value">> => <<"thing5">>, <<"color">> => <<"#173177">>},
+                                    <<"thing6">> => #{<<"value">> => <<"thing6">>, <<"color">> => <<"#173177">>}}},
+                            Data1 = dgiot_utils:to_list(Data),
+                            ?LOG(info, "SubscribeUrl ~s Data1 ~s", [TemplateUrl, Data1]),
+                            R = httpc:request(post, {TemplateUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
+                            ?LOG(info, "~p", [R]);
+                        _Result ->
+                            {error, <<"not find access_token">>}
+                    end;
+                false -> {error, <<"not find access_token">>}
+            end;
+        _Error ->
+            _Error
+    end.
+
+get_wechat_map(SessionToken) ->
+    case dgiot_parse:query_object(<<"Device">>, #{<<"count">> => <<"objectId">>, <<"limit">> => 1000}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"results">> := Results}} ->
+            NewResult =
+                lists:foldl(fun(X, Acc) ->
+                    case X of
+                        #{<<"objectId">> := ObjectId, <<"name">> := Name, <<"status">> := Status, <<"location">> := #{<<"latitude">> := Latitude, <<"longitude">> := Longitude}} ->
+                            [GcLongitude, GcLatitude] = dgiot_gps:wgs84togcj02(Longitude, Latitude, -0.00014, -0.0013),
+                            Acc ++ [#{<<"id">> => ObjectId, <<"title">> => Name, <<"status">> => Status, <<"latitude">> => GcLatitude, <<"longitude">> => GcLongitude, <<"joinCluster">> => true}];
+                        _ ->
+                            Acc
+                    end
+                            end, [], Results),
+            {ok, #{<<"results">> => NewResult}};
+        _ ->
+            {error, <<"no device">>}
+    end.
+
+get_device_info(Deviceid, SessionToken) ->
+    case dgiot_parse:get_object(<<"Device">>, Deviceid, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"product">> := #{<<"objectId">> := ProductId}, <<"basedata">> := Basedata} = Result} ->
+            {NewParams, ProductName} =
+                case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                    {ok, #{<<"config">> := #{<<"basedate">> := #{<<"params">> := Params}}, <<"name">> := Productname}} ->
+                        lists:foldl(fun(Param, {Acc, _Acc1}) ->
+                            Identifier = maps:get(<<"identifier">>, Param),
+                            case maps:find(Identifier, Basedata) of
+                                error ->
+                                    {Acc ++ [Param#{<<"value">> => <<>>}], Productname};
+                                {ok, Value} ->
+                                    {Acc ++ [Param#{<<"value">> => Value}], Productname}
+                            end
+                                    end, {[], <<>>}, Params);
+                    _ ->
+                        {[], <<" ">>}
+                end,
+            {ok, Result#{<<"params">> => NewParams, <<"productname">> => ProductName}};
+        _ ->
+            {error, []}
+    end.
+
+%% 告警列表
+%% dgiot_parse:query_object(<<"Notification">>, #{<<"count">> => <<"objectId">>,<<"where">> => #{<<"type">> => #{<<"$regex">> => <<"c1e44b39f0">>}}}).
+get_notification(ProductId1, SessionToken, Order, Limit, Skip, Where) ->
+    Where1 =
+        case ProductId1 of
+            <<"all">> ->
+                Where;
+            ProductId2 ->
+                Where#{<<"type">> => #{<<"$regex">> => ProductId2}}
+        end,
+    case dgiot_parse:query_object(<<"Notification">>, #{<<"count">> => <<"objectId">>, <<"order">> => Order, <<"limit">> => Limit, <<"skip">> => Skip, <<"where">> => Where1}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"count">> := Count, <<"results">> := Results}} ->
+            NewResult =
+                lists:foldl(fun(X, Acc) ->
+                    Acc ++ get_list(X)
+                            end, [], Results),
+            {ok, #{<<"count">> => Count, <<"results">> => NewResult}};
+        _ ->
+            {ok, #{<<"msg">> => <<"no device">>, <<"results">> => []}}
+    end.
+
+get_list(#{<<"objectId">> := ObjectId} = Result) ->
+    Createdat = maps:get(<<"createdAt">>, Result),
+    Type = maps:get(<<"type">>, Result, <<"">>),
+    Public = maps:get(<<"public">>, Result, true),
+    Status = maps:get(<<"status">>, Result, 0),
+    Process = maps:get(<<"process">>, Result, <<"">>),
+    Content = maps:get(<<"content">>, Result, #{}),
+    Alertstatus = maps:get(<<"alertstatus">>, Content, true),
+    DeviceId = maps:get(<<"_deviceid">>, Content, <<"">>),
+    Productid = maps:get(<<"_productid">>, Content, <<"">>),
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, #{<<"name">> := DeviceName, <<"devaddr">> := Devaddr, <<"detail">> := Detail}} ->
+            Address = maps:get(<<"address">>, Detail, <<"无位置"/utf8>>),
+            Newdate = dgiot_datetime:format(dgiot_datetime:to_localtime(Createdat), <<"YY-MM-DD HH:NN:SS">>),
+            case binary:split(Type, <<$_>>, [global, trim]) of
+                [Productid, <<"status">>] ->
+                    case dgiot_parse:get_object(<<"Product">>, Productid) of
+                        {ok, #{<<"name">> := ProductName}} ->
+                            [#{<<"objectId">> => ObjectId, <<"dynamicform">> => [#{<<"设备编号"/utf8>> => Devaddr}, #{<<"设备地址"/utf8>> => Address}, #{<<"报警内容"/utf8>> => <<"设备"/utf8, DeviceName/binary, "离线"/utf8>>}, #{<<"离线时间"/utf8>> => Newdate}], <<"alertstatus">> => Alertstatus, <<"productname">> => ProductName, <<"devicename">> => DeviceName, <<"process">> => Process, <<"content">> => Content, <<"public">> => Public, <<"status">> => Status, <<"createdAt">> => Createdat}];
+                        _ ->
+                            []
+                    end;
+                [ProductId, AlertId] ->
+                    get_product_not(AlertId, ProductId, Content, Newdate, ObjectId, Alertstatus, DeviceName, Process, Public, Status);
+                _Other1 ->
+                    []
+            end;
+        _ ->
+            []
+    end.
+
+get_product_not(AlertId, ProductId, Content, Newdate, ObjectId, Alertstatus, DeviceName, Process, Public, Status) ->
+    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+        {ok, #{<<"name">> := ProductName, <<"config">> := #{<<"parser">> := Parser}}} ->
+            lists:foldl(fun(P, Par) ->
+                case P of
+                    #{<<"uid">> := AlertId, <<"config">> := #{<<"formDesc">> := FormDesc}} ->
+                        FormD =
+                            maps:fold(fun(Key, Value1, Form) ->
+                                case maps:find(Key, Content) of
+                                    {ok, Value} ->
+                                        Label = maps:get(<<"label">>, Value1),
+                                        Form ++ [#{Label => Value}];
+                                    _ ->
+                                        Label = maps:get(<<"label">>, Value1),
+                                        Default = maps:get(<<"default">>, Value1, <<>>),
+                                        Form ++ [#{Label => Default}]
+                                end
+                                      end, [], FormDesc),
+                        [Par#{<<"dynamicform">> => FormD ++ [#{<<"报警时间"/utf8>> => Newdate}]}];
+                    _Oth ->
+                        [Par]
+                end
+                        end, #{<<"objectId">> => ObjectId, <<"alertstatus">> => Alertstatus, <<"productname">> => ProductName, <<"devicename">> => DeviceName, <<"process">> => Process, <<"public">> => Public, <<"status">> => Status, <<"createdAt">> => Newdate}, Parser);
+        _Other ->
+            []
+    end.
+
+
+getToken(Method, Url, Body, Mchid) ->
+    NonceStr = string:to_upper(dgiot_utils:to_list(dgiot_utils:random())),
+    Ttimestamp = dgiot_utils:to_list(dgiot_datetime:now_secs()),
+    Message =
+        Method ++ "\n"
+        ++ dgiot_utils:to_list(Url) ++ "\n"
+        ++ Ttimestamp ++ "\n"
+        ++ NonceStr ++ "\n"
+        ++ Body ++ "\n",
+    Signature = dgiot_utils:to_list(sign(Message)),
+    Serial_no = dgiot_utils:to_list(application:get_env(dgiot_http, wechat_serial_no, <<"">>)),
+    "mchid=\"" ++ Mchid ++ "\","
+        ++ "nonce_str=\"" ++ NonceStr ++ "\","
+        ++ "timestamp=\"" ++ Ttimestamp ++ "\","
+        ++ "serial_no=\"" ++ Serial_no ++ "\","
+        ++ "signature=\"" ++ Signature ++ "\"".
+
+get_paySign(AppId, Ttimestamp, NonceStr, Package) ->
+    Message =
+        dgiot_utils:to_list(AppId) ++ "\n"
+        ++ Ttimestamp ++ "\n"
+        ++ NonceStr ++ "\n"
+        ++ dgiot_utils:to_list(Package) ++ "\n",
+    dgiot_utils:to_binary(sign(Message)).
+
+sign(Message) ->
+    Path = code:priv_dir(dgiot_http) ++ "/cert/apiclient_key.pem",
+%%    {ok, PrivateKey} = file:read_file(Path ++ "/cert/apiclient_key.pem"),
+%%    rsa:gen_rsa_sign(dgiot_utils:to_binary(Message), 'sha256', PrivateKey),
+    Cmd = "echo -n -e '" ++ Message ++ "' | openssl dgst -sha256 -sign " ++ Path ++ " | openssl base64 -A",
+    dgiot_utils:to_binary(os:cmd(Cmd)).
+

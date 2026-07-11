@@ -1,0 +1,41 @@
+# build
+_build/
+.eunit/
+deps/
+*.o
+*.beam
+erl_crash.dump
+logs/
+out/
+*.swp
+
+# node
+node_modules/
+package-lock.json
+dist/
+
+# binaries
+rebar3
+*.exe
+*.zip
+*.tar.gz
+*.dump
+
+# third-party
+lib-ce/
+docker/
+wsl/
+build/
+apps/emqx_*/
+apps/grpc/
+apps/prometheus/
+
+# IDE
+.idea/
+.vscode/
+.claude/
+
+# misc
+*.pack
+*.pack.idx
+dist/
