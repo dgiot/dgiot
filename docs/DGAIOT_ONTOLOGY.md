@@ -109,6 +109,72 @@ sensor_update(Props)
   → bridge → Parse/TDengine       %% 持久化
 ```
 
+### 本体 ↔ 物理世界映射
+
+**四层联动 — 静态本体模型 + 动态影子进程 + MQTT 桥梁**
+
+```
+物理世界                           dgaiot 影子世界
+────────                          ────────────────
+
+┌──────────┐    Modbus/A11       ┌──────────────────────┐
+│ RTU-001  │ ──────────────────→ │ gen_statem Shadow    │
+│ 油井井口 │   MQTT Topic:       │ PID: <0.123.0>       │
+│ 11.66.12 │ dgiot/oil_field_01/ │ State: online        │
+│ .130:8889│ gw_131/rtu_001/     │ Props: #{            │
+└──────────┘ oil_pressure/data   │   oil_pressure→2.35  │
+                                 │   temperature→45.6   │
+  物理设备                        │ }                    │
+  1:1 Shadow                     └──────────┬───────────┘
+                                            │
+                                       ┌────┴──────┐
+                                       ▼           ▼
+                                   ┌──────┐   ┌────────┐
+                                   │Parse │   │TDengine │
+                                   │:1337 │   │ :6041   │
+                                   └──────┘   └────────┘
+```
+
+**本体映射链:**
+
+```
+Site:  oil_field_01    ← 采油厂
+  └─ Gateway: gw_131   ← IO服务器 11.66.12.131:53001 (Modbus主站)
+       └─ Device: rtu_001  ← 井口RTU (物理设备)
+            ├─ Point: oil_pressure     ← Modbus 40300 float32_AB
+            ├─ Point: casing_pressure  ← Modbus 40302
+            └─ Point: temperature      ← Modbus 40304
+
+MQTT Topic:
+dgiot/{site}/{gateway}/{device}/{point}/data
+dgiot/oil_field_01/gw_131/rtu_001/oil_pressure/data
+```
+
+**生命周期:**
+
+```
+1. 注册 (Data层):
+   dgiot_ontology:register(device, #{id=>rtu_001,gateway=>gw_131,...})
+   → Parse: CREATE Device
+
+2. 启动 (Logic层):
+   dgiot_ontology:spawn_instance(rtu_class, rtu_001)
+   → {ok, ShadowPid}  %% gen_statem 进程启动
+
+3. 数据注入 (Action层):
+   ShadowPid ! {data, #{oil_pressure => 2.35}}
+   → evaluate(Rules, Props)  %% 温度>85 → warning
+   → state: normal → alarm
+   → bridge → Parse + TDengine
+
+4. MQTT 路径 (Data→Action):
+   dgiot_ontology:push_point(oil_pressure, 2.35)
+   → Topic: dgiot/oil_field_01/gw_131/rtu_001/oil_pressure/data
+   → Payload: {ts:1751884800, v:2.35, q:192}
+```
+
+**核心原则**: 本体是静态模型 (Class/Property/Relation)，影子是动态实例 (PID/State/Value)，MQTT 是物理世界与数字世界的桥梁。
+
 ### dgiot_lite 对齐
 
 | DG-IoT | dgiot_lite |
