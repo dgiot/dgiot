@@ -60,24 +60,32 @@ Memory: 211 devices x 3KB = 0.6MB
 ## Layer 3: TDengine — Time-Series
 
 ```sql
--- SuperTable per Product
-CREATE STABLE dgiot_oil_well_rtu (
+-- SuperTable: 每个产品一张 (productId 全局唯一)
+CREATE STABLE dgiot_2de1b3e1b8 (
     ts      TIMESTAMP,
     value   FLOAT,
     quality INT
 ) TAGS (
-    device_id  BINARY(64),
-    point_id   BINARY(64),
-    unit       BINARY(16)
+    device_id  BINARY(64),    -- 设备地址 (如 DEV-001)
+    point_id   BINARY(64),    -- 点名 (如 oil_pressure)
+    unit       BINARY(16)     -- 单位 (如 MPa)
 );
 
--- SubTable per Device+Point
-CREATE TABLE dgiot_oil_field_01_gw_131_rtu_001 
-USING dgiot_oil_well_rtu 
-TAGS ('rtu_001', 'oil_pressure', 'MPa');
+-- SubTable: MD5(productId + devaddr) 保证全局唯一
+CREATE TABLE dgiot_e8f3a9c2 
+USING dgiot_2de1b3e1b8 
+TAGS ('DEV-001', 'oil_pressure', 'MPa');
 
--- Shadow push_point writes here
-INSERT INTO dgiot_oil_field_01_gw_131_rtu_001 VALUES (NOW, 2.35, 192);
+-- 数据行: (ts, value, quality) + TAGS (device_id, point_id, unit)
+INSERT INTO dgiot_e8f3a9c2 VALUES (NOW, 2.35, 192);
+```
+
+```
+唯一性保证:
+  Database   = dgiot_{ChannelId}           channel级隔离
+  SuperTable = dgiot_{ProductId}           product级隔离
+  SubTable   = dgiot_{MD5(ProductId+devaddr)}  设备级隔离
+  Row        = ts + TAGS(device, point)    时间+点位唯一
 ```
 
 ## Query Paths
