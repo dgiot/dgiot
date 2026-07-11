@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dgaiot Ecosystem</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d1117;color:#c9d1d9;font:13px/1.5 -apple-system,BlinkMacSystemFont,sans-serif;padding:20px}
+h1{text-align:center;color:#58a6ff;margin:10px 0 20px}
+.diagram{display:flex;flex-direction:column;gap:8px;max-width:1200px;margin:0 auto}
+.row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.card{border:1px solid #30363d;border-radius:8px;padding:12px 16px;min-width:140px;text-align:center}
+.card strong{display:block;color:#e6edf3;font-size:14px;margin-bottom:4px}
+.card span{color:#8b949e;font-size:11px}
+.arrow{text-align:center;color:#f78166;font-size:20px;margin:2px 0}
+.area{border:2px solid #30363d;border-radius:10px;padding:15px;background:rgba(22,27,34,0.8)}
+.area-title{font-weight:bold;font-size:13px;margin:-25px 0 12px 10px;background:#0d1117;padding:2px 10px;display:inline-block;border-radius:4px}
+.c-orange{border-color:#f78166}.c-orange .area-title{color:#f78166}
+.c-blue{border-color:#58a6ff}.c-blue .area-title{color:#58a6ff}
+.c-green{border-color:#7ee787}.c-green .area-title{color:#7ee787}
+.c-purple{border-color:#d2a8ff}.c-purple .area-title{color:#d2a8ff}
+.c-red{border-color:#ff7b72}.c-red .area-title{color:#ff7b72}
+.c-yellow{border-color:#d29922}.c-yellow .area-title{color:#d29922}
+
+.card.g1{background:rgba(247,129,102,0.1);border-color:#f78166}
+.card.g2{background:rgba(210,168,255,0.1);border-color:#d2a8ff}
+.card.g3{background:rgba(88,166,255,0.1);border-color:#58a6ff}
+.card.g4{background:rgba(126,231,135,0.1);border-color:#7ee787}
+.card.g5{background:rgba(255,123,114,0.1);border-color:#ff7b72}
+.card.g6{background:rgba(210,153,34,0.1);border-color:#d29922}
+
+.big-arrow{text-align:center;font-size:24px}
+.green{color:#7ee787}
+.blue{color:#58a6ff}
+.orange{color:#f78166}
+.purple{color:#d2a8ff}
+</style>
+</head>
+<body>
+
+<h1>dgaiot — Ontology-Driven IIoT Ecosystem</h1>
+
+<div class="diagram">
+
+<!-- Row 0: Philosophy -->
+<div class="row">
+  <div class="area c-yellow" style="flex:1">
+    <div class="area-title">DEVELOPMENT: AI reads Ontology -> generates code</div>
+    <div class="row">
+      <div class="card g6"><strong>thing_model.json</strong><span>125 properties<br>Modbus registers</span></div>
+      <div class="card g6"><strong>io_ontology.json</strong><span>5 servers<br>9 data sources</span></div>
+      <div class="card g6"><strong>ProductTemplet</strong><span>66 templates<br>Parse class</span></div>
+      <div class="card g6"><strong>ACL Rules</strong><span>dgiot_mqtt_acl<br>3-layer auth</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="big-arrow"><span class="orange">AI generates</span> &#8595;</div>
+
+<!-- Row 1: Production layers -->
+<div class="row">
+  <!-- Edge -->
+  <div class="area c-orange" style="flex:1">
+    <div class="area-title">EDGE: iotStudio (Python+Vue)</div>
+    <div class="row">
+      <div class="card g1"><strong>DeviceAccess</strong><span>9 adapters<br>A11/Modbus/OPC</span></div>
+      <div class="card g1"><strong>UnifiedPipeline</strong><span>Protocol decode<br>Frame parser</span></div>
+      <div class="card g1"><strong>StreamEngine</strong><span>15 algorithms<br>sliding/trend</span></div>
+      <div class="card g1"><strong>AlertPipeline</strong><span>6-stage<br>dedup->trace</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="arrow"><span class="orange">MQTT $dg/thing/{PID}/{DevAddr}/properties/report</span> &#8595;</div>
+
+<!-- DLAS Core -->
+<div class="area c-purple" style="width:100%">
+  <div class="area-title">DLAS CORE (Kylin-DMZ · Erlang/OTP)</div>
+
+  <div class="row" style="margin-bottom:8px">
+    <div class="card g2" style="min-width:100%"><strong>SECURITY</strong><span>auth · role · ACL/CLP · JWT · dgiot_mqtt_acl</span></div>
+  </div>
+  <div class="arrow" style="margin:0">&#8595;</div>
+  <div class="row" style="margin-bottom:8px">
+    <div class="card g3" style="flex:1"><strong>LOGIC: Ontology Engine</strong><span>load_model -> compile<br>spawn_instance<br>3 ETS tables</span></div>
+    <div class="card g3" style="flex:1"><strong>LOGIC: Reasoner</strong><span>forward-chain<br>SWRL export<br>Policy optimizer</span></div>
+  </div>
+  <div class="arrow" style="margin:0">&#8595;</div>
+  <div class="row" style="margin-bottom:8px">
+    <div class="card g1" style="flex:1"><strong>ACTION: Shadow gen_statem</strong><span>1:1 device process<br>init->auth->online<br>->alarm->offline</span></div>
+    <div class="card g1" style="flex:1"><strong>ACTION: Bridge</strong><span>MQTT<->Parse<br>sync_parse()<br>push_point()</span></div>
+    <div class="card g1" style="flex:1"><strong>ACTION: MQTT</strong><span>EMQX broker<br>:1883:8081:8083<br>million-device</span></div>
+  </div>
+  <div class="arrow" style="margin:0">&#8595;</div>
+  <div class="row">
+    <div class="card g5" style="flex:1"><strong>DATA: Parse/PG</strong><span>23 classes · JSONB<br>:7432<br>Site/Gateway/Device/Point</span></div>
+    <div class="card g5" style="flex:1"><strong>DATA: TDengine</strong><span>_{ChannelId}._{ProductId}<br>devaddr NCHAR(50)<br>:6041</span></div>
+    <div class="card g5" style="flex:1"><strong>DATA: ETS</strong><span>3 tables<br>model/instance/rules<br>&lt;1us lookup</span></div>
+  </div>
+</div>
+
+<div class="big-arrow"><span class="green">FEEDBACK LOOP</span> &#8593;</div>
+
+<!-- Row: Verification -->
+<div class="row">
+  <div class="area c-green" style="flex:1">
+    <div class="area-title">VERIFICATION: Logs + Tests = Truth</div>
+    <div class="row">
+      <div class="card g4"><strong>MQTT pub/sub</strong><span>3 sent, 3 recv<br>DLAS topic OK</span></div>
+      <div class="card g4"><strong>gen_statem</strong><span>compile + run<br>states verified</span></div>
+      <div class="card g4"><strong>TDengine</strong><span>INSERT 9 points<br>SELECT 9 rows</span></div>
+      <div class="card g4"><strong>dlink auth</strong><span>ClientID={PID}_{Dev}<br>ProductSecret OK</span></div>
+      <div class="card g4"><strong>Full pipeline</strong><span>Field->MQTT->Shadow<br>->TDengine</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="big-arrow"><span class="blue">ENTERPRISE LOOP</span></div>
+
+<!-- Row: Enterprise -->
+<div class="row">
+  <div class="card g6"><strong>Requirements</strong><span>Compliance<br>SLA · Safety</span></div>
+  <div class="arrow" style="align-self:center">-></div>
+  <div class="card g6"><strong>Ontology</strong><span>Single Source<br>of Truth</span></div>
+  <div class="arrow" style="align-self:center">-></div>
+  <div class="card g3"><strong>AI Code Gen</strong><span>Claude/Copilot<br>read ontology</span></div>
+  <div class="arrow" style="align-self:center">-></div>
+  <div class="card g1"><strong>Deterministic Production</strong><span>gen_statem<br>MQTT · TDengine</span></div>
+  <div class="arrow" style="align-self:center">-></div>
+  <div class="card g4"><strong>Logs Verify</strong><span>TDengine INSERT<br>MQTT pub/sub</span></div>
+  <div class="arrow" style="align-self:center">-></div>
+  <div class="card g6"><strong>Feedback</strong><span>Fix ontology<br>not code</span></div>
+</div>
+
+<!-- Legend -->
+<div class="row" style="margin-top:15px;justify-content:center;gap:12px;font-size:11px">
+  <span style="background:rgba(247,129,102,0.2);padding:3px 8px;border-radius:4px;color:#f78166">Edge/ACTION</span>
+  <span style="background:rgba(210,168,255,0.2);padding:3px 8px;border-radius:4px;color:#d2a8ff">SECURITY/LOGIC</span>
+  <span style="background:rgba(88,166,255,0.2);padding:3px 8px;border-radius:4px;color:#58a6ff">AI DEV</span>
+  <span style="background:rgba(126,231,135,0.2);padding:3px 8px;border-radius:4px;color:#7ee787">VERIFICATION</span>
+  <span style="background:rgba(255,123,114,0.2);padding:3px 8px;border-radius:4px;color:#ff7b72">DATA</span>
+  <span style="background:rgba(210,153,34,0.2);padding:3px 8px;border-radius:4px;color:#d29922">ONTOLOGY/FEEDBACK</span>
+</div>
+
+</div>
+</body>
+</html>
