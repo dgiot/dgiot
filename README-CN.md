@@ -9,28 +9,32 @@
 <h3 align="center">Industrial IoT Aggregation Engine</h3>
 <p align="center">Erlang/OTP · Million-Device · Shadow · Ontology · gen_statem</p>
 
-<br>
-
 ---
 
-## Ontology: DLAS
+## DLAS Architecture
 
 ```
-Security  ┌── auth · role · ACL/CLP · Hooks ───────────┐
-Action    ├── Shadow(gen_statem) · Bridge · MQTT · Rule  │
-Logic     ├── Ontology Engine · Model Registry · Reasoner│
-Data      ├── Parse/PG · TDengine · Mnesia/ETS · EMQX    │
-          └──────────────────────────────────────────────┘
+  ┌──────────────────────────────────────────────────────────────────┐
+  │                    EDGE: iotStudio (Python+Vue)                   │
+  │  DeviceAccess(9) → UnifiedPipeline → StreamEngine(15) → Alert(6) │
+  └──────────────────────────┬───────────────────────────────────────┘
+                             │ MQTT / HTTP
+  ┌──────────────────────────▼───────────────────────────────────────┐
+  │  SECURITY    auth · role · ACL/CLP · Hooks · JWT                 │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  ACTION      Shadow(gen_statem) · Bridge · MQTT · Rule Engine   │
+  │              init → auth → online → {normal, alarm, offline}    │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  LOGIC       Ontology Engine · Model Registry · 3 ETS Tables     │
+  │              load_model → compile → spawn → evaluate → reason    │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  DATA        Parse(23 Classes) · PG(:7432)                       │
+  │              TDengine(_{ProductId}, devaddr NCHAR(50))           │
+  │              EMQX(:1883) · Mnesia/ETS                             │
+  └──────────────────────────────────────────────────────────────────┘
 ```
 
-| Layer | Function |
-|:------|:---------|
-| **Data** | Parse 23 classes · TDengine · Mnesia/ETS · EMQX |
-| **Logic** | Ontology Engine · load_model · spawn_instance · Rule · Reasoner |
-| **Action** | Shadow gen_statem · Bridge → Parse/TDengine · MQTT Publish |
-| **Security** | auth · Role Tree · ACL (object) · CLP (class) · Hooks |
-
-[Full Ontology Doc](docs/DGAIOT_ONTOLOGY.md)
+[Full HTML Diagram](docs/architecture-diagram.html)
 
 ## FDE Pipeline
 
@@ -39,14 +43,23 @@ Model → Ontology → Device Access → TimeSeries → Rules → Dashboard
   1        2           3              4           5          6
 ```
 
-## Shadow Device
+## Data Flow
 
 ```
-  sensor_update(Props)
-    → evaluate(Rules, Props)
-    → state transition (normal → warning → critical → offline)
-    → bridge → Parse + TDengine
+Modbus 40300 → MQTT(dgiot/{site}/{gw}/{dev}/{pt}/data) → Shadow PID
+  → evaluate(Rules) → state transition → Parse + TDengine INSERT
 ```
+
+## Ontology: DLAS
+
+| Layer | Function | Key Technology |
+|:------|:---------|:---------------|
+| **Data** | 23 Parse classes, TDengine, Mnesia/ETS | JSONB, SuperTable/SubTable, _{ProductId} |
+| **Logic** | load_model, spawn_instance, registry, rules, reasoner | 3 ETS tables, gen_statem compile |
+| **Action** | Shadow 1:1 device process, Bridge, MQTT | gen_statem OTP, ont_push_point |
+| **Security** | auth, role tree, ACL(object), CLP(class), Hooks | JWT, Parse ACL |
+
+[Full Ontology Doc](docs/DGAIOT_ONTOLOGY.md) · [Storage Architecture](docs/ontology-storage.md) · [Station Simulation](docs/research/station-simulation.md)
 
 ## Modules
 
