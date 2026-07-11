@@ -111,7 +111,7 @@ def analyze_scene(thing_model_path, tdengine_url=None):
     final = list(corr_groups.values()) + list(trend_groups.values()) + alarms + others
     final.sort(key=lambda s: (-priority.get(s['type'], 0), -s.get('count', 1)))
 
-    return final[:10]  # Top 10 only
+    return final[:25]  # Top 25 — CORRELATION grouped, others kept individual
 
 if __name__ == '__main__':
     path = sys.argv[1] if len(sys.argv) > 1 else None
