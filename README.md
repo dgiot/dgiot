@@ -1,98 +1,81 @@
-# dgaiot
+<p align="center">
+  <img src="https://img.shields.io/badge/Erlang-24.3-%23A90533">
+  <img src="https://img.shields.io/badge/OTP-24.3-green">
+  <img src="https://img.shields.io/badge/EMQX-4.9-orange">
+  <img src="https://img.shields.io/badge/License-Apache%202.0-blue">
+</p>
 
-**Industrial IoT Aggregation Engine**
+<h1 align="center">dgaiot</h1>
+<h3 align="center">Industrial IoT Aggregation Engine</h3>
+<p align="center">Erlang/OTP · Million-Device · Shadow · Ontology · gen_statem</p>
 
-Erlang/OTP · Million Devices · Shadow · Ontology · State Machine
+<br>
 
 ---
 
-## Architecture
+## Ontology: DLAS
 
 ```
-                   PROTOCOL ADAPTERS (iotStudio)
-                   Modbus · OPC · A11 · S7 · MQTT
-                          │
-                          ▼
-   ┌──────────────────────────────────────────────────┐
-   │                dgaiot PLATFORM                    │
-   │                                                   │
-   │  ┌─────────┐  ┌──────────┐  ┌─────────────────┐  │
-   │  │ Shadow  │  │ Ontology │  │  State Machine  │  │
-   │  │ Device  │  │ 4-Layer  │  │ gen_statem OTP  │  │
-   │  │ 1:1 OTP │  │ Site>Gw  │  │ init→auth→online│  │
-   │  │ Process │  │ >Dev>Pt  │  │ →alarm→offline  │  │
-   │  └────┬────┘  └────┬─────┘  └───────┬─────────┘  │
-   │       └────────────┼────────────────┘             │
-   │                    ▼                              │
-   │  ┌─────────────────────────────────────────────┐  │
-   │  │              EMQX MQTT Broker                │  │
-   │  │      Million-Device Concurrent Access        │  │
-   │  │      :1883 (MQTT) :8083 (WS) :8081 (API)    │  │
-   │  └─────────────────────────────────────────────┘  │
-   │                    │                              │
-   │       ┌────────────┼────────────┐                 │
-   │       ▼            ▼            ▼                 │
-   │  ┌─────────┐ ┌──────────┐ ┌──────────┐           │
-   │  │ Parse   │ │ TDengine │ │   PG     │           │
-   │  │ :1337   │ │  :6041   │ │  :7432   │           │
-   │  │ REST API│ │ Timeseries│ │Business DB│          │
-   │  └─────────┘ └──────────┘ └──────────┘           │
-   └──────────────────────────────────────────────────┘
-                          │
-                          ▼
-              APPLICATION LAYER (iotStudio)
-              Vue3 · amis · 2D/3D Dashboard
+Security  ┌── auth · role · ACL/CLP · Hooks ───────────┐
+Action    ├── Shadow(gen_statem) · Bridge · MQTT · Rule  │
+Logic     ├── Ontology Engine · Model Registry · Reasoner│
+Data      ├── Parse/PG · TDengine · Mnesia/ETS · EMQX    │
+          └──────────────────────────────────────────────┘
 ```
 
-## Apps
+| Layer | Function |
+|:------|:---------|
+| **Data** | Parse 23 classes · TDengine · Mnesia/ETS · EMQX |
+| **Logic** | Ontology Engine · load_model · spawn_instance · Rule · Reasoner |
+| **Action** | Shadow gen_statem · Bridge → Parse/TDengine · MQTT Publish |
+| **Security** | auth · Role Tree · ACL (object) · CLP (class) · Hooks |
+
+[Full Ontology Doc](docs/DGAIOT_ONTOLOGY.md)
+
+## FDE Pipeline
 
 ```
-dgiot/           Core engine (EMQX + rules + alarms)
-dgiot_ontology/  4-layer ontology
-dgiot_parse/     Parse Server client
-dgiot_task/      Shadow device / task worker
-dgiot_device/    Device management
-dgiot_bridge/    Bridge framework
-dgiot_dlink/     Data link
-dgiot_api/       Management API
-dgiot_http/      HTTP service
-dgiot_tdengine/  TDengine timeseries
+Model → Ontology → Device Access → TimeSeries → Rules → Dashboard
+  1        2           3              4           5          6
 ```
 
-## Ontology (4-Layer)
+## Shadow Device
 
 ```
-Site ──→ Gateway ──→ Device ──→ Point
-
-  oil_field     gw_131      rtu_001     oil_pressure
-                   │
-          protocols: modbus_tcp, a11, opc_da
-          processes: IoProject, LegacyComm
-          devices:  206 RTUs
-
-MQTT Topic: dgiot/{site}/{gateway}/{device}/{point}/data
-Payload:    {ts, v, q}
+  sensor_update(Props)
+    → evaluate(Rules, Props)
+    → state transition (normal → warning → critical → offline)
+    → bridge → Parse + TDengine
 ```
 
-## State Machine
+## Modules
 
-```
-       ┌──────┐   heartbeat    ┌────────┐
-  ────→│ auth │──────────────→│ online │←──────┐
-       └──┬───┘               └───┬────┘       │
-          │ fail                  │ error×3    │ heartbeat
-          ▼                       ▼            │
-       ┌────────┐              ┌───────┐       │
-       │ offline│              │ alarm │───────┘
-       └────────┘              └───────┘
-```
+| App | Layer | Role |
+|:----|:------|:-----|
+| `dgiot` | Data | Core — EMQX, rule engine, alarms |
+| `dgiot_ontology` | Logic | Model registry, reasoner, instance spawner |
+| `dgiot_parse` | Data | Parse Server REST client |
+| `dgiot_task` | Action | Shadow gen_statem worker |
+| `dgiot_device` | Logic | Device management + thing model |
+| `dgiot_bridge` | Action | Protocol bridge framework |
+| `dgiot_dlink` | Action | Data link layer |
+| `dgiot_api` | Security | REST API + auth gateway |
+| `dgiot_http` | — | HTTP service layer |
+| `dgiot_tdengine` | Data | TDengine timeseries connector |
 
 ## Quick Start
 
 ```bash
+git clone git@gitee.com:dgaiot/dgaiot.git
+cd dgaiot
 export PATH=/usr/local/erlang_24.3/bin:$PATH
 make
 ```
+
+## Related
+
+- [iotStudio](https://gitee.com/dgiiot/iotStudio) — Edge Agent & Application (Python + Vue)
+- [dgiot](https://gitee.com/dgiiot/dgiot) — Full Erlang IoT Platform
 
 ## License
 
