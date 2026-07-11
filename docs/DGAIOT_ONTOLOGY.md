@@ -43,9 +43,11 @@ Data      ├──────────────────────�
 ### TDengine 时序
 
 ```
-Supertable: iot_telemetry
-  Tags:     device_id, point_id, unit
-  Columns:  ts, value, quality
+唯一性链:
+  Database   = dgiot_{ChannelId}                 channel级隔离
+  SuperTable = dgiot_{ProductId}                 product级隔离
+  SubTable   = dgiot_{MD5(productId + devaddr)}  设备级隔离
+  Row        = ts + TAGS(device_id, point_id)    时间+点位唯一
 ```
 
 ### dgiot_lite 对齐
