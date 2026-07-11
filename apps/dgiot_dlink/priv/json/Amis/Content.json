@@ -1,0 +1,574 @@
+{
+  "type": "page",
+  "body": [
+    {
+      "tabs": [
+        {
+          "body": [
+            {
+              "api": {
+                "url": "iotapi/amis/Device/parse_objectid",
+                "method": "put",
+                "headers": {
+                  "store": "localStorage",
+                  "dgiotReplace": "parse_objectid"
+                },
+                "requestAdaptor": "return {\r\n  ...api,\r\n  data:{\r\n    content: {...api.data.content}\r\n  }\r\n}"
+              },
+              "body": [
+                {
+                  "type": "divider"
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.device.ap",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "网关起始地址",
+                  "value": "AF000001",
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.device.ap_count",
+                  "size": "",
+                  "type": "input-number",
+                  "label": "网关数量",
+                  "value": 5000,
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "min": "",
+                  "mode": "horizontal",
+                  "name": "content.device.ap_freq",
+                  "size": "",
+                  "type": "input-number",
+                  "label": "网关心跳周期",
+                  "value": 10,
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.device.zeta",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "zeta终端起始地址",
+                  "value": "A0000001",
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.device.zeta_count",
+                  "size": "",
+                  "type": "input-number",
+                  "label": "zeta终端数量",
+                  "value": 0,
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.device.zeta_freq",
+                  "size": "",
+                  "type": "input-number",
+                  "label": "zeta终端心跳周期",
+                  "value": 15,
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.device.zetag",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "zetag标签起始地址",
+                  "value": "7FF0BDC1",
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.device.ap_count",
+                  "size": "",
+                  "type": "input-number",
+                  "label": "zetag标签数量",
+                  "value": 1000000,
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.device.zetag_freq",
+                  "size": "",
+                  "type": "input-number",
+                  "label": "zetag标签心跳周期",
+                  "value": 15,
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.device.zetag_timetolive",
+                  "size": "",
+                  "type": "input-number",
+                  "label": "zeta标签发射剩余次数",
+                  "value": 3600,
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                }
+              ],
+              "type": "form",
+              "style": {
+              },
+              "title": "",
+              "initApi": {
+                "url": "iotapi/amis/Device/parse_objectid",
+                "method": "get",
+                "headers": {
+                  "store": "localStorage",
+                  "dgiotReplace": "parse_objectid"
+                }
+              },
+              "messages": {
+              },
+              "autoFocus": true,
+              "submitText": "终端配置提交",
+              "submitOnChange": false
+            }
+          ],
+          "title": "压测终端配置"
+        },
+        {
+          "body": [
+            {
+              "api": {
+                "url": "iotapi/amis/Device/parse_objectid",
+                "method": "put",
+                "headers": {
+                  "store": "localStorage",
+                  "dgiotReplace": "parse_objectid"
+                },
+                "requestAdaptor": "return {\r\n  ...api,\r\n  data:{\r\n    content: {...api.data.content}\r\n  }\r\n}"
+              },
+              "body": [
+                {
+                  "type": "divider"
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.zeta_auth.apiKey",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "apiKey",
+                  "value": "0b0a09c5f02048778f407029fc2e9b64",
+                  "inline": false,
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.zeta_auth.apiSecret",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "apiSecret",
+                  "value": "04210502c8b047cfbb2cacf1a2c55032",
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.zeta_auth.compangCode",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "companyCode",
+                  "value": "0b0a09c5f02048778f407029fc2e9b64",
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                }
+              ],
+              "type": "form",
+              "style": {
+              },
+              "title": "",
+              "initApi": {
+                "url": "iotapi/amis/Device/parse_objectid",
+                "method": "get",
+                "headers": {
+                  "store": "localStorage",
+                  "dgiotReplace": "parse_objectid"
+                }
+              },
+              "messages": {
+              },
+              "autoFocus": true,
+              "submitText": "zeta_auth配置提交",
+              "submitOnChange": false
+            }
+          ],
+          "title": "zeta_auth"
+        },
+        {
+          "body": [
+            {
+              "api": {
+                "url": "iotapi/amis/Device/parse_objectid",
+                "method": "put",
+                "headers": {
+                  "store": "localStorage",
+                  "dgiotReplace": "parse_objectid"
+                },
+                "requestAdaptor": "return {\r\n  ...api,\r\n  data:{\r\n    content: {...api.data.content}\r\n  }\r\n}"
+              },
+              "body": [
+                {
+                  "type": "divider"
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.zeta.ip",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "ip地址",
+                  "value": "54.238.85.125",
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.zeta_auth.port",
+                  "size": "",
+                  "type": "input-number",
+                  "label": "端口号",
+                  "value": 18486,
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.zeta.KI",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "KI",
+                  "value": 1111111111111111,
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "hint": "",
+                  "mode": "horizontal",
+                  "name": "content.zeta.MIC",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "MIC",
+                  "value": "C426C05A",
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.zeta_server",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "服务器名",
+                  "value": "zetag",
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "hint": "",
+                  "mode": "horizontal",
+                  "name": "content.version",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "版本号",
+                  "value": "1.9",
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                }
+              ],
+              "type": "form",
+              "style": {
+              },
+              "title": "",
+              "initApi": {
+                "url": "iotapi/amis/Device/parse_objectid",
+                "method": "get",
+                "headers": {
+                  "store": "localStorage",
+                  "dgiotReplace": "parse_objectid"
+                }
+              },
+              "messages": {
+              },
+              "autoFocus": true,
+              "submitText": "zetag指标配置提交",
+              "submitOnChange": false
+            }
+          ],
+          "title": "zetag指标"
+        },
+        {
+          "api": {
+            "url": "iotapi/amis/Device/parse_objectid",
+            "method": "put",
+            "headers": {
+              "store": "localStorage",
+              "dgiotReplace": "parse_objectid"
+            },
+            "requestAdaptor": "return {\r\n  ...api,\r\n  data:{\r\n    content: {...api.data.content}\r\n  }\r\n}"
+          },
+          "body": [
+            {
+              "min": "",
+              "mode": "horizontal",
+              "name": "content.zetag_http.count",
+              "size": "",
+              "type": "input-number",
+              "label": "数量",
+              "value": 100,
+              "horizontal": {
+                "left": 2,
+                "right": 10,
+                "leftFixed": "lg"
+              }
+            },
+            {
+              "mode": "horizontal",
+              "name": "content.zeta.host",
+              "size": "",
+              "type": "input-text",
+              "label": "host地址",
+              "value": "54.238.85.125",
+              "horizontal": {
+                "left": 2,
+                "right": 10,
+                "leftFixed": "lg"
+              }
+            },
+            {
+              "mode": "horizontal",
+              "name": "content.zetag_http.port",
+              "size": "",
+              "type": "input-text",
+              "label": "端口号",
+              "value": "80",
+              "horizontal": {
+                "left": 2,
+                "right": 10,
+                "leftFixed": "lg"
+              }
+            },
+            {
+              "mode": "horizontal",
+              "name": "content.zetag_http.time",
+              "size": "",
+              "type": "input-number",
+              "label": "时间",
+              "value": 30,
+              "horizontal": {
+                "left": 2,
+                "right": 10,
+                "leftFixed": "lg"
+              }
+            }
+          ],
+          "type": "form",
+          "style": {
+          },
+          "title": "zeta_http指标",
+          "initApi": {
+            "url": "iotapi/amis/Device/parse_objectid",
+            "method": "get",
+            "headers": {
+              "store": "localStorage",
+              "dgiotReplace": "parse_objectid"
+            }
+          },
+          "messages": {
+          },
+          "autoFocus": true,
+          "submitText": "zeta_http指标配置提交",
+          "submitOnChange": false
+        },
+        {
+          "body": [
+            {
+              "api": {
+                "url": "iotapi/amis/Device/parse_objectid",
+                "method": "put",
+                "headers": {
+                  "store": "localStorage",
+                  "dgiotReplace": "parse_objectid"
+                },
+                "requestAdaptor": "return {\r\n  ...api,\r\n  data:{\r\n    content: {...api.data.content}\r\n  }\r\n}"
+              },
+              "body": [
+                {
+                  "type": "divider"
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.kafka.kafka_host",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "host地址",
+                  "value": "54.238.85.125",
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.kafka.kafka_port",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "kafka端口",
+                  "value": "9093",
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.kafka.mqtt_host",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "mqtt地址",
+                  "value": "127.0.0.1",
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.kafka.mqtt_host",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "mqtt端口号",
+                  "value": "1883",
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.zetag_http.topic",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "topic",
+                  "value": "zetag-heartbeat-all",
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "content.kafka.password",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "密码",
+                  "value": "123456",
+                  "horizontal": {
+                    "left": 2,
+                    "right": 10,
+                    "leftFixed": "lg"
+                  }
+                }
+              ],
+              "type": "form",
+              "style": {
+              },
+              "title": "kafka指标",
+              "initApi": {
+                "url": "iotapi/amis/Device/parse_objectid",
+                "method": "get",
+                "headers": {
+                  "store": "localStorage",
+                  "dgiotReplace": "parse_objectid"
+                }
+              },
+              "messages": {
+              },
+              "autoFocus": true,
+              "submitText": "kafaka指标提交",
+              "submitOnChange": false
+            }
+          ],
+          "title": "kafka指标"
+        }
+      ],
+      "type": "tabs"
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "DGIOT开源物联网平台接口手册",
+    "description": "DGIOT开源物联网平台接口手册, 高并发全连接物联网平台, 支持私有云部署的全开放的IoT产品全生命周期管理平台",
+    "version": "2.0.0",
+    "termsOfService": "https://www.dgiotcloud.cn/",
+    "contact": {
+      "name": "技术支持",
+      "qq群": "community@dgiot.com"
+    }
+  },
+  "externalDocs": {
+    "description": "在线文档",
+    "url": "https://gitee.com/dgiiot/dgiot/wikis"
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "basePath": "/iotapi",
+  "securityDefinitions": {
+    "APIKeyHeader": {
+      "type": "apiKey",
+      "in": "header",
+      "name": "sessionToken"
+    },
+    "BasicAuth": {
+      "type": "basic"
+    },
+    "CookieAuth": {
+      "type": "apiKey",
+      "in": "header",
+      "name": "sessionToken"
+    },
+    "APIKeyQueryParam": {
+      "type": "apiKey",
+      "in": "query",
+      "name": "sessionToken"
+    }
+  },
+  "security": [
+    {
+      "APIKeyHeader": []
+    },
+    {
+      "BasicAuth": []
+    },
+    {
+      "APIKeyQueryParam": []
+    },
+    {
+      "CookieAuth": []
+    }
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "tags": [
+  ],
+  "definitions": {
+    "Error": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "description": "状态码",
+          "type": "number"
+        },
+        "error": {
+          "description": "错误提示",
+          "type": "string"
+        }
+      }
+    }
+  }
+}

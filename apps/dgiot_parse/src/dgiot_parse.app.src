@@ -1,0 +1,14 @@
+{application, dgiot_parse,
+    [{description, "DGIOT Parse"},
+        {vsn, "4.3.0"},
+        {modules, []},
+        {registered, [dgiot_parse_sup]},
+        {applications, [kernel, stdlib, dgiot]},
+        {mod, {dgiot_parse_app, []}},
+        {licenses, ["Apache-2.0"]},
+        {maintainers, ["DGIOT Team"]},
+        {links, [{"Homepage", "https://www.dgiotcloud.cn/"},
+            {"Github", "https://github.com/dgiot/dgiot"}
+        ]}
+    ]
+}.

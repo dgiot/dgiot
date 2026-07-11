@@ -1,0 +1,1673 @@
+{
+  "tags": [],
+  "definitions": {
+    "Token": {
+      "type": "object",
+      "properties": {
+        "appid": {
+          "description": "app secret",
+          "type": "string",
+          "example": "gEsTiaPAjv"
+        },
+        "secret": {
+          "description": "app secret",
+          "type": "string",
+          "example": "VzY0Mjc5NDQxNTg1ODI4NDk1MzYx"
+        }
+      }
+    }
+  },
+  "paths": {
+    "/menu": {
+      "post": {
+        "summary": "菜单导入",
+        "description": "导入菜单",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "产品数据文件",
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Menu"
+        ]
+      },
+      "get": {
+        "summary": "菜单导出",
+        "description": "导出菜单",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "type": "string",
+            "default": "product",
+            "description": "菜单名称"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "file": {
+                  "description": "菜单配置文件",
+                  "type": "string",
+                  "example": "menu.zip"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Menu"
+        ]
+      }
+    },
+    "/import_file": {
+      "post": {
+        "summary": "文件导入",
+        "description": "导入文件",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "导入文件信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "description": "文件路径",
+                  "type": "string",
+                  "example": "/shapes/利欧泵业测试部/file.zip"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/export_file": {
+      "post": {
+        "summary": "文件导出",
+        "description": "文件导出",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "文件列表",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "files": {
+                  "description": "文件列表",
+                  "type": "array",
+                  "example": [
+                    "/shapes/利欧泵业测试部/6.png",
+                    "/shapes/利欧泵业测试部/1.png",
+                    "/shapes/利欧泵业测试部/GBT 3216-2016 回转动力泵 水力性能验收试验 1、2级和3级.pdf"
+                  ]
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "file": {
+                  "description": "下载地址",
+                  "type": "string",
+                  "example": "http://127.0.0.1:1250/shapes/upload/app/1.png"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/import_wmxdata": {
+      "post": {
+        "summary": "导入物模型",
+        "description": "导入物模型",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "objectId",
+            "in": "formData",
+            "description": "产品id",
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "formData",
+            "description": "dlink",
+            "type": "string"
+          },
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "数据文件",
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/import_data": {
+      "post": {
+        "summary": "导库",
+        "description": "json文件导库",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "className",
+            "in": "formData",
+            "description": "表名",
+            "type": "string"
+          },
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "数据文件",
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/export_data": {
+      "post": {
+        "summary": "档案导出",
+        "description": "档案导出",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "classname",
+            "description": "表名",
+            "required": true,
+            "default": "Device",
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "filter",
+            "description": "过来条件",
+            "schema": {
+              "type": "object",
+              "properties": {
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "file": {
+                  "description": "档案文件",
+                  "type": "string",
+                  "example": "product.zip"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/thing": {
+      "get": {
+        "summary": "查询物模型",
+        "description": "查询物模型",
+        "parameters": [
+          {
+            "name": "productid",
+            "in": "query",
+            "type": "string",
+            "default": "8ecadfebe1",
+            "description": "产品id"
+          },
+          {
+            "name": "moduleType",
+            "in": "query",
+            "type": "string",
+            "default": "properties",
+            "description": "属性类型"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Product"
+        ]
+      },
+      "post": {
+        "summary": "添加物模型",
+        "description": "添加物模型",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "关联信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "productid": {
+                  "description": "产品标识",
+                  "type": "string",
+                  "example": "ed09e37bbb"
+                },
+                "item": {
+                  "schema": {
+                    "description": "物模型单项指标",
+                    "properties": {
+                      "name": {
+                        "description": "物模型功能名称",
+                        "type": "string",
+                        "example": "电压"
+                      },
+                      "identifier": {
+                        "description": "物模型标识符",
+                        "type": "string",
+                        "example": "voltage"
+                      },
+                      "accessMode": {
+                        "description": "读写类型",
+                        "type": "string",
+                        "example": "r",
+                        "enum": [
+                          "r",
+                          "rw"
+                        ]
+                      },
+                      "devicetype": {
+                        "description": "物模型类型",
+                        "type": "string",
+                        "example": "控制器"
+                      },
+                      "index": {
+                        "description": "序号",
+                        "type": "number",
+                        "example": 1
+                      },
+                      "isshow": {
+                        "description": "是否显示",
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "isstorage": {
+                        "description": "是否存储",
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "moduleType": {
+                        "description": "类型",
+                        "type": "string",
+                        "example": "properties"
+                      },
+                      "dataForm": {
+                        "schema": {
+                          "description": "物模型数据采集指标",
+                          "properties": {
+                            "collection": {
+                              "description": "采集公式，%s为占位符，表示自身值",
+                              "type": "string",
+                              "example": "%s"
+                            },
+                            "control": {
+                              "description": "控制下发公式，%d为占位符，表示自身值",
+                              "type": "string",
+                              "example": "%d"
+                            },
+                            "protocol": {
+                              "description": "协议类型（动态获取）",
+                              "type": "string",
+                              "example": "MODBUSRTU"
+                            },
+                            "order": {
+                              "description": "采集顺序",
+                              "type": "number",
+                              "example": 0
+                            },
+                            "round": {
+                              "description": "采集轮次",
+                              "type": "string",
+                              "example": "all",
+                              "enum": [
+                                "all",
+                                "first",
+                                "last"
+                              ]
+                            },
+                            "strategy": {
+                              "description": "采集策略",
+                              "type": "string",
+                              "example": "采集值",
+                              "enum": [
+                                "采集值",
+                                "计算值",
+                                "主动上报"
+                              ]
+                            }
+                          }
+                        },
+                        "required": false,
+                        "type": "object"
+                      },
+                      "dataType": {
+                        "schema": {
+                          "description": "物模型数据存储",
+                          "properties": {
+                            "type": {
+                              "description": "类型",
+                              "type": "string",
+                              "example": "int",
+                              "enum": [
+                                "int",
+                                "long",
+                                "float",
+                                "double",
+                                "text",
+                                "boole",
+                                "date",
+                                "enum",
+                                "object"
+                              ]
+                            },
+                            "specs": {
+                              "schema": {
+                                "description": "数据存储",
+                                "properties": {
+                                  "min": {
+                                    "description": "取值范围(最小值)",
+                                    "type": "number",
+                                    "example": -99999
+                                  },
+                                  "max": {
+                                    "description": "取值范围(最大值)",
+                                    "type": "number",
+                                    "example": 99999
+                                  },
+                                  "precision": {
+                                    "description": "小数位数",
+                                    "type": "number",
+                                    "example": 3
+                                  },
+                                  "step": {
+                                    "description": "步长",
+                                    "type": "number",
+                                    "example": 3
+                                  },
+                                  "unit": {
+                                    "description": "单位",
+                                    "type": "string",
+                                    "example": "%"
+                                  }
+                                }
+                              },
+                              "required": false,
+                              "type": "object"
+                            }
+                          }
+                        },
+                        "required": false,
+                        "type": "object"
+                      },
+                      "dataSource": {
+                        "schema": {
+                          "description": "物模型协议数据（动态）",
+                          "properties": {
+                            "_dlinkindex": {
+                              "description": "报文序号",
+                              "type": "number",
+                              "example": 1
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "required": true,
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Product"
+        ]
+      },
+      "put": {
+        "summary": "修改物模型",
+        "description": "修改物模型",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "关联信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "productid": {
+                  "description": "产品标识",
+                  "type": "string",
+                  "example": "ed09e37bbb"
+                },
+                "item": {
+                  "schema": {
+                    "description": "物模型单项指标",
+                    "properties": {
+                      "name": {
+                        "description": "物模型功能名称",
+                        "type": "string",
+                        "example": "电压"
+                      },
+                      "identifier": {
+                        "description": "物模型标识符",
+                        "type": "string",
+                        "example": "voltage"
+                      },
+                      "accessMode": {
+                        "description": "读写类型",
+                        "type": "string",
+                        "example": "r",
+                        "enum": [
+                          "r",
+                          "rw"
+                        ]
+                      },
+                      "devicetype": {
+                        "description": "物模型类型",
+                        "type": "string",
+                        "example": "控制器"
+                      },
+                      "index": {
+                        "description": "序号",
+                        "type": "number",
+                        "example": 1
+                      },
+                      "isshow": {
+                        "description": "是否显示",
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "isstorage": {
+                        "description": "是否存储",
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "moduleType": {
+                        "description": "类型",
+                        "type": "string",
+                        "example": "properties"
+                      },
+                      "dataForm": {
+                        "schema": {
+                          "description": "物模型数据采集指标",
+                          "properties": {
+                            "collection": {
+                              "description": "采集公式，%s为占位符，表示自身值",
+                              "type": "string",
+                              "example": "%s"
+                            },
+                            "control": {
+                              "description": "控制下发公式，%d为占位符，表示自身值",
+                              "type": "string",
+                              "example": "%d"
+                            },
+                            "protocol": {
+                              "description": "协议类型（动态获取）",
+                              "type": "string",
+                              "example": "MODBUSRTU"
+                            },
+                            "order": {
+                              "description": "采集顺序",
+                              "type": "number",
+                              "example": 0
+                            },
+                            "round": {
+                              "description": "采集轮次",
+                              "type": "string",
+                              "example": "all",
+                              "enum": [
+                                "all",
+                                "first",
+                                "last"
+                              ]
+                            },
+                            "strategy": {
+                              "description": "采集策略",
+                              "type": "string",
+                              "example": "采集值",
+                              "enum": [
+                                "采集值",
+                                "计算值",
+                                "主动上报"
+                              ]
+                            }
+                          }
+                        },
+                        "required": false,
+                        "type": "object"
+                      },
+                      "dataType": {
+                        "schema": {
+                          "description": "物模型数据存储",
+                          "properties": {
+                            "type": {
+                              "description": "类型",
+                              "type": "string",
+                              "example": "int",
+                              "enum": [
+                                "int",
+                                "long",
+                                "float",
+                                "double",
+                                "text",
+                                "boole",
+                                "date",
+                                "enum",
+                                "object"
+                              ]
+                            },
+                            "specs": {
+                              "schema": {
+                                "description": "数据存储",
+                                "properties": {
+                                  "min": {
+                                    "description": "取值范围(最小值)",
+                                    "type": "number",
+                                    "example": -99999
+                                  },
+                                  "max": {
+                                    "description": "取值范围(最大值)",
+                                    "type": "number",
+                                    "example": 99999
+                                  },
+                                  "precision": {
+                                    "description": "小数位数",
+                                    "type": "number",
+                                    "example": 3
+                                  },
+                                  "step": {
+                                    "description": "步长",
+                                    "type": "number",
+                                    "example": 3
+                                  },
+                                  "unit": {
+                                    "description": "单位",
+                                    "type": "string",
+                                    "example": "%"
+                                  }
+                                }
+                              },
+                              "required": false,
+                              "type": "object"
+                            }
+                          }
+                        },
+                        "required": false,
+                        "type": "object"
+                      },
+                      "dataSource": {
+                        "schema": {
+                          "description": "物模型协议数据（动态）",
+                          "properties": {
+                            "_dlinkindex": {
+                              "description": "报文序号",
+                              "type": "number",
+                              "example": 1
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "required": true,
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Product"
+        ]
+      },
+      "delete": {
+        "summary": "删除物模型",
+        "description": "删除物模型",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "关联信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "productid": {
+                  "description": "产品id",
+                  "type": "string",
+                  "example": "ed09e37bbb"
+                },
+                "item": {
+                  "schema": {
+                    "description": "物模型单项指标",
+                    "properties": {
+                      "name": {
+                        "description": "物模型功能名称",
+                        "type": "string",
+                        "example": "电压"
+                      },
+                      "identifier": {
+                        "description": "物模型标识符",
+                        "type": "string",
+                        "example": "voltage"
+                      },
+                      "accessMode": {
+                        "description": "读写类型",
+                        "type": "string",
+                        "example": "r",
+                        "enum": [
+                          "r",
+                          "rw"
+                        ]
+                      },
+                      "devicetype": {
+                        "description": "物模型类型",
+                        "type": "string",
+                        "example": "控制器"
+                      },
+                      "index": {
+                        "description": "序号",
+                        "type": "number",
+                        "example": 1
+                      },
+                      "isshow": {
+                        "description": "是否显示",
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "isstorage": {
+                        "description": "是否存储",
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "moduleType": {
+                        "description": "类型",
+                        "type": "string",
+                        "example": "properties"
+                      },
+                      "dataForm": {
+                        "schema": {
+                          "description": "物模型数据采集指标",
+                          "properties": {
+                            "collection": {
+                              "description": "采集公式，%s为占位符，表示自身值",
+                              "type": "string",
+                              "example": "%s"
+                            },
+                            "control": {
+                              "description": "控制下发公式，%d为占位符，表示自身值",
+                              "type": "string",
+                              "example": "%d"
+                            },
+                            "protocol": {
+                              "description": "协议类型（动态获取）",
+                              "type": "string",
+                              "example": "MODBUSRTU"
+                            },
+                            "order": {
+                              "description": "采集顺序",
+                              "type": "number",
+                              "example": 0
+                            },
+                            "round": {
+                              "description": "采集轮次",
+                              "type": "string",
+                              "example": "all",
+                              "enum": [
+                                "all",
+                                "first",
+                                "last"
+                              ]
+                            },
+                            "strategy": {
+                              "description": "采集策略",
+                              "type": "string",
+                              "example": "采集值",
+                              "enum": [
+                                "采集值",
+                                "计算值",
+                                "主动上报"
+                              ]
+                            }
+                          }
+                        },
+                        "required": false,
+                        "type": "object"
+                      },
+                      "dataType": {
+                        "schema": {
+                          "description": "物模型数据存储",
+                          "properties": {
+                            "type": {
+                              "description": "类型",
+                              "type": "string",
+                              "example": "int",
+                              "enum": [
+                                "int",
+                                "long",
+                                "float",
+                                "double",
+                                "text",
+                                "boole",
+                                "date",
+                                "enum",
+                                "object"
+                              ]
+                            },
+                            "specs": {
+                              "schema": {
+                                "description": "数据存储",
+                                "properties": {
+                                  "min": {
+                                    "description": "取值范围(最小值)",
+                                    "type": "number",
+                                    "example": -99999
+                                  },
+                                  "max": {
+                                    "description": "取值范围(最大值)",
+                                    "type": "number",
+                                    "example": 99999
+                                  },
+                                  "precision": {
+                                    "description": "小数位数",
+                                    "type": "number",
+                                    "example": 3
+                                  },
+                                  "step": {
+                                    "description": "步长",
+                                    "type": "number",
+                                    "example": 3
+                                  },
+                                  "unit": {
+                                    "description": "单位",
+                                    "type": "string",
+                                    "example": "%"
+                                  }
+                                }
+                              },
+                              "required": false,
+                              "type": "object"
+                            }
+                          }
+                        },
+                        "required": false,
+                        "type": "object"
+                      },
+                      "dataSource": {
+                        "schema": {
+                          "description": "物模型协议数据（动态）",
+                          "properties": {
+                            "_dlinkindex": {
+                              "description": "报文序号",
+                              "type": "number",
+                              "example": 1
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "required": true,
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Product"
+        ]
+      }
+    },
+    "/product": {
+      "post": {
+        "summary": "产品档案导入",
+        "description": "导入产品及其设备",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "appid",
+            "in": "formData",
+            "description": "应用id",
+            "type": "string"
+          },
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "产品数据文件",
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "file": {
+                  "description": "档案文件",
+                  "type": "string",
+                  "example": "product.zip"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Product"
+        ]
+      },
+      "get": {
+        "summary": "产品档案导出",
+        "description": "导入产品及其设备",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "type": "string",
+            "default": "product",
+            "description": "产品名称"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "file": {
+                  "description": "产品配置文件",
+                  "type": "string",
+                  "example": "product.zip"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Product"
+        ]
+      }
+    },
+    "/device": {
+      "post": {
+        "summary": "查询设备时序数据",
+        "description": "查询设备时序数据",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "filter",
+            "description": "查询条件",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "order": {
+                  "description": "排序",
+                  "type": "string",
+                  "example": "-createdAt"
+                },
+                "include": {
+                  "description": "包含对象",
+                  "type": "string",
+                  "example": "product"
+                },
+                "where": {
+                  "description": "查询条件",
+                  "type": "object",
+                  "example": "{\"objectId\":{\"$in\":[\"689cc9c4a2\",\"cf3795a76a\"]}}"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Device"
+        ]
+      }
+    },
+    "/hash": {
+      "post": {
+        "summary": "获取类对象hash值",
+        "description": "查询类对象objectid",
+        "parameters": [
+          {
+            "description": "类名",
+            "in": "path",
+            "name": "class",
+            "required": true,
+            "default": "Device",
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "config",
+            "description": "配置",
+            "required": true,
+            "schema": {
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/upload_token": {
+      "post": {
+        "summary": "获取上传文件Token",
+        "description": "获取上传文件Token",
+        "security": [],
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "type": "string",
+            "default": "fastdfs",
+            "description": "文件服务器类型"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/relation": {
+      "post": {
+        "summary": "创建关联",
+        "description": "创建关联",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "关联信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "srcClass": {
+                  "description": "源类名",
+                  "type": "string",
+                  "example": "_User"
+                },
+                "srcId": {
+                  "description": "源类对象",
+                  "type": "string",
+                  "example": "hXc9BkGCOD"
+                },
+                "destClass": {
+                  "description": "目标类名",
+                  "type": "string",
+                  "example": "_Role"
+                },
+                "destId": {
+                  "description": "目标类对象",
+                  "type": "string",
+                  "example": "0w66Wg1thM"
+                },
+                "destField": {
+                  "description": "目标关联字段",
+                  "type": "string",
+                  "example": "users"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      },
+      "get": {
+        "summary": "查询关联",
+        "description": "查询关联",
+        "parameters": [
+          {
+            "name": "destClass",
+            "in": "query",
+            "type": "string",
+            "example": "_Role",
+            "default": "_Role",
+            "description": "目标类名"
+          },
+          {
+            "name": "destId",
+            "in": "query",
+            "type": "string",
+            "example": "ccf5456562",
+            "default": "ccf5456562",
+            "description": "目标类对象"
+          },
+          {
+            "name": "destField",
+            "in": "query",
+            "type": "string",
+            "example": "views",
+            "default": "views",
+            "description": "目标关联字段"
+          },
+          {
+            "name": "srcClass",
+            "in": "query",
+            "type": "string",
+            "example": "View",
+            "default": "View",
+            "description": "源类名"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      },
+      "delete": {
+        "summary": "删除关联",
+        "description": "删除关联",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "关联信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "srcClass": {
+                  "description": "源类名",
+                  "type": "string",
+                  "example": "_User"
+                },
+                "srcId": {
+                  "description": "源类对象",
+                  "type": "string",
+                  "example": "hXc9BkGCOD"
+                },
+                "destClass": {
+                  "description": "目标类名",
+                  "type": "string",
+                  "example": "_Role"
+                },
+                "destId": {
+                  "description": "目标类对象",
+                  "type": "string",
+                  "example": "0w66Wg1thM"
+                },
+                "destField": {
+                  "description": "目标关联字段",
+                  "type": "string",
+                  "example": "users"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/upload": {
+      "post": {
+        "summary": "服务器文件上传",
+        "description": "文件上传到服务器",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "file",
+            "in": "formData",
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/adddevice": {
+      "post": {
+        "summary": "序列号添加设备",
+        "description": "序列号添加设备",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "devaddr": {
+                  "description": "设备编号",
+                  "type": "string",
+                  "example": "10002005291401001"
+                },
+                "productid": {
+                  "description": "产品id",
+                  "type": "string",
+                  "example": "3e854d0be3"
+                },
+                "longitude": {
+                  "description": "经度",
+                  "type": "string",
+                  "example": "120.161324"
+                },
+                "latitude": {
+                  "description": "纬度",
+                  "type": "string",
+                  "example": "30.262441"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Device"
+        ]
+      }
+    },
+    "/producttree": {
+      "get": {
+        "security": [],
+        "summary": "获取产品树",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Product"
+        ]
+      }
+    },
+    "/station_data": {
+      "post": {
+        "summary": "整站数据",
+        "description": "导入导出整站数据",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "formData",
+            "description": "类型",
+            "type": "string"
+          },
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "数据文件",
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/device_debug": {
+      "post": {
+        "summary": "设备下发调试",
+        "description": "设备下发调试",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "deviceid": {
+                  "description": "设备Id",
+                  "type": "string",
+                  "example": "5d9652a261"
+                },
+                "messagetype": {
+                  "description": "发送格式",
+                  "type": "string",
+                  "example": "HEX"
+                },
+                "data": {
+                  "description": "报文",
+                  "type": "string",
+                  "example": "680B0001497F0F005"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Device"
+        ]
+      }
+    }
+  }
+}

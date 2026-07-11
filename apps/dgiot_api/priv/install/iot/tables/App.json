@@ -1,0 +1,50 @@
+[
+  {
+    "className": "App",
+    "classLevelPermissions": {
+      "count":{
+        "*":true
+      },
+      "get": {
+        "*": true
+      },
+      "find": {
+        "*": true
+      },
+      "create": {
+        "*": true
+      },
+      "update": {
+        "*": true
+      },
+      "delete": {
+        "*": true
+      },
+      "addField": {
+        "role:root": true
+      }
+    },
+    "fields": {
+      "config": {
+        "type": "Object"
+      },
+      "name": {
+        "type": "String",
+        "required": true
+      },
+      "secret": {
+        "type": "String"
+      },
+      "desc":{
+        "type":"String"
+      },
+      "enable":{
+        "type":"Boolean"
+      },
+      "user": {
+        "targetClass": "_User",
+        "type": "Pointer"
+      }
+    }
+  }
+]

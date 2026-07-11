@@ -1,0 +1,30 @@
+{
+  "modelId": "CigaretteMaker-v1",
+  "class": "equipment",
+  "subClass": "cigarette_maker",
+  "properties": [
+    {"id": "health_score", "name": "健康度", "type": "float", "unit": "%"},
+    {"id": "speed", "name": "速度", "type": "int", "unit": "支/分"},
+    {"id": "draw_resistance", "name": "吸阻", "type": "float", "unit": "Pa"},
+    {"id": "circumference", "name": "圆周", "type": "float", "unit": "mm"}
+  ],
+  "relations": [
+    {"relation": "monitored_by", "target": "quality", "direction": "inbound"},
+    {"relation": "executes", "target": "process", "direction": "outbound"}
+  ],
+  "rules": [
+    {"id": "P2", "name": "健康度过低停机", "severity": "L1",
+     "when": {"property": "health_score", "op": "<", "value": 60},
+     "then": {"state": "fault", "action": "emergency_stop"}},
+    {"id": "P1", "name": "健康度预警", "severity": "L3",
+     "when": {"property": "health_score", "op": "<", "value": 80},
+     "then": {"state": "warning", "action": "alert"}},
+    {"id": "D2", "name": "吸阻超标追溯", "severity": "L2",
+     "when": {"property": "draw_resistance", "op": ">", "value": 1200},
+     "then": {"state": "investigating", "action": "root_cause_trace"}}
+  ],
+  "events": [
+    {"id": "health_drop", "name": "健康度下降", "type": "warning"},
+    {"id": "fault_detected", "name": "故障检测", "type": "error"}
+  ]
+}

@@ -1,0 +1,13 @@
+{application, dgiot_http,
+    [{description, "DGIOT HTTP"},
+        {vsn, "4.3.0"},
+        {modules, []},
+        {registered, [dgiot_http_sup]},
+        {applications, [kernel, stdlib, dgiot, dgiot_parse, gen_smtp]},
+        {mod, {dgiot_http_app, []}},
+        {licenses, ["Apache-2.0"]},
+        {maintainers, ["DGIOT Team"]},
+        {links, [{"Homepage", "https://www.dgiotcloud.cn/"},
+            {"Github", "https://github.com/dgiot/dgiot"}
+        ]}
+    ]}.

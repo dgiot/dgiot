@@ -1,0 +1,16 @@
+[
+  {
+    "value": "Product",
+    "label": "产品"
+  },
+  {
+    "value": "Notification",
+    "label": "告警"
+  },
+  {
+    "value": "Maintenance",
+    "label": "工单"
+  }
+]
+
+

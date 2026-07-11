@@ -1,0 +1,133 @@
+# DGAIOT 一键部署
+# Usage: docker-compose up -d
+version: "3.8"
+
+services:
+  # ============================================================
+  # PostgreSQL 15 — 业务数据库
+  # ============================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: dgiot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dgiot
+      POSTGRES_PASSWORD: dgiot_pass
+      POSTGRES_DB: dgiot
+    ports:
+      - "7432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dgiot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ============================================================
+  # Redis 7 — 缓存
+  # ============================================================
+  redis:
+    image: redis:7-alpine
+    container_name: dgiot-redis
+    restart: unless-stopped
+    ports:
+      - "16379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ============================================================
+  # TDengine 3 — 时序数据库 (设备遥测)
+  # ============================================================
+  tdengine:
+    image: tdengine/tdengine:3.3.2.0
+    container_name: dgiot-tdengine
+    restart: unless-stopped
+    ports:
+      - "6030:6030"
+      - "6041:6041"
+    volumes:
+      - td_data:/var/lib/taos
+      - td_log:/var/log/taos
+    environment:
+      TZ: Asia/Shanghai
+
+  # ============================================================
+  # Parse Server 7 — 数据服务 / 用户认证
+  # ============================================================
+  parse:
+    image: parseplatform/parse-server:6.5.0
+    container_name: dgiot-parse
+    restart: unless-stopped
+    ports:
+      - "1337:1337"
+    environment:
+      PARSE_SERVER_APPLICATION_ID: dgiot
+      PARSE_SERVER_MASTER_KEY: dgiot_master_key
+      PARSE_SERVER_DATABASE_URI: postgres://dgiot:dgiot_pass@postgres:5432/dgiot
+      PARSE_SERVER_MOUNT_PATH: /parse
+      PARSE_SERVER_CLOUD: /parse-server/cloud/main.js
+      PARSE_SERVER_LOGS_FOLDER: /parse-server/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - parse_logs:/parse-server/logs
+
+  # ============================================================
+  # DGAIOT Erlang/OTP — 设备接入 + 协议 + 状态机
+  # ============================================================
+  dgiot:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+    image: dgiot:latest
+    container_name: dgiot-core
+    restart: unless-stopped
+    ports:
+      - "1883:1883"   # MQTT
+      - "8083:8083"   # WebSocket
+      - "8084:8084"   # Management API
+      - "18083:18083" # Dashboard
+    environment:
+      DGIOT_NODE_NAME: dgiot@127.0.0.1
+      DGIOT_NODE_COOKIE: dgiot_secret
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      tdengine:
+        condition: service_started
+    volumes:
+      - dgiot_data:/data/dgiot
+      - dgiot_log:/data/dgiot/log
+
+  # ============================================================
+  # nginx — 反向代理
+  # ============================================================
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: dgiot-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./deploy/nginx/dgiot.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - parse
+      - dgiot
+
+volumes:
+  pg_data:
+  redis_data:
+  td_data:
+  td_log:
+  parse_logs:
+  dgiot_data:
+  dgiot_log:
