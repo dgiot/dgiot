@@ -61,26 +61,28 @@ list_instances(Class) ->
 
 %%====================================================================
 %% 4-Layer Register
+%% Site=Channel=Device have MD5 objectId; Point uses thing_model identifier
 %%====================================================================
-register(site,    #{id := Id} = Map) -> dgiot_parse:create_object(<<"Site">>,    Map#{"objectId"=>Id});
-register(gateway, #{id := Id} = Map) -> dgiot_parse:create_object(<<"Gateway">>, Map#{"objectId"=>Id});
+register(site,    #{name := Name})  -> {ok, Name};  %% human-readable, no Parse
+register(channel, #{id := Id} = Map) -> dgiot_parse:create_object(<<"Channel">>, Map#{"objectId"=>Id});
 register(device,  #{id := Id} = Map) -> dgiot_parse:create_object(<<"Device">>,  Map#{"objectId"=>Id});
 register(point,   #{id := Id} = Map) ->
-    R = dgiot_parse:create_object(<<"Point">>, Map#{"objectId"=>Id}),
     spawn(fun() -> get_path(Id) end),  %% 优化#1: 预热path缓存
-    R.
+    ok.
 
 %%====================================================================
 %% MQTT Path (优化#1: ETS缓存)
+%% Topic: dgiot/{site}/{channel_id}/{device_id}/{point_id}/data
 %%====================================================================
 get_path(PointId) ->
     case ets:lookup(?PATH_CACHE, PointId) of
         [{PointId, Path}] -> Path;
         [] ->
-            {ok, #{<<"device">>:=DevId, <<"id">>:=Pid}} = dgiot_parse:get_object(<<"Point">>, PointId),
-            {ok, #{<<"gateway">>:=GwId, <<"id">>:=Did}}  = dgiot_parse:get_object(<<"Device">>, DevId),
-            {ok, #{<<"site">>:=SiteId}}                    = dgiot_parse:get_object(<<"Gateway">>, GwId),
-            Path = <<"dgiot/", SiteId/binary, "/", GwId/binary, "/", Did/binary, "/", Pid/binary>>,
+            %% Point -> Device -> Channel -> Site
+            {ok, #{<<"device">>:=DevId, <<"identifier">>:=Pid}} = dgiot_parse:get_object(<<"Point">>, PointId),
+            {ok, #{<<"channel">>:=ChId}} = dgiot_parse:get_object(<<"Device">>, DevId),
+            {ok, #{<<"site">>:=SiteName}} = dgiot_parse:get_object(<<"Channel">>, ChId),
+            Path = <<"dgiot/", SiteName/binary, "/", ChId/binary, "/", DevId/binary, "/", Pid/binary>>,
             ets:insert(?PATH_CACHE, {PointId, Path}),
             Path
     end.
