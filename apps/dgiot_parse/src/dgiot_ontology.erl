@@ -1,144 +1,49 @@
 %%--------------------------------------------------------------------
-%% dgiot_ontology — DLAS 本体论引擎 v2.0
+%% dgiot_ontology — 4层本体论引擎 (简洁版)
 %%
-%% Data:    Parse/PG · TDengine · ETS tables
-%% Logic:   load_model · spawn_instance · registry · rules · reasoner
-%% Action:  Shadow gen_statem · Bridge · MQTT
-%% Security: auth · role · ACL/CLP (via dgiot_parse)
+%% 层1 Site    采油厂/井场          Class: Site
+%% 层2 Gateway IO服务器/协议网关     Class: Gateway
+%% 层3 Device  RTU/传感器/执行器    Class: Device
+%% 层4 Point   测点                 Class: Point
 %%
-%% FDE Pipeline: Model → Ontology → Device → TimeSeries → Rules → Dashboard
+%% MQTT Topic: dgiot/{site}/{gateway}/{device}/{point}/data
+%% Payload:    {ts, v, q}
 %%--------------------------------------------------------------------
 -module(dgiot_ontology).
 -author("edge-hub").
 -include_lib("dgiot/include/logger.hrl").
 
-%% ── API ──
+%% API — 核心 6 个函数
 -export([
-    init/0,                  %% 初始化 ETS 表 + 加载所有模型
-    load_model/1,            %% 加载单个物模型
-    spawn_instance/2,        %% 根据模型创建 Shadow 进程
-    get_model/1,             %% 查询模型定义
-    list_instances/1,        %% 列出 Class 下所有实例
-    register/2,              %% 注册本体节点 (向下兼容)
-    get_path/1,              %% MQTT topic 路径
-    push_point/2,            %% 推送测点
-    health/0                 %% 健康检查
+    register/2,         %% 注册本体节点
+    get_path/1,         %% 获取 MQTT topic 路径
+    get_points/1,       %% 获取设备下所有测点
+    get_devices/1,      %% 获取网关下所有设备
+    push_point/2,       %% 推送测点值到 MQTT
+    health/0            %% 健康检查
 ]).
 
-%% ── ETS 表定义 ──
--define(MODEL_TABLE,  dgiot_ontology_model).      %% Class -> #{properties, rules, relations}
--define(INST_TABLE,   dgiot_ontology_instance).   %% InstanceId -> #{class, model, pid}
--define(RULES_TABLE,  dgiot_ontology_rules).      %% RuleId -> #{when, then, severity}
-
-%% ── 4层 Record ──
+%% ——— 4 层 record ———
 -record(site,    {id, name, type, location}).
 -record(gateway, {id, ip, site, protocols=[], devices=[]}).
 -record(device,  {id, gateway, name, type, protocol, slaveid, points=[]}).
--record(point,   {id, device, name, unit, range, alarm}).
+-record(point,   {id, device, name, register, unit, range, alarm}).
 
-%%====================================================================
-%% Data Layer: ETS Init
-%%====================================================================
-
-init() ->
-    ets:new(?MODEL_TABLE,  [named_table, public, {keypos, 1}]),
-    ets:new(?INST_TABLE,   [named_table, public, {keypos, 1}]),
-    ets:new(?RULES_TABLE,  [named_table, public, {keypos, 1}]),
-    logger:info("[ontology] ETS tables created"),
-    {ok, #{tables => [model, instance, rules]}}.
-
-%%====================================================================
-%% Logic Layer: Model Loading
-%%====================================================================
-
-load_model(#{<<"class">> := Class} = Model) ->
-    %% 物模型格式: {class, sub_class, properties[], relations[], rules[]}
-    Properties = maps:get(<<"properties">>, Model, []),
-    Relations  = maps:get(<<"relations">>,  Model, []),
-    RuleDefs   = maps:get(<<"rules">>,       Model, []),
-
-    %% 存模型定义
-    ets:insert(?MODEL_TABLE, {Class, #{
-        class => Class,
-        sub_class => maps:get(<<"sub_class">>, Model, <<>>),
-        properties => Properties,
-        relations => Relations,
-        rules => RuleDefs
-    }}),
-
-    %% 编译规则
-    lists:foreach(fun(Rule) ->
-        RuleId = maps:get(<<"id">>, Rule),
-        ets:insert(?RULES_TABLE, {RuleId, Rule})
-    end, RuleDefs),
-
-    logger:info("[ontology] Model loaded: ~s (~p props, ~p rules)",
-        [Class, length(Properties), length(RuleDefs)]),
-    {ok, Class}.
-
-%%====================================================================
-%% Logic Layer: Instance Spawning
-%%====================================================================
-
-spawn_instance(Class, InstanceId) ->
-    case ets:lookup(?MODEL_TABLE, Class) of
-        [] -> {error, model_not_found};
-        [{Class, Model}] ->
-            %% 启动 gen_statem Shadow 进程
-            {ok, Pid} = dgiot_shadow:start_link(InstanceId, #{
-                class => Class,
-                model => Model,
-                properties => init_properties(maps:get(properties, Model, []))
-            }),
-            ets:insert(?INST_TABLE, {InstanceId, #{
-                class => Class,
-                model => Model,
-                pid => Pid,
-                status => init,
-                created => erlang:system_time(second)
-            }}),
-            logger:info("[ontology] Instance spawned: ~s (~s)", [InstanceId, Class]),
-            {ok, Pid}
-    end.
-
-%%====================================================================
-%% Logic Layer: Registry
-%%====================================================================
-
-get_model(Class) ->
-    case ets:lookup(?MODEL_TABLE, Class) of
-        [] -> {error, not_found};
-        [{Class, Model}] -> {ok, Model}
-    end.
-
-list_instances(Class) ->
-    MatchSpec = [{{'_', #{class => Class, pid => '$1'}}, [], ['$1']}],
-    ets:select(?INST_TABLE, MatchSpec).
-
-%%====================================================================
-%% 4-Layer Register (向下兼容)
-%%====================================================================
-
+%% ——— register: 注册任意层节点 ———
 register(site, #{id := Id} = Map) ->
-    dgiot_parse:create_object(<<"Site">>, Map#{"objectId" => Id}),
-    {ok, Id};
+    dgiot_parse:create_object(<<"Site">>, Map#{"objectId" => Id});
 
 register(gateway, #{id := Id} = Map) ->
-    dgiot_parse:create_object(<<"Gateway">>, Map#{"objectId" => Id}),
-    {ok, Id};
+    dgiot_parse:create_object(<<"Gateway">>, Map#{"objectId" => Id});
 
 register(device, #{id := Id} = Map) ->
-    dgiot_parse:create_object(<<"Device">>, Map#{"objectId" => Id}),
-    {ok, Id};
+    dgiot_parse:create_object(<<"Device">>, Map#{"objectId" => Id});
 
 register(point, #{id := Id} = Map) ->
-    dgiot_parse:create_object(<<"Point">>, Map#{"objectId" => Id}),
-    {ok, Id}.
+    dgiot_parse:create_object(<<"Point">>, Map#{"objectId" => Id}).
 
-%%====================================================================
-%% MQTT Topic Path
-%%====================================================================
-
+%% ——— get_path: 构建 MQTT topic ———
+%% 入: PointId  出: <<"dgiot/site_01/gw_131/rtu_001/oil_pressure">>
 get_path(PointId) ->
     {ok, #{<<"device">> := DevId, <<"id">> := Pid}} =
         dgiot_parse:get_object(<<"Point">>, PointId),
@@ -148,40 +53,30 @@ get_path(PointId) ->
         dgiot_parse:get_object(<<"Gateway">>, GwId),
     <<"dgiot/", SiteId/binary, "/", GwId/binary, "/", Did/binary, "/", Pid/binary>>.
 
-%%====================================================================
-%% Action Layer: Push
-%%====================================================================
+%% ——— get_points: 设备 → 测点列表 ———
+get_points(DeviceId) ->
+    {ok, #{<<"results">> := Points}} =
+        dgiot_parse:query_object(<<"Point">>, #{<<"device">> => DeviceId}),
+    Points.
 
+%% ——— get_devices: 网关 → 设备列表 ———
+get_devices(GatewayId) ->
+    {ok, #{<<"results">> := Devices}} =
+        dgiot_parse:query_object(<<"Device">>, #{<<"gateway">> => GatewayId}),
+    Devices.
+
+%% ——— push_point: 推送测点值 ———
 push_point(PointId, Value) ->
     Topic = get_path(PointId),
     TopicData = iolist_to_binary([Topic, <<"/data">>]),
     Payload = #{
         ts => erlang:system_time(millisecond),
         v => Value,
-        q => 192
+        q => 192  %% 质量码: 192=good
     },
-    dgiot_mqtt:publish(TopicData, jsx:encode(Payload)),
-    {ok, TopicData}.
+    dgiot_mqtt:publish(TopicData, jsx:encode(Payload)).
 
-%%====================================================================
-%% Internal
-%%====================================================================
-
-init_properties(Props) ->
-    maps:from_list([{maps:get(<<"id">>, P), maps:get(<<"type">>, P)} || P <- Props]).
-
-%%====================================================================
-%% Health
-%%====================================================================
-
+%% ——— health ———
 health() ->
-    #{
-        version => <<"2.0">>,
-        ontology => <<"DLAS: Data·Logic·Action·Security">>,
-        pipeline => <<"FDE: Model→Ontology→Device→TS→Rules→Dashboard">>,
-        tables => #{
-            models => ets:info(?MODEL_TABLE, size),
-            instances => ets:info(?INST_TABLE, size),
-            rules => ets:info(?RULES_TABLE, size)
-        }
-    }.
+    #{ontology => <<"4-layer: Site > Gateway > Device > Point">>,
+      mqtt_topic => <<"dgiot/{site}/{gateway}/{device}/{point}/data">>}.
