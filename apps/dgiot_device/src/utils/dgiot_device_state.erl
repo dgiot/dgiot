@@ -1,5 +1,9 @@
 %%--------------------------------------------------------------------
+<<<<<<< HEAD
 %% Copyright (c) 2020-2025 DGIOT Technologies Co., Ltd. All Rights Reserved.
+=======
+%% Copyright (c) 2020-2021 DGIOT Technologies Co., Ltd. All Rights Reserved.
+>>>>>>> origin/dgaiot-plugins
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -19,6 +23,7 @@
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
+<<<<<<< HEAD
 -export([
     online/1,
     offline/1,
@@ -99,3 +104,19 @@ update_device_status(DeviceId, Status) when is_binary(Status) ->
         _ ->
             {error, invalid_status}
     end.
+=======
+-export([get_online/1, online/1, offline/1, enable/1, disable/1,
+         put_color/3, get_color/2, put_location/3, get_location/1,
+         get_address/3]).
+
+get_online(_) -> 0.
+online(_) -> ok.
+offline(_) -> ok.
+enable(_) -> ok.
+disable(_) -> ok.
+put_color(_, _, _) -> ok.
+get_color(_, _) -> <<"#000000">>.
+put_location(_, _, _) -> ok.
+get_location(_) -> {0.0, 0.0}.
+get_address(_, _, _) -> <<"">>.
+>>>>>>> origin/dgaiot-plugins

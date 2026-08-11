@@ -2,9 +2,12 @@ $(shell $(CURDIR)/scripts/git-hooks-init.sh)
 REBAR = $(CURDIR)/rebar3
 BUILD = $(CURDIR)/build
 SCRIPTS = $(CURDIR)/scripts
+<<<<<<< HEAD
 export EMQX_RELUP ?= true
 export EMQX_DEFAULT_BUILDER = ghcr.io/emqx/emqx-builder/4.4-20:24.3.4.2-1-alpine3.15.1
 export EMQX_DEFAULT_RUNNER = alpine:3.15.1
+=======
+>>>>>>> origin/dgaiot-plugins
 export OTP_VSN ?= $(shell $(CURDIR)/scripts/get-otp-vsn.sh)
 export PKG_VSN ?= $(shell $(CURDIR)/pkg-vsn.sh)
 export DOCKERFILE := deploy/docker/Dockerfile
@@ -18,17 +21,30 @@ endif
 
 GET_DASHBOARD=$(SCRIPTS)/get-dashboard.sh
 
+<<<<<<< HEAD
 PROFILE ?= emqx
 REL_PROFILES := emqx emqx-edge
 PKG_PROFILES := emqx-pkg emqx-edge-pkg
+=======
+PROFILE ?= dgiot
+REL_PROFILES := dgiot
+PKG_PROFILES := dgiot-pkg
+>>>>>>> origin/dgaiot-plugins
 PROFILES := $(REL_PROFILES) $(PKG_PROFILES) default
 CT_READABLE ?= true
 
 ifeq ($(OS),Windows_NT)
+<<<<<<< HEAD
 		QUIKRUN=$(CURDIR)/_build/$(PROFILE)/rel/emqx/bin/emqx.cmd console
 	else
 	  	QUIKRUN=$(CURDIR)/_build/$(PROFILE)/rel/emqx/bin/emqx console
 	endif
+=======
+	QUIKRUN=$(CURDIR)/_build/$(PROFILE)/rel/dgiot/bin/dgiot.cmd console
+else
+	QUIKRUN=$(CURDIR)/_build/$(PROFILE)/rel/dgiot/bin/dgiot console
+endif
+>>>>>>> origin/dgaiot-plugins
 
 export REBAR_GIT_CLONE_OPTIONS += --depth=1
 
@@ -153,7 +169,11 @@ $(REL_PROFILES:%=%-rel) $(PKG_PROFILES:%=%-rel): $(COMMON_DEPS)
 .PHONY: $(REL_PROFILES:%=%-relup-downloads)
 define download-relup-packages
 $1-relup-downloads:
+<<<<<<< HEAD
 	@if [ "$${EMQX_RELUP}" = "true" ]; then $(CURDIR)/scripts/relup-base-packages.sh $1; fi
+=======
+	@$(CURDIR)/scripts/relup-base-packages.sh $1
+>>>>>>> origin/dgaiot-plugins
 endef
 ALL_ZIPS = $(REL_PROFILES)
 $(foreach zt,$(ALL_ZIPS),$(eval $(call download-relup-packages,$(zt))))
@@ -206,7 +226,25 @@ ALL_ZIPS = $(REL_PROFILES)
 $(foreach zt,$(ALL_ZIPS),$(eval $(call gen-docker-target-testing,$(zt))))
 
 .PHONY: run
+<<<<<<< HEAD
 run: $(PROFILE) quickrun
+=======
+run: $(PROFILE)
+	@echo "=== DGAIOT å¯åŠ¨ ==="
+	@_build/dgiot/rel/dgiot/bin/dgiot start 2>/dev/null || true
+	@sleep 10
+	@_build/dgiot/rel/dgiot/bin/dgiot ping && echo "âœ… dgiot" || echo "âš ï¸ dgiot"
+	@cd apps/dgiot_app && npx nest build > /dev/null 2>&1 && nohup node dist/main.js > /tmp/nestjs.log 2>&1 &
+	@cd apps/dgiot_frontend && nohup npx vite --host 0.0.0.0 --port 8080 > /tmp/vite.log 2>&1 &
+	@sleep 3
+	@echo "âœ… http://localhost:8080 (admin/CHANGEME)"
+
+.PHONY: dev
+dev: $(PROFILE)
+	@_build/dgiot/rel/dgiot/bin/dgiot start 2>/dev/null || true
+	@sleep 8
+	@cd apps/dgiot_frontend && npx vite --host 0.0.0.0 --port 8080
+>>>>>>> origin/dgaiot-plugins
 
 .PHONY: ci
 GET_DASHBOARD=$(SCRIPTS)/pre-ci.sh
@@ -215,25 +253,48 @@ ci: $(REBAR) $(PROFILE)
 .PHONY: quickrun
 quickrun:
 	@$(QUIKRUN)
+<<<<<<< HEAD
 ## ============================================================================
 ## ²å¼þ²âÊÔ¿ò¼Ü£¨Í¨¹ýtest_framework.sh£©
 ## ============================================================================
 
 # ÁÐ³öËùÓÐ²å¼þ
+=======
+
+.PHONY: check
+check: xref
+	@echo "=== XRef check passed ==="
+
+## ============================================================================
+## ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¿ï¿½Ü£ï¿½Í¨ï¿½ï¿½test_framework.shï¿½ï¿½
+## ============================================================================
+
+# ï¿½Ð³ï¿½ï¿½ï¿½ï¿½Ð²ï¿½ï¿½
+>>>>>>> origin/dgaiot-plugins
 .PHONY: list-plugins
 list-plugins:
 	@./scripts/test_framework.sh --list-plugins
 
+<<<<<<< HEAD
 # ÁÐ³öÖ¸¶¨²å¼þµÄ²âÊÔÓÃÀý
 .PHONY: list-testcases
 list-testcases:
 	@if [ -z "$(PLUGIN)" ]; then \
 echo "ÓÃ·¨: make list-testcases PLUGIN=<²å¼þÃû>"; \
 echo "Ê¾Àý: make list-testcases PLUGIN=dgiot_modbus"; \
+=======
+# ï¿½Ð³ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+.PHONY: list-testcases
+list-testcases:
+	@if [ -z "$(PLUGIN)" ]; then \
+echo "ï¿½Ã·ï¿½: make list-testcases PLUGIN=<ï¿½ï¿½ï¿½ï¿½ï¿½>"; \
+echo "Ê¾ï¿½ï¿½: make list-testcases PLUGIN=dgiot_modbus"; \
+>>>>>>> origin/dgaiot-plugins
 exit 1; \
 fi
 	@./scripts/test_framework.sh --list $(PLUGIN)
 
+<<<<<<< HEAD
 # Ö´ÐÐ²å¼þ²âÊÔÓÃÀý
 .PHONY: test-plugin
 test-plugin:
@@ -243,21 +304,45 @@ echo "Ê¾Àý: make test-plugin PLUGIN=dgiot_modbus TESTCASE=simple"; \
 echo ""; \
 echo "Ê¹ÓÃ make list-plugins ²é¿´¿ÉÓÃ²å¼þ"; \
 echo "Ê¹ÓÃ make list-testcases PLUGIN=<²å¼þÃû> ²é¿´²å¼þµÄ²âÊÔÓÃÀý"; \
+=======
+# Ö´ï¿½Ð²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+.PHONY: test-plugin
+test-plugin:
+	@if [ -z "$(PLUGIN)" ] || [ -z "$(TESTCASE)" ]; then \
+echo "ï¿½Ã·ï¿½: make test-plugin PLUGIN=<ï¿½ï¿½ï¿½ï¿½ï¿½> TESTCASE=<ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½>"; \
+echo "Ê¾ï¿½ï¿½: make test-plugin PLUGIN=dgiot_modbus TESTCASE=simple"; \
+echo ""; \
+echo "Ê¹ï¿½ï¿½ make list-plugins ï¿½é¿´ï¿½ï¿½ï¿½Ã²ï¿½ï¿½"; \
+echo "Ê¹ï¿½ï¿½ make list-testcases PLUGIN=<ï¿½ï¿½ï¿½ï¿½ï¿½> ï¿½é¿´ï¿½ï¿½ï¿½ï¿½Ä²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"; \
+>>>>>>> origin/dgaiot-plugins
 exit 1; \
 fi
 	@./scripts/test_framework.sh --run $(PLUGIN) $(TESTCASE)
 
+<<<<<<< HEAD
 # Ö´ÐÐ²å¼þËùÓÐ²âÊÔÓÃÀý
 .PHONY: test-plugin-all
 test-plugin-all:
 	@if [ -z "$(PLUGIN)" ]; then \
 echo "ÓÃ·¨: make test-plugin-all PLUGIN=<²å¼þÃû>"; \
 echo "Ê¾Àý: make test-plugin-all PLUGIN=dgiot_modbus"; \
+=======
+# Ö´ï¿½Ð²ï¿½ï¿½ï¿½ï¿½ï¿½Ð²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+.PHONY: test-plugin-all
+test-plugin-all:
+	@if [ -z "$(PLUGIN)" ]; then \
+echo "ï¿½Ã·ï¿½: make test-plugin-all PLUGIN=<ï¿½ï¿½ï¿½ï¿½ï¿½>"; \
+echo "Ê¾ï¿½ï¿½: make test-plugin-all PLUGIN=dgiot_modbus"; \
+>>>>>>> origin/dgaiot-plugins
 exit 1; \
 fi
 	@./scripts/test_framework.sh --all $(PLUGIN)
 
+<<<<<<< HEAD
 # ¿ìËÙ²âÊÔÃüÁî±ðÃû
+=======
+# ï¿½ï¿½ï¿½Ù²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+>>>>>>> origin/dgaiot-plugins
 .PHONY: test-modbus
 test-modbus:
 	@./scripts/test_framework.sh modbus
@@ -274,7 +359,147 @@ test-modbus-register:
 test-modbus-simulator:
 	@./scripts/test_framework.sh modbus simulator
 
+<<<<<<< HEAD
 # °ïÖúÐÅÏ¢
 .PHONY: test-help
 test-help:
 	@./scripts/test_framework.sh --help
+=======
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢
+.PHONY: test-help
+test-help:
+	@./scripts/test_framework.sh --help
+
+## ============================================================================
+## ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¿ï¿½ï¿½ï¿½ï¿½ï¿½î£¨Í¨ï¿½Ã·ï¿½ï¿½ï¿½ï¿½ï¿½
+## ============================================================================
+
+# ï¿½Ð³ï¿½ï¿½ï¿½ï¿½Ð²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬
+.PHONY: plugin-debug-list
+plugin-debug-list:
+	@./scripts/plugin_debug_framework.sh list
+
+# Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð²ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½Ä£Ê½
+.PHONY: plugin-debug-all
+plugin-debug-all:
+	@./scripts/plugin_debug_framework.sh all debug
+
+# Ò»ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½Ð²ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½Ä£Ê½
+.PHONY: plugin-production-all
+plugin-production-all:
+	@./scripts/plugin_debug_framework.sh all production
+
+# ï¿½é¿´ï¿½ï¿½ï¿½Ð²ï¿½ï¿½ï¿½ï¿½Ö¾ï¿½ï¿½ï¿½ï¿½
+.PHONY: plugin-levels-all
+plugin-levels-all:
+	@./scripts/plugin_debug_framework.sh all levels
+
+# ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½Ä£Ê½
+.PHONY: plugin-debug
+plugin-debug:
+	@if [ -z "$(PLUGIN)" ]; then \
+echo "ï¿½Ã·ï¿½: make plugin-debug PLUGIN=<ï¿½ï¿½ï¿½ï¿½ï¿½>"; \
+echo "Ê¾ï¿½ï¿½: make plugin-debug PLUGIN=dgiot_drone"; \
+echo ""; \
+echo "Ê¹ï¿½ï¿½ make plugin-debug-list ï¿½é¿´ï¿½ï¿½ï¿½Ã²ï¿½ï¿½"; \
+exit 1; \
+fi
+	@./scripts/plugin_debug_framework.sh $(PLUGIN) debug
+
+# ï¿½Ö¸ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½Ä£Ê½
+.PHONY: plugin-production
+plugin-production:
+	@if [ -z "$(PLUGIN)" ]; then \
+echo "ï¿½Ã·ï¿½: make plugin-production PLUGIN=<ï¿½ï¿½ï¿½ï¿½ï¿½>"; \
+echo "Ê¾ï¿½ï¿½: make plugin-production PLUGIN=dgiot_drone"; \
+echo ""; \
+echo "Ê¹ï¿½ï¿½ make plugin-debug-list ï¿½é¿´ï¿½ï¿½ï¿½Ã²ï¿½ï¿½"; \
+exit 1; \
+fi
+	@./scripts/plugin_debug_framework.sh $(PLUGIN) production
+
+# ï¿½é¿´Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¾ï¿½ï¿½ï¿½ï¿½
+.PHONY: plugin-levels
+plugin-levels:
+	@if [ -z "$(PLUGIN)" ]; then \
+echo "ï¿½Ã·ï¿½: make plugin-levels PLUGIN=<ï¿½ï¿½ï¿½ï¿½ï¿½>"; \
+echo "Ê¾ï¿½ï¿½: make plugin-levels PLUGIN=dgiot_drone"; \
+echo ""; \
+echo "Ê¹ï¿½ï¿½ make plugin-debug-list ï¿½é¿´ï¿½ï¿½ï¿½Ã²ï¿½ï¿½"; \
+exit 1; \
+fi
+	@./scripts/plugin_debug_framework.sh $(PLUGIN) levels
+
+# ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¾
+.PHONY: plugin-monitor
+plugin-monitor:
+	@if [ -z "$(PLUGIN)" ]; then \
+echo "ï¿½Ã·ï¿½: make plugin-monitor PLUGIN=<ï¿½ï¿½ï¿½ï¿½ï¿½>"; \
+echo "Ê¾ï¿½ï¿½: make plugin-monitor PLUGIN=dgiot_drone"; \
+echo ""; \
+echo "Ê¹ï¿½ï¿½ make plugin-debug-list ï¿½é¿´ï¿½ï¿½ï¿½Ã²ï¿½ï¿½"; \
+exit 1; \
+fi
+	@./scripts/plugin_debug_framework.sh $(PLUGIN) monitor
+
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¿ï¿½Ü°ï¿½ï¿½ï¿½
+.PHONY: plugin-debug-help
+plugin-debug-help:
+	@./scripts/plugin_debug_framework.sh help
+
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô½Å±ï¿½
+.PHONY: create-plugin-debug
+create-plugin-debug:
+	@if [ -z "$(PLUGIN)" ]; then \
+echo "ï¿½Ã·ï¿½: make create-plugin-debug PLUGIN=<ï¿½ï¿½ï¿½ï¿½ï¿½>"; \
+echo "Ê¾ï¿½ï¿½: make create-plugin-debug PLUGIN=dgiot_modbus"; \
+echo ""; \
+echo "Ê¹ï¿½ï¿½ make plugin-debug-list ï¿½é¿´ï¿½ï¿½ï¿½Ã²ï¿½ï¿½"; \
+exit 1; \
+fi
+	@./scripts/create_plugin_debug.sh $(PLUGIN)
+
+# ï¿½ï¿½ï¿½Ðµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+.PHONY: debug-help
+debug-help:
+	@echo "=== DG-IoTï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ==="
+	@echo ""
+	@echo "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½:"
+	@echo "  make list-plugins          - ï¿½Ð³ï¿½ï¿½ï¿½ï¿½Ð²ï¿½ï¿½"
+	@echo "  make list-testcases        - ï¿½Ð³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"
+	@echo "  make test-plugin           - Ö´ï¿½Ð²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"
+	@echo "  make test-plugin-all       - Ö´ï¿½Ð²ï¿½ï¿½ï¿½ï¿½ï¿½Ð²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"
+	@echo "  make test-modbus           - ï¿½ï¿½ï¿½Ù²ï¿½ï¿½ï¿½Modbusï¿½ï¿½ï¿½"
+	@echo "  make test-modbus-simple    - ï¿½ï¿½ï¿½ï¿½Modbusï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"
+	@echo "  make test-modbus-register  - ï¿½ï¿½ï¿½ï¿½Modbus×¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"
+	@echo "  make test-modbus-simulator - ï¿½ï¿½ï¿½ï¿½ModbusÄ£ï¿½ï¿½ï¿½ï¿½"
+	@echo "  make test-help             - ï¿½ï¿½ï¿½Ô¿ï¿½Ü°ï¿½ï¿½ï¿½"
+	@echo ""
+	@echo "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¿ï¿½ï¿½ï¿½ï¿½ï¿½î£¨Í¨ï¿½Ã·ï¿½ï¿½ï¿½ï¿½ï¿½:"
+	@echo "  make plugin-debug-list     - ï¿½Ð³ï¿½ï¿½ï¿½ï¿½Ð²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬"
+	@echo "  make plugin-debug-all      - Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð²ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½Ä£Ê½"
+	@echo "  make plugin-production-all - Ò»ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½Ð²ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½Ä£Ê½"
+	@echo "  make plugin-levels-all     - ï¿½é¿´ï¿½ï¿½ï¿½Ð²ï¿½ï¿½ï¿½ï¿½Ö¾ï¿½ï¿½ï¿½ï¿½"
+	@echo "  make plugin-debug          - ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½Ä£Ê½"
+	@echo "  make plugin-production     - ï¿½Ö¸ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½Ä£Ê½"
+	@echo "  make plugin-levels         - ï¿½é¿´Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¾ï¿½ï¿½ï¿½ï¿½"
+	@echo "  make plugin-monitor        - ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¾"
+	@echo "  make create-plugin-debug   - ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô½Å±ï¿½"
+	@echo "  make plugin-debug-help     - ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¿ï¿½Ü°ï¿½ï¿½ï¿½"
+	@echo ""
+	@echo "Ê¹ï¿½ï¿½Ê¾ï¿½ï¿½:"
+	@echo "  # ï¿½é¿´ï¿½ï¿½ï¿½Ð²ï¿½ï¿½×´Ì¬"
+	@echo "  make plugin-debug-list"
+	@echo ""
+	@echo "  # ï¿½ï¿½ï¿½ï¿½Modbusï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô½Å±ï¿½"
+	@echo "  make create-plugin-debug PLUGIN=dgiot_modbus"
+	@echo ""
+	@echo "  # ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë»ï¿½ï¿½ï¿½ï¿½"
+	@echo "  make plugin-debug PLUGIN=dgiot_drone"
+	@echo ""
+	@echo "  # ï¿½é¿´Modbusï¿½ï¿½ï¿½ï¿½ï¿½Ö¾ï¿½ï¿½ï¿½ï¿½"
+	@echo "  make plugin-levels PLUGIN=dgiot_modbus"
+	@echo ""
+	@echo "  # ï¿½é¿´ï¿½ï¿½ï¿½Ð¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"
+	@echo "  make debug-help"
+>>>>>>> origin/dgaiot-plugins

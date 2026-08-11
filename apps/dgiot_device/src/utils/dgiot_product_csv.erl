@@ -26,6 +26,7 @@
 %%  dgiot_product_csv:read_csv(<<"8cff09f988">>, <<"modbustcp">>).
 %%  dgiot_utils:save_csv_ets(<<"/dgiot_file/product/csv/modbustcp.csv">>)
 read_csv(ChannelId, FilePath, Is_refresh, Is_shard) ->
+<<<<<<< HEAD
     case dgiot_csv:save_csv_ets(?MODULE, FilePath) of
         not_exist ->
             not_exist;
@@ -43,6 +44,20 @@ read_csv(ChannelId, FilePath, Is_refresh, Is_shard) ->
                 end),
             get_max_addrs(FileName)
     end.
+=======
+    FileName = dgiot_csv:save_csv_ets(?MODULE, FilePath),
+    spawn(fun() ->
+        Productmap = dgiot_product_csv:get_products(FileName),
+        TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
+        {Devicemap, ProductIds} = dgiot_product_csv:create_product(ChannelId, FileName, Productmap, TdChannelId, Is_shard),
+        dgiot_product_csv:create_device(FileName, Devicemap, ProductIds),
+        timer:sleep(1000),
+        dgiot_product_csv:post_thing(FileName, ProductIds, Is_refresh)
+%%        timer:sleep(1000),
+%%        dgiot_bridge:control_channel(TdChannelId, <<"update">>, <<>>)
+          end),
+    get_max_addrs(FileName).
+>>>>>>> origin/dgaiot-plugins
 
 %%  ets:match(ruodian,{'_', ['$1', '_', <<"D6101">> | '_']}).
 get_products(FileName) ->

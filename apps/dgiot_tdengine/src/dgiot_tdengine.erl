@@ -25,7 +25,11 @@
 -export([transaction/2, format_data/4]).
 -export([format_sql/3, get_values/3]).
 -export([save_fields/2, get_fields/1]).
+<<<<<<< HEAD
 -export([batch_sql/2, batch_sql/3]).
+=======
+-export([batch_sql/2]).
+>>>>>>> origin/dgaiot-plugins
 -export([get_channel/1]).
 
 transaction(Channel, Fun) ->
@@ -54,9 +58,17 @@ create_database(Channel, DataBase, Keep) ->
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
         end).
 
+<<<<<<< HEAD
 create_schemas(Schema) ->
     create_schemas(?DEFAULT, Schema).
 
+=======
+
+create_schemas(Schema) ->
+    create_schemas(?DEFAULT, Schema).
+
+%% 如果里面有using，则为使用了超级表创建子表
+>>>>>>> origin/dgaiot-plugins
 create_schemas(Channel, #{<<"using">> := _STbName} = Query) ->
     transaction(Channel,
         fun(Context) ->
@@ -64,6 +76,10 @@ create_schemas(Channel, #{<<"using">> := _STbName} = Query) ->
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
         end);
 
+<<<<<<< HEAD
+=======
+%% 如果schema里面带有tags则为超级表，没有则为普通表
+>>>>>>> origin/dgaiot-plugins
 create_schemas(Channel, Query) ->
     transaction(Channel,
         fun(Context) ->
@@ -73,9 +89,15 @@ create_schemas(Channel, Query) ->
             R
         end).
 
+<<<<<<< HEAD
 create_object(TableName, Object) ->
     create_object(?DEFAULT, TableName, Object).
 
+=======
+%% 插入
+create_object(TableName, Object) ->
+    create_object(?DEFAULT, TableName, Object).
+>>>>>>> origin/dgaiot-plugins
 create_object(Channel, TableName, #{<<"values">> := Values0} = Object) ->
     transaction(Channel,
         fun(Context) ->
@@ -85,9 +107,15 @@ create_object(Channel, TableName, #{<<"values">> := Values0} = Object) ->
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
         end).
 
+<<<<<<< HEAD
 query_object(TableName, Query) ->
     query_object(?DEFAULT, TableName, Query).
 
+=======
+%% 查询
+query_object(TableName, Query) ->
+    query_object(?DEFAULT, TableName, Query).
+>>>>>>> origin/dgaiot-plugins
 query_object(Channel, TableName, Query) ->
     transaction(Channel,
         fun(Context) ->
@@ -96,9 +124,15 @@ query_object(Channel, TableName, Query) ->
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
         end).
 
+<<<<<<< HEAD
 batch(Batch) ->
     batch(?DEFAULT, Batch).
 
+=======
+%% 批处理
+batch(Batch) ->
+    batch(?DEFAULT, Batch).
+>>>>>>> origin/dgaiot-plugins
 batch(Channel, Requests) when is_list(Requests) ->
     transaction(Channel,
         fun(Context) ->
@@ -120,6 +154,7 @@ batch_sql(Channel, Sql) ->
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
         end).
 
+<<<<<<< HEAD
 batch_sql(Channel, Database, Sql) ->
     transaction(Channel,
         fun(Context) ->
@@ -140,15 +175,25 @@ batch_sql(Channel, Database, Sql) ->
 create_user(UserName, Password) ->
     create_user(?DEFAULT, UserName, Password).
 
+=======
+create_user(UserName, Password) ->
+    create_user(?DEFAULT, UserName, Password).
+>>>>>>> origin/dgaiot-plugins
 create_user(Channel, UserName, Password) ->
     transaction(Channel,
         fun(Context) ->
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, <<"CREATE USER ", UserName/binary, " PASS ‘", Password/binary, "’">>)
         end).
 
+<<<<<<< HEAD
 delete_user(UserName) ->
     delete_user(?DEFAULT, UserName).
 
+=======
+
+delete_user(UserName) ->
+    delete_user(?DEFAULT, UserName).
+>>>>>>> origin/dgaiot-plugins
 delete_user(Channel, UserName) ->
     transaction(Channel,
         fun(Context) ->
@@ -157,13 +202,20 @@ delete_user(Channel, UserName) ->
 
 alter_user(UserName, NewPassword) ->
     alter_user(?DEFAULT, UserName, NewPassword).
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/dgaiot-plugins
 alter_user(Channel, UserName, NewPassword) ->
     transaction(Channel,
         fun(Context) ->
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, <<"ALTER USER ", UserName/binary, " PASS ‘", NewPassword/binary, "’">>)
         end).
 
+<<<<<<< HEAD
+=======
+%% 产品，设备地址与数据分离，推荐
+>>>>>>> origin/dgaiot-plugins
 format_data(ChannelId, ProductId, DevAddr, Data) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     Fields = get_fields(ProductId),
@@ -178,6 +230,10 @@ format_data(ChannelId, ProductId, DevAddr, Data) ->
         <<"values">> => NewValues
     }.
 
+<<<<<<< HEAD
+=======
+%% INSERT INTO _173acf2f85._af6d16f9ba using _173acf2f85._173acf2f85 TAGS ('_KOHbyuiJilnsdD') VALUES (now,null,null,null,null);
+>>>>>>> origin/dgaiot-plugins
 get_values(Fields, ProductId, Data) ->
     Values0 =
         lists:foldl(fun(Field, Acc) ->
@@ -243,6 +299,10 @@ get_sqls(Data, ProductId, DevAddr, Results) ->
 
 get_sqls([], _ProductId, _DevAddr, _Results, Acc) ->
     Acc;
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/dgaiot-plugins
 get_sqls([Data | Rest], ProductId, DevAddr, Results, {_, Acc}) ->
     Now = maps:get(<<"createdat">>, Data, now),
     {TagSql, Sql} = get_sql(Results, ProductId, Data#{<<"devaddr">> => DevAddr}, Now),
@@ -253,6 +313,10 @@ get_sql(Results, ProductId, Values, Now) ->
 
 get_sql([], _ProductId, _Values, _Now, {TagAcc, Acc}) ->
     {list_to_binary(TagAcc ++ ")"), list_to_binary(Acc ++ ")")};
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/dgaiot-plugins
 get_sql([Column | Results], ProductId, Values, Now, {TagAcc, Acc}) ->
     NewAcc =
         case Column of
@@ -273,6 +337,10 @@ get_sql([Column | Results], ProductId, Values, Now, {TagAcc, Acc}) ->
         end,
     get_sql(Results, ProductId, Values, Now, NewAcc).
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/dgaiot-plugins
 get_value(Field, Values, ProductId, Acc) ->
     Value = dgiot_tdengine_field:check_value(maps:get(Field, Values, null), ProductId, Field),
     case Value of

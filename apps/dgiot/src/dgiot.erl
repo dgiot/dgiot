@@ -111,6 +111,7 @@ child_spec(M, worker, Args) ->
     };
 
 child_spec(M, supervisor, Args) ->
+<<<<<<< HEAD
     % 对于监督者，使用ChannelId作为id，避免重复
     % Args通常是[ChannelId]，其中ChannelId是监督者名称
     Id = case Args of
@@ -120,6 +121,10 @@ child_spec(M, supervisor, Args) ->
     end,
     #{
         id => Id,
+=======
+    #{
+        id => M,
+>>>>>>> origin/dgaiot-plugins
         start => {M, start_link, Args},
         restart => permanent,
         shutdown => infinity,

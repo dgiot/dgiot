@@ -159,7 +159,11 @@
 ]}.
 
 {mapping, "dgiot_api.bridge_url", "dgiot_http.bridge_url", [
+<<<<<<< HEAD
 {default, "https://prod.iotn2n.com"},
+=======
+{default, "https://demo.dgiot.com"},
+>>>>>>> origin/dgaiot-plugins
 {datatype, string}
 ]}.
 

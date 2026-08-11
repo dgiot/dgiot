@@ -300,6 +300,7 @@ send(ChannelId, ClientId, Topic, Payload) ->
 
 %% @doc client start_link
 -spec start_link(atom(), map()) -> result().
+<<<<<<< HEAD
 start_link(Module, State) ->
     %% 支持两种键格式：原子键和二进制键
     {ChannelId, ClientId} = case State of
@@ -318,6 +319,10 @@ start_link(Module, State) ->
     end,
     
     case dgiot_data:lookup(dgiot_utils:to_atom(ChannelId), ClientId) of
+=======
+start_link(Module, #{<<"channel">> := ChannelId, <<"client">> := Client} = State) ->
+    case dgiot_data:lookup(dgiot_utils:to_atom(ChannelId), Client) of
+>>>>>>> origin/dgaiot-plugins
         {ok, Pid} when is_pid(Pid) ->
             case is_process_alive(Pid) of
                 true ->

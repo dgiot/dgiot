@@ -18,8 +18,13 @@
 -author("johnliu").
 -include("dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
+<<<<<<< HEAD
 -include_lib("emqx_rule_engine/include/rule_engine.hrl").
 -include_lib("emqx_rule_engine/include/rule_actions.hrl").
+=======
+-include_lib("dgiot/include/rule_engine.hrl").
+-include("rule_actions.hrl").
+>>>>>>> origin/dgaiot-plugins
 
 -define(RESOURCE_TYPE_DGIOT, 'dgiot_resource').
 
@@ -140,10 +145,17 @@ on_get_resource_status(_ResId, _Conf) ->
 
 on_resource_destroy(ResId, Conf) ->
     ?LOG(debug, "on_resource_destroy ~p,~p", [ResId, Conf]),
+<<<<<<< HEAD
     case catch emqx_rule_registry:remove_resource(ResId) of
         {'EXIT', {{throw, {dependency_exists, {rule, RuleId}}}, _}} ->
             ok = emqx_rule_registry:remove_rule(RuleId),
             ok = emqx_rule_registry:remove_resource(ResId);
+=======
+    case catch dgiot_rule_registry:remove_resource(ResId) of
+        {'EXIT', {{throw, {dependency_exists, {rule, RuleId}}}, _}} ->
+            ok = dgiot_rule_registry:remove_rule(RuleId),
+            ok = dgiot_rule_registry:remove_resource(ResId);
+>>>>>>> origin/dgaiot-plugins
         _ ->
             ok
     end.
@@ -183,6 +195,10 @@ on_action_dgiot(Selected, Envs = #{?BINDING_KEYS := #{'_Id' := ActId}, event := 
         EventId -> % 'client.connected', 'client.disconnected',  'session.subscribed', 'session.unsubscribed','message.delivered','message.acked','message.dropped'
             dgiot_channelx:do_event(ChannelId, EventId, {rule, Msg, Selected})
     end,
+<<<<<<< HEAD
     emqx_rule_metrics:inc_actions_success(ActId).
+=======
+    dgiot_rule_metrics:inc_actions_success(ActId).
+>>>>>>> origin/dgaiot-plugins
 
 

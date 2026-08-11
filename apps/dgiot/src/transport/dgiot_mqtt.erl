@@ -14,16 +14,33 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/dgaiot-plugins
 -module(dgiot_mqtt).
 -author("jonhliu").
 -include("dgiot_mqtt.hrl").
 -include_lib("dgiot/include/logger.hrl").
+<<<<<<< HEAD
 -include_lib("emqx_rule_engine/include/rule_engine.hrl").
 %%-include_lib("emqx_rule_engine/include/rule_actions.hrl").
 -define(DGIOT_MQTT_WORK, dgiot_mqtt_work).
 -define(LOG_RULE_ACTION(Level, Metadata, Fmt, Args),
     emqx_rule_utils:log_action(Level, Metadata, Fmt, Args)).
+=======
+
+-ifdef(DGIOT_WITH_EMQX).
+-include_lib("emqx_rule_engine/include/rule_engine.hrl").
+%%-include_lib("emqx_rule_engine/include/rule_actions.hrl").
+-define(LOG_RULE_ACTION(Level, Metadata, Fmt, Args),
+    emqx_rule_utils:log_action(Level, Metadata, Fmt, Args)).
+-else.
+-define(LOG_RULE_ACTION(Level, Metadata, Fmt, Args), ok).
+-endif.
+
+-define(DGIOT_MQTT_WORK, dgiot_mqtt_work).
+>>>>>>> origin/dgaiot-plugins
 
 -define(bound_v(Key, ENVS0),
     maps:get(Key,
@@ -31,10 +48,25 @@
 
 -define(BINDING_KEYS, '__bindings__').
 
+<<<<<<< HEAD
 %% ETS tables for PubSub
 -define(SUBOPTION, emqx_suboption).
 -define(SUBSCRIBER, emqx_subscriber).
 -define(SUBSCRIPTION, emqx_subscription).
+=======
+-ifdef(DGIOT_WITH_EMQX).
+%% ETS tables for PubSub (EMQX mode)
+-define(SUBOPTION, emqx_suboption).
+-define(SUBSCRIBER, emqx_subscriber).
+-define(SUBSCRIPTION, emqx_subscription).
+-else.
+%% ETS tables for PubSub (native mode)
+-define(SUBOPTION, dgiot_native_sub_option).
+-define(SUBSCRIBER, dgiot_native_sub_scriber).
+-define(SUBSCRIPTION, dgiot_native_sub_scription).
+-endif.
+
+>>>>>>> origin/dgaiot-plugins
 -dgiot_data("ets").
 -export([init_ets/0]).
 -define(DGIOT_ROUTE_KEY, dgiot_route_key).
@@ -65,7 +97,26 @@
 ]).
 
 init_ets() ->
+<<<<<<< HEAD
     dgiot_data:init(?DGIOT_ROUTE_KEY).
+=======
+    dgiot_data:init(?DGIOT_ROUTE_KEY),
+    init_native_ets(),
+    ok.
+
+-ifndef(DGIOT_WITH_EMQX).
+init_native_ets() ->
+    create_ets(?SUBOPTION, [named_table, public, set, {write_concurrency, true}]),
+    create_ets(?SUBSCRIBER, [named_table, public, bag, {write_concurrency, true}]),
+    create_ets(?SUBSCRIPTION, [named_table, public, bag, {write_concurrency, true}]),
+    ok.
+
+create_ets(Name, Opts) ->
+    case ets:info(Name) of undefined -> ets:new(Name, Opts); _ -> ok end.
+-else.
+init_native_ets() -> ok.
+-endif.
+>>>>>>> origin/dgaiot-plugins
 
 %%
 subscribe_route_key(Topics, Type, SessionToken) ->
@@ -101,26 +152,43 @@ unsubscribe_route_key(SessionToken, Type) ->
     end.
 
 has_routes(Topic) ->
+<<<<<<< HEAD
     emqx_router:has_routes(Topic).
+=======
+    dgiot_broker:has_routes(Topic).
+>>>>>>> origin/dgaiot-plugins
 
 %% 根据clientid动态订阅topic
 subscribe_mgmt(ClientId, Topic) ->
     timer:sleep(1),
+<<<<<<< HEAD
     emqx_mgmt:subscribe(ClientId, [{Topic, #{qos => 0}}]).
+=======
+    dgiot_broker:subscribe_mgmt(ClientId, Topic).
+>>>>>>> origin/dgaiot-plugins
 
 %% 根据clientid动态取消订阅topic
 unsubscribe_mgmt(ClientId, Topic) ->
     timer:sleep(1),
+<<<<<<< HEAD
     emqx_mgmt:do_unsubscribe(ClientId, Topic).
+=======
+    dgiot_broker:unsubscribe_mgmt(ClientId, Topic).
+>>>>>>> origin/dgaiot-plugins
 
 subscribe(Topic) ->
     Options = #{qos => 0},
     timer:sleep(1),
+<<<<<<< HEAD
     emqx:subscribe(Topic, dgiot_utils:to_binary(self()), Options).
+=======
+    dgiot_broker:subscribe_self(Topic, dgiot_utils:to_binary(self()), Options).
+>>>>>>> origin/dgaiot-plugins
 
 %% 根据clientid动态订阅topic
 subscribe(ClientId, TopicFilter) ->
     timer:sleep(1),
+<<<<<<< HEAD
     case emqx_broker_helper:lookup_subpid(ClientId) of
         Pid when is_pid(Pid) ->
             subscribe(TopicFilter, ClientId, Pid, subopts());
@@ -130,39 +198,76 @@ subscribe(ClientId, TopicFilter) ->
 
 unsubscribe(Topic) ->
     emqx_broker:unsubscribe(iolist_to_binary(Topic)).
+=======
+    case dgiot_broker:lookup_subpid(ClientId) of
+        Pid when is_pid(Pid) ->
+            subscribe(TopicFilter, ClientId, Pid, subopts());
+        _ ->
+            dgiot_broker:subscribe_client(ClientId, TopicFilter)
+    end.
+
+unsubscribe(Topic) ->
+    dgiot_broker:unsubscribe_self(iolist_to_binary(Topic)).
+>>>>>>> origin/dgaiot-plugins
 
 %% 根据clientid动态取消订阅topic
 unsubscribe(ClientId, TopicFilter) ->
     timer:sleep(1),
+<<<<<<< HEAD
     case emqx_broker_helper:lookup_subpid(ClientId) of
         Pid when is_pid(Pid) ->
             do_unsubscribe(TopicFilter, Pid);
         _ ->
             emqx_broker:unsubscribe(TopicFilter)
+=======
+    case dgiot_broker:lookup_subpid(ClientId) of
+        Pid when is_pid(Pid) ->
+            do_unsubscribe(TopicFilter, Pid);
+        _ ->
+            dgiot_broker:unsubscribe_client(ClientId, TopicFilter)
+>>>>>>> origin/dgaiot-plugins
     end.
 
 send(ProductId, DevAddr, Client, Topic, Payload) ->
     publish(Client, Topic, Payload),
     send(ProductId, DevAddr, Topic, Payload).
 
+<<<<<<< HEAD
 send(ProductId, DevAddr, Topic, Payload) ->
+=======
+send(ProductId, DevAddr, Topic, Payload) when is_binary(ProductId),
+                                              byte_size(ProductId) =:= 10 ->
+>>>>>>> origin/dgaiot-plugins
     case dgiot_data:get(?DGIOT_MQTT_WORK, ProductId) of
         not_find ->
             pass;
         ChannelId ->
             dgiot_client:send(ChannelId, <<ProductId:10/binary, "_", DevAddr/binary>>, Topic, dgiot_json:encode(Payload))
+<<<<<<< HEAD
     end.
+=======
+    end;
+send(_ProductId, _DevAddr, _Topic, _Payload) ->
+    ok.
+>>>>>>> origin/dgaiot-plugins
 
 -spec(publish(Client :: binary(), Topic :: binary(), Payload :: binary())
         -> ok | {error, Reason :: any()}).
 publish(Client, Topic, Payload) ->
     timer:sleep(1),
+<<<<<<< HEAD
     Msg = emqx_message:make(dgiot_utils:to_binary(Client), 0, Topic, Payload),
     emqx:publish(Msg),
     ok.
 
 publish(Client, Topic, Payload, check_route) ->
     case emqx_router:has_routes(Topic) of
+=======
+    dgiot_broker:publish(Client, Topic, Payload).
+
+publish(Client, Topic, Payload, check_route) ->
+    case dgiot_broker:has_routes(Topic) of
+>>>>>>> origin/dgaiot-plugins
         true ->
             publish(Client, Topic, Payload);
         false -> ok
@@ -172,6 +277,7 @@ publish(Client, Topic, Payload, _) ->
     publish(Client, Topic, Payload).
 
 message(Client, Topic, Payload) ->
+<<<<<<< HEAD
     emqx_message:make(dgiot_utils:to_binary(Client), 0, Topic, Payload).
 
 shared_sub(Group, Topic, SubPid) ->
@@ -179,6 +285,15 @@ shared_sub(Group, Topic, SubPid) ->
 
 shared_unsub(Group, Topic, SubPid) ->
     emqx_shared_sub:unsubscribe(Group, Topic, SubPid).
+=======
+    dgiot_broker:message_make(Client, 0, Topic, Payload).
+
+shared_sub(Group, Topic, SubPid) ->
+    dgiot_broker:shared_sub(Group, Topic, SubPid).
+
+shared_unsub(Group, Topic, SubPid) ->
+    dgiot_broker:shared_unsub(Group, Topic, SubPid).
+>>>>>>> origin/dgaiot-plugins
 
 get_payload(Msg) ->
     Msg#message.payload.
@@ -229,6 +344,10 @@ get_message(Selected, #{?BINDING_KEYS := #{
 get_message(_Selected, Envs) ->
     maps:without([?BINDING_KEYS], Envs).
 
+<<<<<<< HEAD
+=======
+-ifdef(DGIOT_WITH_EMQX).
+>>>>>>> origin/dgaiot-plugins
 message(Selected, ActId, Payload_tmpl, Target_topic, Target_qos, Republish, Envs) ->
     PayloadTks = emqx_rule_utils:preproc_tmpl(Payload_tmpl),
     TopicTks = emqx_rule_utils:preproc_tmpl(Target_topic),
@@ -239,6 +358,18 @@ message(Selected, ActId, Payload_tmpl, Target_topic, Target_qos, Republish, Envs
             Payload1 ->
                 {emqx_rule_utils:proc_tmpl(TopicTks, Selected), Payload1}
         end,
+<<<<<<< HEAD
+=======
+    build_republish(Selected, ActId, Payload_tmpl, Topic, Payload, Target_qos, Republish, Envs).
+-else.
+message(_Selected, _ActId, _Payload_tmpl, _Target_topic, _Target_qos, _Republish, Envs) ->
+    %% Native mode: pass through without template expansion
+    maps:without([?BINDING_KEYS], Envs).
+-endif.
+
+-ifdef(DGIOT_WITH_EMQX).
+build_republish(Selected, ActId, _Payload_tmpl, Topic, Payload, Target_qos, Republish, Envs) ->
+>>>>>>> origin/dgaiot-plugins
     DeviceId =
         case Selected of
             #{<<"clientid">> := Clientid} ->
@@ -258,6 +389,10 @@ message(Selected, ActId, Payload_tmpl, Target_topic, Target_qos, Republish, Envs
         payload => Payload,
         timestamp => maps:get(timestamp, Envs, erlang:system_time(millisecond))
     }.
+<<<<<<< HEAD
+=======
+-endif.
+>>>>>>> origin/dgaiot-plugins
 
 republish(#{headers := #{republish_by := _ActId}} = Envs) ->
     Envs;
@@ -269,7 +404,11 @@ republish(#{
     'TargetQoS' := TargetQoS
 }) ->
     Msg = #message{
+<<<<<<< HEAD
         id = emqx_guid:gen(),
+=======
+        id = dgiot_guid:gen(),
+>>>>>>> origin/dgaiot-plugins
         qos = if TargetQoS =:= -1 -> 0; true -> TargetQoS end,
         from = ActId,
         flags = #{dup => false, retain => false},
@@ -278,9 +417,15 @@ republish(#{
         payload = Payload,
         timestamp = erlang:system_time(millisecond)
     },
+<<<<<<< HEAD
     _ = emqx_broker:safe_publish(Msg),
     emqx_rule_metrics:inc_actions_success(ActId),
     emqx_metrics:inc_msg(Msg);
+=======
+    _ = dgiot_broker:safe_publish(Msg),
+    dgiot_broker:inc_actions_success(ActId),
+    dgiot_broker:inc_msg(Msg);
+>>>>>>> origin/dgaiot-plugins
 
 republish(Envs) ->
     Envs.
@@ -291,12 +436,20 @@ subopts(Init) ->
     maps:merge(?DEFAULT_SUBOPTS, Init).
 
 %% @private
+<<<<<<< HEAD
 -spec(subscribe(emqx_topic:topic(), emqx_types:subid(), pid(), emqx_types:subopts()) -> ok).
+=======
+-spec(subscribe(binary(), term(), pid(), map()) -> ok).
+>>>>>>> origin/dgaiot-plugins
 subscribe(Topic, SubId, SubPid, SubOpts0) when is_binary(Topic), is_pid(SubPid), is_map(SubOpts0) ->
     SubOpts = maps:merge(?DEFAULT_SUBOPTS, SubOpts0),
     case ets:member(?SUBOPTION, {SubPid, Topic}) of
         false -> %% New
+<<<<<<< HEAD
             ok = emqx_broker_helper:register_sub(SubPid, SubId),
+=======
+            ok = dgiot_broker:register_sub(SubPid, SubId),
+>>>>>>> origin/dgaiot-plugins
             do_subscribe(Topic, SubPid, with_subid(SubId, SubOpts));
         true -> %% Existed
             set_subopts(SubPid, Topic, with_subid(SubId, SubOpts)),
@@ -316,11 +469,19 @@ set_subopts(SubPid, Topic, NewOpts) ->
 %% Unsubscribe API
 %%--------------------------------------------------------------------
 
+<<<<<<< HEAD
 -spec(do_unsubscribe(emqx_topic:topic(), pid()) -> ok).
 do_unsubscribe(Topic, SubPid) when is_binary(Topic) ->
     case ets:lookup(?SUBOPTION, {SubPid, Topic}) of
         [{_, SubOpts}] ->
             _ = emqx_broker_helper:reclaim_seq(Topic),
+=======
+-spec(do_unsubscribe(binary(), pid()) -> ok).
+do_unsubscribe(Topic, SubPid) when is_binary(Topic) ->
+    case ets:lookup(?SUBOPTION, {SubPid, Topic}) of
+        [{_, SubOpts}] ->
+            _ = dgiot_broker:reclaim_seq(Topic),
+>>>>>>> origin/dgaiot-plugins
             do_unsubscribe(Topic, SubPid, SubOpts);
         [] -> ok
     end.
@@ -340,7 +501,11 @@ do_unsubscribe(undefined, Topic, SubPid, SubOpts) ->
     end;
 
 do_unsubscribe(Group, Topic, SubPid, _SubOpts) ->
+<<<<<<< HEAD
     emqx_shared_sub:unsubscribe(Group, Topic, SubPid).
+=======
+    dgiot_broker:shared_unsub(Group, Topic, SubPid).
+>>>>>>> origin/dgaiot-plugins
 
 %% @private
 do_subscribe(Topic, SubPid, SubOpts) ->
@@ -349,7 +514,11 @@ do_subscribe(Topic, SubPid, SubOpts) ->
     do_subscribe(Group, Topic, SubPid, SubOpts).
 
 do_subscribe(undefined, Topic, SubPid, SubOpts) ->
+<<<<<<< HEAD
     case emqx_broker_helper:get_sub_shard(SubPid, Topic) of
+=======
+    case dgiot_broker:get_sub_shard(SubPid, Topic) of
+>>>>>>> origin/dgaiot-plugins
         0 -> true = ets:insert(?SUBSCRIBER, {Topic, SubPid}),
             true = ets:insert(?SUBOPTION, {{SubPid, Topic}, SubOpts}),
             call(pick(Topic), {subscribe, Topic});
@@ -362,7 +531,11 @@ do_subscribe(undefined, Topic, SubPid, SubOpts) ->
 %% Shared subscription
 do_subscribe(Group, Topic, SubPid, SubOpts) ->
     true = ets:insert(?SUBOPTION, {{SubPid, Topic}, SubOpts}),
+<<<<<<< HEAD
     emqx_shared_sub:subscribe(Group, Topic, SubPid).
+=======
+    dgiot_broker:shared_sub(Group, Topic, SubPid).
+>>>>>>> origin/dgaiot-plugins
 
 -compile({inline, [with_subid/2]}).
 with_subid(undefined, SubOpts) ->

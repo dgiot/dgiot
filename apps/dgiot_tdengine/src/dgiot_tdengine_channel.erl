@@ -32,7 +32,11 @@
 -export([init/3, handle_event/3, handle_message/2, stop/3, handle_init/1]).
 -export([handle_info/2, test/1]).
 
+<<<<<<< HEAD
 -export([read_productid_from_ets/1, new_productid_ets/0]).
+=======
+-export([read_productid_from_ets/1]).
+>>>>>>> origin/dgaiot-plugins
 
 %% 注册通道类型
 -channel_type(#{
@@ -180,8 +184,11 @@ init(?TYPE, ChannelId, Config) ->
 
 handle_init(State) ->
     dgiot_metrics:inc(dgiot_tdengine, <<"tdengine">>, 1),
+<<<<<<< HEAD
     % 立即发送 init 消息，确保通道启动后立刻创建表
     self() ! init,
+=======
+>>>>>>> origin/dgaiot-plugins
     erlang:send_after(1000, self(), ws_login),
     {ok, State}.
 
@@ -192,12 +199,24 @@ handle_event(_EventType, _Event, State) ->
 
 %% gun监测 开始
 handle_message({gun_up, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
+<<<<<<< HEAD
     {ok, State};
 
 handle_message({gun_error, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
     {ok, State};
 
 handle_message({gun_down, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
+=======
+    %%    io:format("~s ~p gun_up = ~p.~n", [?FILE, ?LINE, _Protocol]),
+    {ok, State};
+
+handle_message({gun_error, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
+    %%    io:format("~s ~p gun_error = ~p.~n", [?FILE, ?LINE, _Protocol]),
+    {ok, State};
+
+handle_message({gun_down, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
+    %%    io:format("~s ~p gun_down = ~p.~n", [?FILE, ?LINE, _Protocol]),
+>>>>>>> origin/dgaiot-plugins
     {ok, State};
 %% gun监测结束
 
@@ -216,6 +235,7 @@ handle_message(init, #state{id = ChannelId, env = Config} = State) ->
     case dgiot_bridge:get_products(ChannelId) of
         {ok, _, ProductIds} ->
             NewProducts = lists:foldl(fun(X, Acc) ->
+<<<<<<< HEAD
                                               %% 处理tuple格式的ProductId: {ProductId, _}
                                               ProductId = case X of
                                                   {P, _} when is_binary(P) -> P;
@@ -232,6 +252,11 @@ handle_message(init, #state{id = ChannelId, env = Config} = State) ->
                                                       save_productid_to_ets(ProductId, ChannelId),
                                                       Acc ++ dgiot_product_tdengine:get_products(ProductId, ChannelId)
                                               end
+=======
+                                              dgiot_data:insert({tdchannel_product, binary_to_atom(X)}, ChannelId),
+                                              save_productid_to_ets(X, ChannelId),
+                                              Acc ++ dgiot_product_tdengine:get_products(X, ChannelId)
+>>>>>>> origin/dgaiot-plugins
                                       end,
                                       [],
                                       ProductIds),
@@ -285,16 +310,32 @@ stop(ChannelType, ChannelId, _State) ->
 
 %% gun监测 开始
 handle_info({gun_up, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
+<<<<<<< HEAD
     {ok, State};
 
 handle_info({gun_error, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
     {ok, State};
 
 handle_info({gun_down, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
+=======
+    % io:format("~s ~p gun_up = ~p.~n", [?FILE, ?LINE, _Protocol]),
+    {ok, State};
+
+handle_info({gun_error, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
+    % io:format("~s ~p gun_error = ~p.~n", [?FILE, ?LINE, _Protocol]),
+    {ok, State};
+
+handle_info({gun_down, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
+    % io:format("~s ~p gun_down = ~p.~n", [?FILE, ?LINE, _Protocol]),
+>>>>>>> origin/dgaiot-plugins
     {ok, State};
 %% gun监测结束
 
 handle_info(_Message, State) ->
+<<<<<<< HEAD
+=======
+    % io:format("~s ~p Message = ~p.~n", [?FILE, ?LINE, _Message]),
+>>>>>>> origin/dgaiot-plugins
     {ok, State}.
 
 
@@ -343,13 +384,18 @@ check_database(ChannelId, ProductId, #{<<"database">> := DataBase, <<"keep">> :=
             dgiot_bridge:send_log(ChannelId, "Check database Error, ChannelId:~p, ProductId:~p, Reason:authentication failure", [ChannelId, ProductId]),
             timer:sleep(5000),
             check_database(ChannelId, ProductId, Config);
+<<<<<<< HEAD
         {error, Reason} ->
             ?LOG(error, "Create database ~p failed: ~p", [DataBase, Reason]),
+=======
+        _ ->
+>>>>>>> origin/dgaiot-plugins
             ok
     end.
 
 
 create_table(ChannelId, ProductId, _Config) ->
+<<<<<<< HEAD
     ?LOG(info, ">>> create_table for product ~p", [ProductId]),
     try
         case dgiot_bridge:get_product_info(ProductId) of
@@ -376,6 +422,35 @@ create_table(ChannelId, ProductId, _Config) ->
     catch
         Class:CatchReason:Stacktrace ->
             ?LOG(error, ">>> Exception in create_table for product ~p: ~p:~p~n~p", [ProductId, Class, CatchReason, Stacktrace])
+=======
+    case dgiot_bridge:get_product_info(ProductId) of
+        {ok, Product} ->
+            case dgiot_tdengine_schema:get_schema(ChannelId, Product) of
+                ignore ->
+                    ?LOG(debug, "Create Table ignore, ChannelId:~p, ProductId:~p", [ChannelId, Product]);
+                Schema ->
+                    TableName = ?Table(ProductId),
+                    case dgiot_tdengine:create_schemas(ChannelId, Schema#{<<"tableName">> => TableName}) of
+                        {error, Reason} ->
+                            ?LOG(error, "Create Table[~s] Fail, Schema:~p, Reason:~p", [TableName, Schema, Reason]);
+                        {ok, #{<<"affected_rows">> := _}} ->
+                            %% @todo 一个产品只能挂一个TDengine?
+                            dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
+                            ?LOG(debug, "Create Table[~s] Succ, Schema:~p", [TableName, Schema]);
+                        {ok, #{<<"code">> := 0, <<"column_meta">> := _}} ->
+                            %% @todo 一个产品只能挂一个TDengine?
+                            dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
+                            ?LOG(debug, "Create Table[~s] Succ, Schema:~p", [TableName, Schema]);
+                        {ok, #{<<"code">> := 904, <<"desc">> := _Desc}} ->
+                            %%                            io:format("~p ~p Desc ~p ~n Schema = ~p.~n", [?FILE, ?LINE, _Desc, Schema#{<<"tableName">> => TableName}]),
+                            ok;
+                        {ok, #{<<"code">> := Code, <<"desc">> := Desc}} ->
+                            ?LOG(debug, "Create Table[~s] failed, Code:~p Desc:~p", [TableName, Code, Desc])
+                    end
+            end;
+        {error, Reason} ->
+            ?LOG(error, "Create Table Error, ~p ~p", [Reason, ProductId])
+>>>>>>> origin/dgaiot-plugins
     end.
 
 
@@ -405,6 +480,7 @@ test(_, _) -> ok.
 
 
 new_productid_ets() ->
+<<<<<<< HEAD
     case ets:info(td_product_channel, name) of
         undefined ->
             ets:new(td_product_channel, [bag, public, named_table, {write_concurrency, true}, {read_concurrency, true}, {heir, none}]);
@@ -436,6 +512,13 @@ save_productid_to_ets(ProductId, ChannelId) when is_binary(ProductId), is_binary
 save_productid_to_ets(ProductId, ChannelId) ->
     ?LOG(error, "TDengine通道: 产品ID或通道ID格式错误 - ProductId=~p, ChannelId=~p", [ProductId, ChannelId]),
     {error, invalid_format}.
+=======
+    ets:new(td_product_channel, [bag, public, named_table, {write_concurrency, true}, {read_concurrency, true}]).
+
+
+save_productid_to_ets(ProductId, ChannelId) ->
+    ets:insert(td_product_channel, {ProductId, ChannelId}).
+>>>>>>> origin/dgaiot-plugins
 
 
 read_productid_from_ets(ProductId) ->

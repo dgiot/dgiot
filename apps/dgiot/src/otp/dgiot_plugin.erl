@@ -113,6 +113,13 @@ save_app(App) ->
             dgiot_data:insert({compile, app}, NewApp)
     end.
 
+<<<<<<< HEAD
+=======
+build_dir() ->
+    Profile = os:getenv("PROFILE", "dgiot"),
+    <<"/_build/", (dgiot_utils:to_binary(Profile))/binary, "/lib/">>.
+
+>>>>>>> origin/dgaiot-plugins
 compile(App) ->
     AtomApp = dgiot_utils:to_atom(App),
     BeamOutDir = code:lib_dir(AtomApp) ++ "/ebin/",
@@ -136,7 +143,12 @@ compile(App) ->
     ok.
 
 needs_compile(AppsFile, BeamOutDir, CompileOpts) ->
+<<<<<<< HEAD
     LibFile = re:replace(dgiot_utils:to_binary(AppsFile), <<"/apps/">>, <<"/_build/emqx/lib/">>, [{return, binary}]),
+=======
+    BuildDir = build_dir(),
+    LibFile = re:replace(dgiot_utils:to_binary(AppsFile), <<"/apps/">>, BuildDir, [{return, binary}]),
+>>>>>>> origin/dgaiot-plugins
     case filelib:last_modified(dgiot_utils:to_list(AppsFile)) > filelib:last_modified(dgiot_utils:to_list(LibFile)) of
         true ->
             file:copy(dgiot_utils:to_list(AppsFile), dgiot_utils:to_list(LibFile)),

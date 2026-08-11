@@ -53,11 +53,20 @@ check_parse(Tables, I) ->
                     {error, Reason}
             end;
         {Type, Reason} when Type == error; Type == 'EXIT' ->
+<<<<<<< HEAD
             case I > 5 of
                 true ->
                     {error, Reason};
                 false ->
                     ?LOG(error, "ParseServer is not health,~p!!!", [Reason]),
+=======
+            case I > 3 of
+                true ->
+                    ?LOG(warning, "ParseServer unavailable after ~p retries,~p", [I, Reason]),
+                    {error, Reason};
+                false ->
+                    ?LOG(info, "ParseServer not ready (retry ~p/~p),~p", [I + 1, 3, Reason]),
+>>>>>>> origin/dgaiot-plugins
                     receive after 5000 -> check_parse(Tables, I + 1) end
             end
     end.

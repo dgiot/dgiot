@@ -20,12 +20,16 @@
 
 -export([
     set_loglevel/3,
+<<<<<<< HEAD
     test/1,
     log_once/3,
     log_once/4,
     clear_log_once/0,
     clear_log_once/1,
     get_log_once_keys/0]).
+=======
+    test/1]).
+>>>>>>> origin/dgaiot-plugins
 
 test(N) ->
 %%    Test = <<"test">>,
@@ -49,7 +53,11 @@ test(N) ->
 %% 获取module日志等级  logger:get_module_level(dgiot)
 %% 设置module日志等级  logger:set_module_level(dgiot_wechat,debug)
 set_loglevel(<<"system">>, <<"dgiot">>, Level) ->
+<<<<<<< HEAD
     emqx_logger:set_log_level(dgiot_utils:to_atom(Level));
+=======
+    logger:set_primary_config(level, dgiot_utils:to_atom(Level));
+>>>>>>> origin/dgaiot-plugins
 
 set_loglevel(<<"app">>, Name, Level) ->
     logger:set_application_level(dgiot_utils:to_atom(Name), dgiot_utils:to_atom(Level));
@@ -59,6 +67,7 @@ set_loglevel(<<"module">>, Name, Level) ->
 
 set_loglevel(Type, _Name, _Level) ->
     {error, <<Type/binary, " error">>}.
+<<<<<<< HEAD
 
 %%--------------------------------------------------------------------
 %% Log Once APIs - 每个进程只打印一次的日志
@@ -127,3 +136,5 @@ is_log_once_key(_) -> false.
 
 %% 提取log_once的key
 extract_key({log_once, Key}) -> Key.
+=======
+>>>>>>> origin/dgaiot-plugins

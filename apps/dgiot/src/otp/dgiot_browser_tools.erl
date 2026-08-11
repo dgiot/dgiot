@@ -9,8 +9,13 @@
 %%%-------------------------------------------------------------------
 -module(dgiot_browser_tools).
 -author("dgiot").
+<<<<<<< HEAD
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot/include/dgiot.hrl").
+=======
+-include("logger.hrl").
+-include("dgiot.hrl").
+>>>>>>> origin/dgaiot-plugins
 
 %% API 导出
 -export([

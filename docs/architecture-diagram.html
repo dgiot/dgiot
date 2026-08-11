@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dgaiot DLAS Architecture</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d1117;color:#c9d1d9;font:14px/1.6 -apple-system,BlinkMacSystemFont,sans-serif;padding:20px}
+h1{text-align:center;color:#58a6ff;margin:10px 0 30px;font-size:22px}
+.diagram{max-width:1100px;margin:0 auto}
+.layer{border:1px solid #30363d;border-radius:8px;margin:6px 0;overflow:hidden}
+.layer-title{padding:8px 16px;font-weight:bold;font-size:13px}
+.layer-body{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px;justify-content:center}
+.l-edge{background:#1a2332}.l-edge .layer-title{background:#0d419d}
+.l-security{background:#1a1a2e}.l-security .layer-title{background:#6e3b9e}
+.l-action{background:#1a2e1a}.l-action .layer-title{background:#238636}
+.l-logic{background:#2e1a1a}.l-logic .layer-title{background:#9e3b3b}
+.l-data{background:#1a2e2e}.l-data .layer-title{background:#3b6e9e}
+.box{border:1px solid #30363d;border-radius:6px;padding:10px 14px;text-align:center;min-width:110px;font-size:12px}
+.box strong{display:block;color:#e6edf3;font-size:13px;margin-bottom:4px}
+.box span{color:#8b949e}
+.arrow-row{text-align:center;color:#58a6ff;padding:2px 0;font-size:16px}
+.flow{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:15px 0}
+.flow-box{border:1px solid #58a6ff;border-radius:6px;padding:10px 16px;text-align:center;background:#0d1a2e;font-size:12px}
+.flow-box strong{color:#58a6ff;display:block;margin-bottom:4px}
+.flow-arrow{color:#f78166;align-self:center;font-size:18px}
+.legend{display:flex;justify-content:center;gap:20px;margin:20px 0;flex-wrap:wrap;font-size:12px}
+.legend span{padding:3px 10px;border-radius:4px}
+.note{text-align:center;color:#484f58;font-size:11px;margin-top:15px}
+</style>
+</head>
+<body>
+
+<h1>dgaiot — DLAS Architecture (Data·Logic·Action·Security)</h1>
+
+<div class="diagram">
+
+<!-- Edge -->
+<div class="layer l-edge">
+  <div class="layer-title">EDGE: iotStudio (Python + Vue)</div>
+  <div class="layer-body">
+    <div class="box"><strong>DeviceAccess</strong><span>9 Adapters<br>Modbus/OPC/A11/S7</span></div>
+    <div class="box"><strong>UnifiedPipeline</strong><span>Protocol Decode<br>Frame Parser</span></div>
+    <div class="box"><strong>StreamEngine</strong><span>15 Algorithms<br>range/sliding/trend</span></div>
+    <div class="box"><strong>AlertPipeline</strong><span>6-Stage<br>Dedup->Notify->Trace</span></div>
+  </div>
+</div>
+
+<div class="arrow-row">&#8593; MQTT / HTTP &#8595;</div>
+
+<!-- Security -->
+<div class="layer l-security">
+  <div class="layer-title">SECURITY: auth &#183; role &#183; ACL &#183; CLP &#183; Hooks &#183; JWT</div>
+</div>
+
+<!-- Action -->
+<div class="layer l-action">
+  <div class="layer-title">ACTION: Shadow gen_statem &#183; Bridge &#183; MQTT &#183; Rule Engine</div>
+  <div class="layer-body">
+    <div class="box"><strong>Shadow<br>gen_statem</strong><span>1:1 Device<br>init->auth->online<br>->alarm->offline</span></div>
+    <div class="box"><strong>Bridge</strong><span>MQTT&#8596;Parse<br>sync_parse()</span></div>
+    <div class="box"><strong>dgiot_mqtt</strong><span>pub/sub<br>ont_push_point</span></div>
+    <div class="box"><strong>dgiot_task</strong><span>Workflow<br>Schedule</span></div>
+  </div>
+</div>
+
+<!-- Logic -->
+<div class="layer l-logic">
+  <div class="layer-title">LOGIC: Ontology Engine &#183; Model Registry &#183; Reasoner</div>
+  <div class="layer-body">
+    <div class="box"><strong>Ontology<br>Engine</strong><span>load_model<br>compile->spawn</span></div>
+    <div class="box"><strong>3 ETS<br>Tables</strong><span>model<br>instance<br>rules</span></div>
+    <div class="box"><strong>Thing<br>Model</strong><span>class/props<br>relations/rules</span></div>
+    <div class="box"><strong>Reasoner</strong><span>forward-chain<br>SWRL export</span></div>
+  </div>
+</div>
+
+<!-- Data -->
+<div class="layer l-data">
+  <div class="layer-title">DATA: Parse/PG &#183; TDengine &#183; Mnesia/ETS &#183; EMQX</div>
+  <div class="layer-body">
+    <div class="box"><strong>Parse</strong><span>23 Classes<br>JSONB</span></div>
+    <div class="box"><strong>PostgreSQL</strong><span>:7432<br>Site/Gateway<br>Device/Point</span></div>
+    <div class="box"><strong>TDengine</strong><span>:6041<br>_{ProductId}<br>devaddr NCHAR(50)</span></div>
+    <div class="box"><strong>EMQX</strong><span>:1883<br>Million-Device<br>MQTT Broker</span></div>
+  </div>
+</div>
+
+<!-- Flow -->
+<div class="flow">
+  <div class="flow-box"><strong>Modbus 40300</strong><span>oil_pressure<br>float32_AB</span></div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-box"><strong>MQTT Topic</strong><span>dgiot/oil_field_01/<br>gw_131/rtu_001/<br>oil_pressure/data</span></div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-box"><strong>Shadow PID</strong><span>&lt;0.456.0&gt;<br>evaluate(Rules)<br>state transition</span></div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-box"><strong>TDengine</strong><span>_{ChannelId}<br>INSERT<br>(NOW,2.35,192)</span></div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <span style="background:#0d419d;color:#58a6ff">iotStudio Edge</span>
+  <span style="background:#6e3b9e;color:#d2a8ff">Security</span>
+  <span style="background:#238636;color:#7ee787">Action</span>
+  <span style="background:#9e3b3b;color:#ffa198">Logic</span>
+  <span style="background:#3b6e9e;color:#a5d6ff">Data</span>
+</div>
+
+<p class="note">FDE Pipeline: Model -> Ontology -> Device Access -> TimeSeries -> Rules -> Dashboard</p>
+
+</div>
+</body>
+</html>

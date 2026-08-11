@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .eunit
 test-data/
 deps
@@ -145,3 +146,46 @@ apps/*/etc/*.conf
 
 # 无人机项目敏感文件 - 已在上方精确排除
 apps/dgiot_uav/.codebuddy/
+=======
+# build
+_build/
+.eunit/
+deps/
+*.o
+*.beam
+erl_crash.dump
+logs/
+out/
+*.swp
+
+# node
+node_modules/
+package-lock.json
+dist/
+
+# binaries
+rebar3
+*.exe
+*.zip
+*.tar.gz
+*.dump
+
+# third-party
+lib-ce/
+docker/
+wsl/
+build/
+apps/emqx_*/
+apps/grpc/
+apps/prometheus/
+
+# IDE
+.idea/
+.vscode/
+.claude/
+
+# misc
+*.pack
+*.pack.idx
+dist/
+>>>>>>> origin/dgaiot-plugins

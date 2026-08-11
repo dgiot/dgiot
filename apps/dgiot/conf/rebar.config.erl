@@ -28,7 +28,11 @@ extra_deps() ->
     {ok, Proplist} = file:consult("lib-extra/plugins"),
     ErlPlugins0 = proplists:get_value(erlang_plugins, Proplist),
     ExPlugins0 = proplists:get_value(elixir_plugins, Proplist),
+<<<<<<< HEAD
     Filter = string:split(os:getenv("EMQX_EXTRA_PLUGINS", ""), ",", all),
+=======
+    Filter = string:split(os:getenv("DGIOT_EXTRA_PLUGINS", ""), ",", all),
+>>>>>>> origin/dgaiot-plugins
     ErlPlugins = filter_extra_deps(ErlPlugins0, Filter),
     ExPlugins = filter_extra_deps(ExPlugins0, Filter),
     {ExPlugins =/= [], ErlPlugins ++ ExPlugins}.
@@ -51,7 +55,10 @@ overrides() ->
     [ {add, [ {extra_src_dirs, [{"etc", [{recursive,true}]}]}
             , {erl_opts, [{compile_info, [{emqx_vsn, get_vsn()}]}]}
             ]}
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/dgaiot-plugins
     , {add, relx, [{erl_opts, [{d, 'RLX_LOG', rlx_log}]}]}
     , {add, snabbkaffe,
        [{erl_opts, common_compile_opts()}]}
@@ -80,6 +87,7 @@ is_cover_enabled() ->
 is_enterprise() ->
     filelib:is_regular("EMQX_ENTERPRISE").
 
+<<<<<<< HEAD
 alternative_lib_dir() ->
     case is_enterprise() of
         true -> "lib-ee";
@@ -98,6 +106,16 @@ plugins(HasElixir) ->
     ]
     %% test plugins are concatenated to default profile plugins
     %% otherwise rebar3 test profile runs are super slow
+=======
+project_app_dirs() ->
+    ["apps/*"].
+
+plugins(HasElixir) ->
+    [{relup_helper, {git, "https://gitee.com/fastdgiot/relup_helper", {tag, "2.1.0"}}}
+        , {pc, {git, "https://gitee.com/fastdgiot/port_compiler.git", {tag, "v1.11.1"}}}
+    | [ {rebar_mix, "v0.4.0"} || HasElixir ]
+    ]
+>>>>>>> origin/dgaiot-plugins
     ++ test_plugins().
 
 test_plugins() ->
@@ -112,9 +130,15 @@ test_deps() ->
     ].
 
 common_compile_opts() ->
+<<<<<<< HEAD
     [debug_info % alwyas include debug_info
     , {compile_info, [{emqx_vsn, get_vsn()}]}
         , {d, snk_kind, msg}
+=======
+    [debug_info
+    , {compile_info, [{emqx_vsn, get_vsn()}]}
+    , {d, snk_kind, msg}
+>>>>>>> origin/dgaiot-plugins
     ] ++
         [{d, 'EMQX_ENTERPRISE'} || is_enterprise()] ++
         [{d, 'EMQX_BENCHMARK'} || os:getenv("EMQX_BENCHMARK") =:= "1"].
@@ -131,6 +155,7 @@ prod_overrides() ->
 
 profiles() ->
     Vsn = get_vsn(),
+<<<<<<< HEAD
     [ {'emqx',          [ {erl_opts, prod_compile_opts()}
                         , {relx, relx(Vsn, cloud, bin)}
                         , {overrides, prod_overrides()}
@@ -148,6 +173,9 @@ profiles() ->
                         , {overrides, prod_overrides()}
                         ]}
     , {check,           [ {erl_opts, common_compile_opts()}
+=======
+    [ {check,           [ {erl_opts, common_compile_opts()}
+>>>>>>> origin/dgaiot-plugins
                         ]}
     , {test,            [ {deps, test_deps()}
                         , {erl_opts, common_compile_opts() ++ erl_opts_i()}
@@ -155,8 +183,11 @@ profiles() ->
                         ]}
     ] ++ ee_profiles(Vsn).
 
+<<<<<<< HEAD
 %% RelType: cloud (full size) | edge (slim size)
 %% PkgType: bin | pkg
+=======
+>>>>>>> origin/dgaiot-plugins
 relx(Vsn, RelType, PkgType) ->
     IsEnterprise = is_enterprise(),
     [ {include_src,false}
@@ -165,10 +196,17 @@ relx(Vsn, RelType, PkgType) ->
     , {generate_start_script,false}
     , {sys_config,false}
     , {vm_args,false}
+<<<<<<< HEAD
     , {release, {emqx, Vsn}, relx_apps(RelType)}
     , {overlay, relx_overlay(RelType)}
     , {overlay_vars, [ {built_on_platform, built_on()}
                      , {emqx_description, emqx_description(RelType, IsEnterprise)}
+=======
+    , {release, {dgiot, Vsn}, relx_apps(RelType)}
+    , {overlay, relx_overlay(RelType)}
+    , {overlay_vars, [ {built_on_platform, built_on()}
+                     , {dgiot_description, dgiot_description(RelType, IsEnterprise)}
+>>>>>>> origin/dgaiot-plugins
                      | overlay_vars(RelType, PkgType, IsEnterprise)]}
     ].
 
@@ -185,21 +223,31 @@ distro() ->
         _ -> false
     end.
 
+<<<<<<< HEAD
 emqx_description(cloud, true) -> "EMQ X Enterprise";
 emqx_description(cloud, false) -> "EMQ X Broker";
 emqx_description(edge, _) -> "EMQ X Edge".
+=======
+dgiot_description(cloud, true) -> "DGAIOT Enterprise";
+dgiot_description(cloud, false) -> "DGAIOT Platform";
+dgiot_description(edge, _) -> "DGAIOT Edge".
+>>>>>>> origin/dgaiot-plugins
 
 overlay_vars(_RelType, PkgType, true) ->
     ee_overlay_vars(PkgType);
 overlay_vars(RelType, PkgType, false) ->
     overlay_vars_rel(RelType) ++ overlay_vars_pkg(PkgType).
 
+<<<<<<< HEAD
 %% vars per release type, cloud or edge
+=======
+>>>>>>> origin/dgaiot-plugins
 overlay_vars_rel(RelType) ->
     VmArgs = case RelType of
                  cloud -> "vm.args";
                  edge -> "vm.args.edge"
              end,
+<<<<<<< HEAD
     [{enable_plugin_emqx_rule_engine, RelType =:= cloud}
         , {enable_plugin_emqx_bridge_mqtt, RelType =:= edge}
         , {enable_plugin_emqx_modules, false} %% modules is not a plugin in ce
@@ -234,6 +282,34 @@ overlay_vars_rel(RelType) ->
     ].
 
 %% vars per packaging type, bin(zip/tar.gz/docker) or pkg(rpm/deb)
+=======
+    %% dgiot base plugin
+    [{enable_plugin_dgiot, true}
+    , {enable_plugin_dgiot_bridge, true}
+    , {enable_plugin_dgiot_parse, true}
+    , {enable_plugin_dgiot_api, true}
+    , {enable_plugin_dgiot_tdengine, true}
+    , {enable_plugin_dgiot_task, true}
+    , {enable_plugin_dgiot_device, true}
+    , {enable_plugin_dgiot_http, true}
+    , {enable_plugin_dgiot_topo, true}
+    , {enable_plugin_dgiot_bamis, true}
+    , {enable_plugin_dgiot_dlink, true}
+    , {enable_plugin_dgiot_evidence, true}
+    , {enable_plugin_dgiot_opc, true}
+    , {enable_plugin_dgiot_meter, true}
+    , {enable_plugin_dgiot_modbus, true}
+    , {enable_plugin_dgiot_ffmpeg, true}
+    , {enable_plugin_dgiot_gb26875, true}
+    , {enable_plugin_dgiot_hjt212, true}
+    , {enable_plugin_dgiot_bacnet, true}
+    , {enable_plugin_dgiot_factory, true}
+    , {enable_plugin_dgiot_printer, true}
+    , {enable_plugin_dgiot_location, true}
+    , {vm_args_file, VmArgs}
+    ].
+
+>>>>>>> origin/dgaiot-plugins
 overlay_vars_pkg(bin) ->
     [ {platform_bin_dir, "bin"}
     , {platform_data_dir, "data"}
@@ -250,6 +326,7 @@ overlay_vars_pkg(bin) ->
     ];
 overlay_vars_pkg(pkg) ->
     [ {platform_bin_dir, ""}
+<<<<<<< HEAD
     , {platform_data_dir, "/var/lib/emqx"}
     , {platform_etc_dir, "/etc/emqx"}
     , {platform_lib_dir, ""}
@@ -261,6 +338,19 @@ overlay_vars_pkg(pkg) ->
     , {runner_log_dir, "/var/log/emqx"}
     , {runner_data_dir, "/var/lib/emqx"}
     , {runner_user, "emqx"}
+=======
+    , {platform_data_dir, "/var/lib/dgiot"}
+    , {platform_etc_dir, "/etc/dgiot"}
+    , {platform_lib_dir, ""}
+    , {platform_log_dir, "/var/log/dgiot"}
+    , {platform_plugins_dir, "/var/lib/dgiot/plugins"}
+    , {runner_bin_dir, "/usr/bin"}
+    , {runner_etc_dir, "/etc/dgiot"}
+    , {runner_lib_dir, "$RUNNER_ROOT_DIR/lib"}
+    , {runner_log_dir, "/var/log/dgiot"}
+    , {runner_data_dir, "/var/lib/dgiot"}
+    , {runner_user, "dgiot"}
+>>>>>>> origin/dgaiot-plugins
     ].
 
 relx_apps(ReleaseType) ->
@@ -278,6 +368,7 @@ relx_apps(ReleaseType) ->
         , gpb
         , poolboy
         , ibrowse
+<<<<<<< HEAD
 
         , emqx
         , {mnesia, load}
@@ -286,6 +377,13 @@ relx_apps(ReleaseType) ->
         , observer_cli
     ]
     ++ [emqx_modules || not is_enterprise()]
+=======
+        , dgiot
+        , {mnesia, load}
+        , {ekka, load}
+        , observer_cli
+    ]
+>>>>>>> origin/dgaiot-plugins
     ++ [emqx_license || is_enterprise()]
     ++ [bcrypt || provide_bcrypt_release(ReleaseType)]
     ++ relx_apps_per_rel(ReleaseType)
@@ -311,6 +409,7 @@ is_app(Name) ->
     end.
 
 relx_plugin_apps(ReleaseType) ->
+<<<<<<< HEAD
     [ emqx_retainer
     , emqx_management
     , emqx_dashboard
@@ -322,10 +421,14 @@ relx_plugin_apps(ReleaseType) ->
     ]
     ++ [emqx_telemetry || not is_enterprise()]
     ++ relx_plugin_apps_per_rel(ReleaseType)
+=======
+    relx_plugin_apps_per_rel(ReleaseType)
+>>>>>>> origin/dgaiot-plugins
     ++ relx_plugin_apps_enterprise(is_enterprise())
     ++ relx_plugin_apps_extra().
 
 relx_plugin_apps_per_rel(cloud) ->
+<<<<<<< HEAD
     [
         emqx_exhook
         , emqx_prometheus
@@ -353,6 +456,30 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_factory
         , dgiot_printer
         , dgiot_location
+=======
+    [ dgiot
+    , dgiot_api
+    , dgiot_parse
+    , dgiot_bridge
+    , dgiot_device
+    , dgiot_tdengine
+    , dgiot_http
+    , dgiot_task
+    , dgiot_dlink
+    , dgiot_topo
+    , dgiot_bamis
+    , dgiot_evidence
+    , dgiot_opc
+    , dgiot_meter
+    , dgiot_modbus
+    , dgiot_ffmpeg
+    , dgiot_gb26875
+    , dgiot_hjt212
+    , dgiot_bacnet
+    , dgiot_factory
+    , dgiot_printer
+    , dgiot_location
+>>>>>>> origin/dgaiot-plugins
     ];
 relx_plugin_apps_per_rel(edge) ->
     [].
@@ -375,6 +502,7 @@ relx_overlay(ReleaseType) ->
     , {mkdir, "data/scripts"}
     , {mkdir, "data/backup"}
     , {template, "data/loaded_plugins.tmpl", "data/loaded_plugins"}
+<<<<<<< HEAD
     , {template, "data/loaded_modules.tmpl", "data/loaded_modules"}
     , {template, "data/emqx_vars", "releases/emqx_vars"}
     , {copy, "bin/emqx", "bin/emqx"}
@@ -387,6 +515,14 @@ relx_overlay(ReleaseType) ->
     , {copy, "bin/install_upgrade.escript", "bin/install_upgrade.escript-{{release_version}}"} %% for relup
     , {template, "bin/emqx.cmd", "bin/emqx.cmd"}
     , {template, "bin/emqx_ctl.cmd", "bin/emqx_ctl.cmd"}
+=======
+    , {template, "data/dgiot_vars", "releases/dgiot_vars"}
+    , {copy, "bin/dgiot", "bin/dgiot"}
+    , {copy, "bin/dgiot_ctl", "bin/dgiot_ctl"}
+    , {copy, "bin/node_dump", "bin/node_dump"}
+    , {copy, "bin/dgiot", "bin/dgiot-{{release_version}}"}
+    , {copy, "bin/dgiot_ctl", "bin/dgiot_ctl-{{release_version}}"}
+>>>>>>> origin/dgaiot-plugins
     , {copy, "bin/nodetool", "bin/nodetool"}
     , {copy, "bin/nodetool", "bin/nodetool-{{release_version}}"}
     , {copy, "_build/default/lib/cuttlefish/cuttlefish", "bin/cuttlefish"}
@@ -399,13 +535,21 @@ relx_overlay(ReleaseType) ->
 
 etc_overlay(ReleaseType) ->
     PluginApps = relx_plugin_apps(ReleaseType),
+<<<<<<< HEAD
     Templates = emqx_etc_overlay(ReleaseType) ++
+=======
+    Templates = dgiot_etc_overlay(ReleaseType) ++
+>>>>>>> origin/dgaiot-plugins
                 lists:append([plugin_etc_overlays(App) || App <- PluginApps]) ++
                 [community_plugin_etc_overlays(App) || App <- relx_plugin_apps_extra()],
     [ {mkdir, "etc/"}
     , {mkdir, "etc/plugins"}
     , {template, "etc/BUILT_ON", "releases/{{release_version}}/BUILT_ON"}
+<<<<<<< HEAD
     , {copy, "{{base_dir}}/lib/emqx/etc/certs","etc/"}
+=======
+    , {copy, "{{base_dir}}/lib/dgiot/etc/certs","etc/"}
+>>>>>>> origin/dgaiot-plugins
     ] ++
     lists:map(
       fun({From, To}) -> {template, From, To};
@@ -414,6 +558,7 @@ etc_overlay(ReleaseType) ->
     ++ extra_overlay(ReleaseType).
 
 extra_overlay(cloud) ->
+<<<<<<< HEAD
     [
      {copy, "{{base_dir}}/lib/emqx_psk_file/etc/psk.txt", "etc/psk.txt"}
     ];
@@ -432,12 +577,32 @@ emqx_etc_overlay_common() ->
     ["etc/acl.conf", "etc/emqx.conf", "etc/ssl_dist.conf",
      %% TODO: check why it has to end with .paho
      %% and why it is put to etc/plugins dir
+=======
+    [];
+extra_overlay(edge) ->
+    [].
+
+dgiot_etc_overlay(cloud) ->
+    dgiot_etc_overlay_common() ++
+    [ {"etc/dgiot_cloud/vm.args","etc/vm.args"}
+    ];
+dgiot_etc_overlay(edge) ->
+    dgiot_etc_overlay_common() ++
+    [ {"etc/dgiot_edge/vm.args","etc/vm.args"}
+    ].
+
+dgiot_etc_overlay_common() ->
+    ["etc/acl.conf", "etc/dgiot.conf", "etc/ssl_dist.conf",
+>>>>>>> origin/dgaiot-plugins
      {"etc/acl.conf.paho", "etc/plugins/acl.conf.paho"}].
 
 plugin_etc_overlays(App0) ->
     App = atom_to_list(App0),
     ConfFiles = find_conf_files(App),
+<<<<<<< HEAD
     %% NOTE: not filename:join here since relx translates it for windows
+=======
+>>>>>>> origin/dgaiot-plugins
     [{"{{base_dir}}/lib/"++ App ++"/etc/" ++ F, "etc/plugins/" ++ F}
      || F <- ConfFiles].
 
@@ -445,12 +610,18 @@ community_plugin_etc_overlays(App0) ->
     App = atom_to_list(App0),
     {"{{base_dir}}/lib/"++ App ++"/etc/" ++ App ++ ".conf", "etc/plugins/" ++ App ++ ".conf"}.
 
+<<<<<<< HEAD
 %% NOTE: for apps fetched as rebar dependency (there is so far no such an app)
 %% the overlay should be hand-coded but not to rely on build-time wildcards.
 find_conf_files(App) ->
     Dir1 = filename:join(["apps", App, "etc"]),
     Dir2 = filename:join([alternative_lib_dir(), App, "etc"]),
     filelib:wildcard("*.conf", Dir1) ++ filelib:wildcard("*.conf", Dir2).
+=======
+find_conf_files(App) ->
+    Dir1 = filename:join(["apps", App, "etc"]),
+    filelib:wildcard("*.conf", Dir1).
+>>>>>>> origin/dgaiot-plugins
 
 env(Name, Default) ->
     case os:getenv(Name) of
@@ -490,8 +661,12 @@ provide_bcrypt_release(ReleaseType) ->
 
 erl_opts_i() ->
     [{i, "apps"}] ++
+<<<<<<< HEAD
     [{i, Dir}  || Dir <- filelib:wildcard(filename:join(["apps", "*", "include"]))] ++
     [{i, Dir}  || Dir <- filelib:wildcard(filename:join([alternative_lib_dir(), "*", "include"]))].
+=======
+    [{i, Dir}  || Dir <- filelib:wildcard(filename:join(["apps", "*", "include"]))].
+>>>>>>> origin/dgaiot-plugins
 
 dialyzer(Config) ->
     {dialyzer, OldDialyzerConfig} = lists:keyfind(dialyzer, 1, Config),
@@ -503,7 +678,11 @@ dialyzer(Config) ->
             [ list_to_atom(App) || App <- string:tokens(Value, ",")]
     end,
 
+<<<<<<< HEAD
     AppNames = [emqx | list_dir("apps")] ++ list_dir(alternative_lib_dir()),
+=======
+    AppNames = list_dir("apps"),
+>>>>>>> origin/dgaiot-plugins
 
     KnownApps = [Name ||  Name <- AppsToAnalyse, lists:member(Name, AppNames)],
 

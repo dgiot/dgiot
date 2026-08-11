@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 %%--------------------------------------------------------------------
 %% Copyright (c) 2020-2025 DGIOT Technologies Co., Ltd. All Rights Reserved.
 %%
@@ -81,3 +82,10 @@ log_device_operation(DeviceId, Operation, Details, User) ->
             ?LOG(error, "Failed to save device operation log: ~p", [Reason]),
             ok
     end.
+=======
+-module(dgiot_device_logger).
+-export([get_url/1, save_log/3, save_log/4]).
+get_url(_) -> <<>>.
+save_log(_, _, _) -> ok.
+save_log(_, _, _, _) -> ok.
+>>>>>>> origin/dgaiot-plugins

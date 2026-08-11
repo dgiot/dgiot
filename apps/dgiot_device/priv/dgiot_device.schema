@@ -18,6 +18,7 @@
   {datatype, string}
 ]}.
 
+<<<<<<< HEAD
 {mapping, "device.sync_batch_size", "dgiot_device.sync_batch_size", [
   {default, 50},
   {datatype, integer}
@@ -35,3 +36,5 @@
 
 
 
+=======
+>>>>>>> origin/dgaiot-plugins

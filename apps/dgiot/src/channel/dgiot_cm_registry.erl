@@ -99,15 +99,26 @@ record(ClientId, ChanPid) ->
 %%--------------------------------------------------------------------
 
 init([]) ->
+<<<<<<< HEAD
     ok = ekka_mnesia:create_table(?TAB, [
+=======
+    try ekka_mnesia:create_table(?TAB, [
+>>>>>>> origin/dgaiot-plugins
                 {type, bag},
                 {ram_copies, [node()]},
                 {record_name, channel},
                 {attributes, record_info(fields, channel)},
                 {storage_properties, [{ets, [{read_concurrency, true},
+<<<<<<< HEAD
                                              {write_concurrency, true}]}]}]),
     ok = ekka_mnesia:copy_table(?TAB, ram_copies),
     ok = ekka:monitor(membership),
+=======
+                                             {write_concurrency, true}]}]}])
+    catch _:_ -> ok end,
+    try ekka_mnesia:copy_table(?TAB, ram_copies) catch _:_ -> ok end,
+    try ekka:monitor(membership) catch _:_ -> ok end,
+>>>>>>> origin/dgaiot-plugins
     {ok, #{}}.
 
 handle_call(Req, _From, State) ->

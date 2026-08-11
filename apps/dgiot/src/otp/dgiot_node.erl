@@ -47,7 +47,20 @@ leave(Node) when is_atom(Node) ->
     end.
 
 get_nodes() ->
+<<<<<<< HEAD
     [format(Node, Info) || {Node, Info} <- emqx_mgmt:list_nodes()].
+=======
+    Nodes = mnesia:system_info(running_db_nodes),
+    [format(N, node_memory(N)) || N <- Nodes].
+
+node_memory(Node) ->
+    case rpc:call(Node, erlang, memory, []) of
+        {badrpc, _} -> #{};
+        Mem ->
+            #{memory_total => proplists:get_value(total, Mem, 0),
+              memory_used => proplists:get_value(processes, Mem, 0)}
+    end.
+>>>>>>> origin/dgaiot-plugins
 
 
 get_nodes(Sort) ->
@@ -233,10 +246,26 @@ format(Node, {error, Reason}) -> [{node, Node}, {error, Reason}];
 format(Node, Info = #{memory_total := Total, memory_used := Used}) ->
     Info#{node => Node,
         is_current => Node == node(),
+<<<<<<< HEAD
         memory_total => emqx_mgmt_util:kmg(Total),
         memory_used => emqx_mgmt_util:kmg(Used)
     }.
 
+=======
+        memory_total => kmg(Total),
+        memory_used => kmg(Used)
+    }.
+
+kmg(B) when B >= 1073741824 ->
+    <<(float_to_binary(B / 1073741824, [{decimals, 1}]))/binary, "G">>;
+kmg(B) when B >= 1048576 ->
+    <<(float_to_binary(B / 1048576, [{decimals, 1}]))/binary, "M">>;
+kmg(B) when B >= 1024 ->
+    <<(float_to_binary(B / 1024, [{decimals, 1}]))/binary, "K">>;
+kmg(B) ->
+    <<(integer_to_binary(B))/binary, "B">>.
+
+>>>>>>> origin/dgaiot-plugins
 
 %%ekka_callback(prepare) ->
 %%    ekka:callback(prepare, fun ?MODULE:shutdown/1);

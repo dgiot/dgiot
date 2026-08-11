@@ -657,6 +657,7 @@
           "Data"
         ]
       }
+<<<<<<< HEAD
     },
     "/testitem/order": {
       "get": {
@@ -749,6 +750,8 @@
         },
         "tags": ["System"]
       }
+=======
+>>>>>>> origin/dgaiot-plugins
     }
   }
 }

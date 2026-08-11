@@ -61,6 +61,7 @@
 %%--------------------------------------------------------------------
 
 mnesia(boot) ->
+<<<<<<< HEAD
     ok = ekka_mnesia:create_table(?MNESIA_NODE, [
                 {type, set},
                 {ram_copies, [node()]},
@@ -70,6 +71,24 @@ mnesia(boot) ->
 
 mnesia(copy) ->
     ok = ekka_mnesia:copy_table(?MNESIA_NODE, ram_copies).
+=======
+    case mnesia:create_table(?MNESIA_NODE, [
+                {type, set},
+                {ram_copies, [node()]},
+                {record_name, mnesia_node},
+                {attributes, record_info(fields, mnesia_node)}]) of
+        {atomic, ok} -> ok;
+        {aborted, {already_exists, _}} -> ok;
+        {aborted, {node_not_running, _}} -> ok
+    end;
+
+mnesia(copy) ->
+    try mnesia:add_table_copy(?MNESIA_NODE, node(), ram_copies) of
+        {atomic, ok} -> ok;
+        {aborted, {already_exists, _}} -> ok
+    catch _:_ -> ok
+    end.
+>>>>>>> origin/dgaiot-plugins
 
 %%--------------------------------------------------------------------
 %% API
@@ -85,7 +104,11 @@ start_link() ->
 monitor({_Group, Node}) ->
     monitor(Node);
 monitor(Node) when is_atom(Node) ->
+<<<<<<< HEAD
     case ekka:is_member(Node)
+=======
+    case (try (try ekka:is_member(Node) catch _:_ -> true end) catch _:_ -> true end)
+>>>>>>> origin/dgaiot-plugins
          orelse ets:member(?MNESIA_NODE, Node) of
         true  -> ok;
         false -> mnesia:dirty_write(?MNESIA_NODE, #mnesia_node{name = Node})
@@ -96,11 +119,19 @@ monitor(Node) when is_atom(Node) ->
 %%--------------------------------------------------------------------
 
 init([]) ->
+<<<<<<< HEAD
     ok = ekka:monitor(membership),
     {ok, _} = mnesia:subscribe({table, ?MNESIA_NODE, simple}),
     Nodes = lists:foldl(
               fun(Node, Acc) ->
                   case ekka:is_member(Node) of
+=======
+    try ekka:monitor(membership) catch _:_ -> ok end,
+    {ok, _} = mnesia:subscribe({table, ?MNESIA_NODE, simple}),
+    Nodes = lists:foldl(
+              fun(Node, Acc) ->
+                  case (try ekka:is_member(Node) catch _:_ -> true end) of
+>>>>>>> origin/dgaiot-plugins
                       true  -> Acc;
                       false -> true = erlang:monitor_node(Node, true),
                                [Node | Acc]
@@ -119,7 +150,11 @@ handle_cast(Msg, State) ->
 
 handle_info({mnesia_table_event, {write, {?MNESIA_NODE, Node, _}, _}},
             State = #{nodes := Nodes}) ->
+<<<<<<< HEAD
     case ekka:is_member(Node) orelse lists:member(Node, Nodes) of
+=======
+    case (try ekka:is_member(Node) catch _:_ -> true end) orelse lists:member(Node, Nodes) of
+>>>>>>> origin/dgaiot-plugins
         true -> {noreply, State};
         false ->
             true = erlang:monitor_node(Node, true),
@@ -153,7 +188,11 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
+<<<<<<< HEAD
     ok = ekka:unmonitor(membership),
+=======
+    try ekka:unmonitor(membership) catch _:_ -> ok end,
+>>>>>>> origin/dgaiot-plugins
     dgiot_stats:cancel_update(mnesia_stats),
     mnesia:unsubscribe({table, ?MNESIA_NODE, simple}).
 

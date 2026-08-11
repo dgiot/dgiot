@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 %%--------------------------------------------------------------------
 %% Copyright (c) 2020-2021 DGIOT Technologies Co., Ltd. All Rights Reserved.
 %%
@@ -204,3 +205,9 @@ get_status_and_enable(Device) ->
         _ ->
             {true, maps:get(<<"isEnable">>, Device, true)}
     end.
+=======
+-module(dgiot_device_post).
+-export([post/1, post/2]).
+post(X) -> dgiot_device_cache:post(X).
+post(X, Y) -> dgiot_device_cache:post(X, Y).
+>>>>>>> origin/dgaiot-plugins

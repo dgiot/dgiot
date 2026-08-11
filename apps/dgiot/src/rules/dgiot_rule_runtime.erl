@@ -17,7 +17,10 @@
 -module(dgiot_rule_runtime).
 
 -include_lib("dgiot/include/rule_engine.hrl").
+<<<<<<< HEAD
 -include_lib("emqx/include/emqx.hrl").
+=======
+>>>>>>> origin/dgaiot-plugins
 -include_lib("dgiot/include/logger.hrl").
 
 -export([ apply_rule/2
@@ -45,7 +48,11 @@
 %%------------------------------------------------------------------------------
 %% Apply rules
 %%------------------------------------------------------------------------------
+<<<<<<< HEAD
 -spec(apply_rules(list(emqx_rule_engine:rule()), input()) -> ok).
+=======
+-spec(apply_rules(list(#rule{}), input()) -> ok).
+>>>>>>> origin/dgaiot-plugins
 apply_rules([], _Input) ->
     ok;
 apply_rules([#rule{enabled = false}|More], Input) ->

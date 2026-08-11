@@ -22,7 +22,14 @@
 %%
 %% @end
 -module(dgiot_dlink_app).
+<<<<<<< HEAD
 -emqx_plugin(auth).
+=======
+-dgiot_plugin(?MODULE).
+-ifdef(DGIOT_WITH_EMQX).
+-emqx_plugin(auth).
+-endif.
+>>>>>>> origin/dgaiot-plugins
 -behaviour(application).
 -include_lib("dgiot_task/include/dgiot_task.hrl").
 
@@ -46,19 +53,35 @@ stop(_State) ->
     ok.
 
 stop_hook(State) ->
+<<<<<<< HEAD
     emqx:unhook('client.authenticate', fun dgiot_mqtt_auth:check/3),
     emqx:unhook('client.check_acl', fun dgiot_mqtt_acl:check_acl/5),
     emqx:unhook('client.disconnected', fun dgiot_mqtt_offline:on_client_disconnected/4),
     emqx:unhook('session.terminated', fun dgiot_mqtt_offline:on_session_terminated/4),
     emqx:unhook('message.publish', fun dgiot_mqtt_message:on_message_publish/2),
+=======
+    dgiot_hooks:unhook('client.authenticate', fun dgiot_mqtt_auth:check/3),
+    dgiot_hooks:unhook('client.check_acl', fun dgiot_mqtt_acl:check_acl/5),
+    dgiot_hooks:unhook('client.disconnected', fun dgiot_mqtt_offline:on_client_disconnected/4),
+    dgiot_hooks:unhook('session.terminated', fun dgiot_mqtt_offline:on_session_terminated/4),
+    dgiot_hooks:unhook('message.publish', fun dgiot_mqtt_message:on_message_publish/2),
+>>>>>>> origin/dgaiot-plugins
     dgiot_hook:remove({?DGIOT_DATASOURCE, <<"DLINK">>}),
     State.
 
 %% todo dlink auth
 start_hook() ->
+<<<<<<< HEAD
     emqx:hook('client.authenticate', fun dgiot_mqtt_auth:check/3, [#{hash_type => plain}]),
     emqx:hook('client.check_acl', fun dgiot_mqtt_acl:check_acl/5, [#{}]),
     emqx:hook('client.disconnected', fun dgiot_mqtt_offline:on_client_disconnected/4, [#{}]),
     emqx:hook('session.terminated', fun dgiot_mqtt_offline:on_session_terminated/4, [#{}]),
     emqx:hook('message.publish', fun dgiot_mqtt_message:on_message_publish/2, [#{}]).
+=======
+    dgiot_hooks:hook('client.authenticate', fun dgiot_mqtt_auth:check/3, [#{hash_type => plain}]),
+    dgiot_hooks:hook('client.check_acl', fun dgiot_mqtt_acl:check_acl/5, [#{}]),
+    dgiot_hooks:hook('client.disconnected', fun dgiot_mqtt_offline:on_client_disconnected/4, [#{}]),
+    dgiot_hooks:hook('session.terminated', fun dgiot_mqtt_offline:on_session_terminated/4, [#{}]),
+    dgiot_hooks:hook('message.publish', fun dgiot_mqtt_message:on_message_publish/2, [#{}]).
+>>>>>>> origin/dgaiot-plugins
 

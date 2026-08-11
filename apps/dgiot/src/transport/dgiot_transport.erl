@@ -21,11 +21,19 @@
 
 -define(SOCKOPTS, [
     {reuseaddr, true},
+<<<<<<< HEAD
     {backlog, 512},
     {nodelay, true},
     {keepalive, true},
     {send_timeout, 30000},
     {send_timeout_close, false}
+=======
+    {backlog, 1024},
+    {nodelay, false},
+    {keepalive, false},
+    {send_timeout, 5000},
+    {send_timeout_close, true}
+>>>>>>> origin/dgaiot-plugins
 ]).
 
 -define(OPTS, [
@@ -41,13 +49,22 @@ get_opts(tcp, Port) ->
     TCPOpts = [
         {backlog, 512},
         {keepalive, true},
+<<<<<<< HEAD
         {send_timeout, 30000},
         {send_timeout_close, false},
+=======
+        {send_timeout, 15000},
+        {send_timeout_close, true},
+>>>>>>> origin/dgaiot-plugins
         {nodelay, true},
         {reuseaddr, true},
         binary,
         {packet, raw},
+<<<<<<< HEAD
         {exit_on_close, false}
+=======
+        {exit_on_close, true}
+>>>>>>> origin/dgaiot-plugins
     ],
     Opts = [
         {tcp_options, TCPOpts},
@@ -83,7 +100,11 @@ get_opts(udp, Port) ->
 
 get_opts(tcp, App, _Port) ->
     Opts = application:get_env(App, listeners, ?OPTS),
+<<<<<<< HEAD
     TCPOpts = proplists:get_value(tcp_options, Opts, ?SOCKOPTS) ++ [binary, {packet, raw}, {exit_on_close, false}],
+=======
+    TCPOpts = proplists:get_value(tcp_options, Opts, ?SOCKOPTS) ++ [binary, {packet, raw}, {exit_on_close, true}],
+>>>>>>> origin/dgaiot-plugins
     MaxConnections = proplists:get_value(max_connections, Opts, 1024000),
     MaxConnRate = proplists:get_value(max_conn_rate, Opts, 1024000),
     Acceptors = proplists:get_value(acceptors, Opts, 16),
@@ -99,7 +120,11 @@ get_opts(tcp, App, _Port) ->
 
 get_opts(udp, App, _Port) ->
     Opts = application:get_env(App, listeners, ?OPTS),
+<<<<<<< HEAD
     TCPOpts = proplists:get_value(tcp_options, Opts, ?SOCKOPTS) ++ [binary, {packet, raw}, {exit_on_close, false}],
+=======
+    TCPOpts = proplists:get_value(tcp_options, Opts, ?SOCKOPTS) ++ [binary, {packet, raw}, {exit_on_close, true}],
+>>>>>>> origin/dgaiot-plugins
     MaxConnections = proplists:get_value(max_connections, Opts, 1024000),
     MaxConnRate = proplists:get_value(max_conn_rate, Opts, 1024000),
     Acceptors = proplists:get_value(acceptors, Opts, 16),

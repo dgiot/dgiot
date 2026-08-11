@@ -18,7 +18,14 @@
 -module(dgiot_task_app).
 
 -behaviour(application).
+<<<<<<< HEAD
 -emqx_plugin(?MODULE).
+=======
+-dgiot_plugin(?MODULE).
+-ifdef(DGIOT_WITH_EMQX).
+-emqx_plugin(?MODULE).
+-endif.
+>>>>>>> origin/dgaiot-plugins
 -include("dgiot_task.hrl").
 
 %% Application callbacks

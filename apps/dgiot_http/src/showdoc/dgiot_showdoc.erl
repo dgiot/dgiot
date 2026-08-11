@@ -118,7 +118,11 @@ to_content(#{
 % @title 用户注册
 % @description 用户注册的接口
 % @method get
+<<<<<<< HEAD
 % @url http://doc.iotn2n.com/home/user/login
+=======
+% @url https://doc.dgiot.com/home/user/login
+>>>>>>> origin/dgaiot-plugins
 % @param username 必选 string 用户名
 % @param password 必选 string 密码
 % @param name 可选 string 用户昵称

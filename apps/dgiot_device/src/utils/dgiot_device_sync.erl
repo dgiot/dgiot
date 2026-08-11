@@ -1,4 +1,5 @@
 -module(dgiot_device_sync).
+<<<<<<< HEAD
 -author("Your Name").
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/logger.hrl").
@@ -350,3 +351,7 @@ insert_mnesia(DeviceId, Acl, Status, State, Now, IsEnable, ProductId, Devaddr, D
     %%    notification(DeviceId, Status, Longitude, Latitude, IsEnable, Now),
         dgiot_mnesia:insert(DeviceId, ['Device', Acl, Status, State, Now, IsEnable, dgiot_utils:to_atom(ProductId), Devaddr, DeviceSecret, Node, Longitude, Latitude, ParentId]).
         
+=======
+-export([sync_parse/1]).
+sync_parse(X) -> dgiot_device_cache:sync_parse(X).
+>>>>>>> origin/dgaiot-plugins

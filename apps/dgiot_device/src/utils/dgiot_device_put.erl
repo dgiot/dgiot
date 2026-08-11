@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 %%--------------------------------------------------------------------
 %% Copyright (c) 2020-2021 DGIOT Technologies Co., Ltd. All Rights Reserved.
 %%
@@ -171,3 +172,8 @@ insert_updated_device(DeviceId, UpdateData, ExistingDevice) ->
         ProductId, Devaddr, DeviceSecret, Node, 
         Longitude, Latitude, ParentId
     ).
+=======
+-module(dgiot_device_put).
+-export([put/1]).
+put(X) -> dgiot_device_cache:put(X).
+>>>>>>> origin/dgaiot-plugins

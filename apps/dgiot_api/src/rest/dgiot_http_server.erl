@@ -107,7 +107,11 @@ get_child_spec(Name, #{
     acceptors := Acceptors
 } = Env) ->
     SSL = maps:with([cacertfile, certfile, keyfile], Env),
+<<<<<<< HEAD
     IP = {0, 0, 0, 0},
+=======
+    IP = maps:get(ip, Env, {0, 0, 0, 0}),
+>>>>>>> origin/dgaiot-plugins
     NetOpts = [{ssl, maps:to_list(SSL)}],
     {Transport, TransportOpts} = get_transport(IP, Port, NetOpts),
     ExtraOpts = maps:get(cowboy_extra_opts, Env, []),
@@ -155,13 +159,21 @@ get_routes(Name, #{docroot := DocRoot}) ->
 
 
 get_env(App) ->
+<<<<<<< HEAD
+=======
+    Defaults = #{port => 5080, docroot => "priv/www", acceptors => 8},
+>>>>>>> origin/dgaiot-plugins
     lists:foldl(
         fun(Key, Acc) ->
             case get_env(App, Key) of
                 undefined -> Acc;
                 Value -> Acc#{Key => Value}
             end
+<<<<<<< HEAD
         end, #{}, [port, docroot, acceptors, cacertfile, certfile, keyfile]).
+=======
+        end, Defaults, [port, docroot, acceptors, cacertfile, certfile, keyfile]).
+>>>>>>> origin/dgaiot-plugins
 get_env(App, Key) when Key == docroot; Key == cacertfile; Key == certfile; Key == keyfile ->
     case get_env_value(App, Key) of
             "priv/" ++ _ = Path ->

@@ -11,7 +11,11 @@
         "write": true
       }
     },
+<<<<<<< HEAD
     "dashboard": "http://prod.iotn2n.com:3000/d/j2eTKoFWk/ping-tai-jian-kong?isShare=true&orgId=2&var-interval=5s&var-env=All&var-name=All&var-node={host}:9100&var-ip={host}&refresh=5s",
+=======
+    "dashboard": "http://dashboard.dgiot.com/d/j2eTKoFWk/ping-tai-jian-kong?isShare=true&orgId=2&var-interval=5s&var-env=All&var-name=All&var-node={host}:9100&var-ip={host}&refresh=5s",
+>>>>>>> origin/dgaiot-plugins
     "config": {
     },
     "copyright": "Copyright © 2017-2019 数蛙科技 Corporation, All Rights Reserved",

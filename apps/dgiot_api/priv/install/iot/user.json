@@ -1,7 +1,11 @@
 [
   {
     "username": "root",
+<<<<<<< HEAD
     "email": "johnliu@iotn2n.com",
+=======
+    "email": "admin@dgiot.com",
+>>>>>>> origin/dgaiot-plugins
     "password": "root",
     "emailVerified": true,
     "phone": "",
@@ -12,7 +16,11 @@
   },
   {
     "username": "admin",
+<<<<<<< HEAD
     "email": "admin@iotn2n.com",
+=======
+    "email": "admin@dgiot.com",
+>>>>>>> origin/dgaiot-plugins
     "password": "admin",
     "emailVerified": true,
     "phone": "",
@@ -23,7 +31,11 @@
   },
   {
     "username": "test",
+<<<<<<< HEAD
     "email": "test@iotn2n.com",
+=======
+    "email": "test@dgiot.com",
+>>>>>>> origin/dgaiot-plugins
     "password": "test",
     "emailVerified": true,
     "phone": "",

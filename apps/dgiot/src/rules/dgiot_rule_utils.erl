@@ -229,9 +229,13 @@ tcp_connectivity(Host, Port, Timeout) ->
 ipv6_probe(Opts) ->
     case persistent_term:get({?MODULE, ipv6_probe_supported}, unknown) of
         unknown ->
+<<<<<<< HEAD
             %% e.g. 23.2.7.1-emqx-2-x86_64-unknown-linux-gnu-64
             OtpVsn = emqx_vm:get_otp_version(),
             Bool = (match =:= re:run(OtpVsn, "emqx", [{capture, none}])),
+=======
+            Bool = (erlang:system_info(otp_release) >= "22"),
+>>>>>>> origin/dgaiot-plugins
             _ = persistent_term:put({?MODULE, ipv6_probe_supported}, Bool),
             ipv6_probe(Bool, Opts);
         Bool ->

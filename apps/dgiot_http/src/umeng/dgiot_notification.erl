@@ -143,6 +143,7 @@ send_sms(NationCode, Mobile, TplId, Params, AppId, AppKey, Sign, Ext) ->
 
 test_email() ->
     Map = #{
+<<<<<<< HEAD
         <<"from">> => <<"18257190166@163.com">>,
         <<"to">> => <<"344896904@qq.com">>,
         <<"subject">> => <<"测试邮件"/utf8>>,
@@ -151,6 +152,16 @@ test_email() ->
         <<"data">> => <<"刘 中文测试 欢迎访问 https://github.com/dgiot "/utf8>>,
         <<"relay">> => <<"smtp.163.com">>,
         <<"username">> => <<"18257190166@163.com">>,
+=======
+        <<"from">> => <<"noreply@example.com">>,
+        <<"to">> => <<"admin@example.com">>,
+        <<"subject">> => <<"测试邮件"/utf8>>,
+        <<"fromdes">> => <<"刘 <noreply@example.com>"/utf8>>,
+        <<"todes">> => <<"刘 <admin@example.com>"/utf8>>,
+        <<"data">> => <<"刘 中文测试 欢迎访问 https://github.com/dgiot "/utf8>>,
+        <<"relay">> => <<"smtp.example.com">>,
+        <<"username">> => <<"noreply@example.com">>,
+>>>>>>> origin/dgaiot-plugins
         <<"password">> => <<"ALRFYEVAFSITDXSX">>
     },
     send_email(Map).
@@ -176,11 +187,19 @@ send_email(Email) ->
     PassWord = dgiot_data:get(?CONFIGURATION, mail_password),
     Relay = dgiot_data:get(?CONFIGURATION, mail_smtp),
 
+<<<<<<< HEAD
     To = maps:get(<<"to">>, Email, <<"3333333@qq.com">>),
     ArrTo = binary:split(To, <<$,>>, [global, trim]),
     Subject = maps:get(<<"subject">>, Email, <<"测试邮件"/utf8>>),
     FromDes = maps:get(<<"fromdes">>, Email, <<"dgiot开源物联网 <dgiot@163.com>"/utf8>>),
     ToDes = maps:get(<<"todes">>, Email, <<"dgiot用户 <3333333@qq.com>"/utf8>>),
+=======
+    To = maps:get(<<"to">>, Email, <<"user@example.com">>),
+    ArrTo = binary:split(To, <<$,>>, [global, trim]),
+    Subject = maps:get(<<"subject">>, Email, <<"测试邮件"/utf8>>),
+    FromDes = maps:get(<<"fromdes">>, Email, <<"dgiot开源物联网 <noreply@dgiot.com>"/utf8>>),
+    ToDes = maps:get(<<"todes">>, Email, <<"dgiot用户 <user@example.com>"/utf8>>),
+>>>>>>> origin/dgaiot-plugins
     Data = maps:get(<<"data">>, Email, <<"dgiot邮件 中文测试 欢迎访问 https://github.com/dgiot "/utf8>>),
 
     EmailBody = {<<"multipart">>, <<"alternative">>, [{<<"From">>, FromDes}, {<<"To">>, ToDes}, {<<"Subject">>, Subject}], #{},

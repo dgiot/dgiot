@@ -20,6 +20,7 @@
 -include_lib("dgiot/include/logger.hrl").
 
 -export([get_schema/2, create_database/1, create_table/2, alter_table/2, get_addSql/4]).
+<<<<<<< HEAD
 -export([extract_columns/1, create_stable_by_columns/5]).
 
 %% 从产品物模型中提取所有字段（已清洗、去重，不含 devaddr 标签）
@@ -154,6 +155,11 @@ get_existing_columns(ChannelId, Database, TableName) ->
     end.
 
 %% 以下为原有函数（未修改，仅保持原样）
+=======
+
+%% TDengine参数限制与保留关键字
+%% https://www.taosdata.com/docs/cn/v2.0/administrator#keywords
+>>>>>>> origin/dgaiot-plugins
 get_schema(_ChannelId, Schema) ->
     case maps:get(<<"thing">>, Schema, <<>>) of
         <<>> ->
@@ -207,6 +213,10 @@ format_keep(Query) ->
     Keep = maps:get(<<"keep">>, Query, 10),
     dgiot_utils:to_binary(Keep).
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/dgaiot-plugins
 create_table(#{<<"tableName">> := TableName, <<"using">> := STbName, <<"tags">> := Tags} = _Query, #{<<"channel">> := Channel} = _Context) ->
     TagFields =
         list_to_binary(dgiot_utils:join(",", lists:foldr(
@@ -266,6 +276,10 @@ alter_table(#{<<"tableName">> := TableName}, #{<<"channel">> := Channel} = Conte
             pass
     end.
 
+<<<<<<< HEAD
+=======
+%% ALTER TABLE  _24b9b4bc50._5392ccb3d7 drop COLUMN status;
+>>>>>>> origin/dgaiot-plugins
 get_addSql(ProductId, TdColumn, Database, TableName) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props} = Thing}} ->
@@ -273,7 +287,11 @@ get_addSql(ProductId, TdColumn, Database, TableName) ->
             lists:foldl(fun(Prop, Acc) ->
                 case Prop of
                     #{<<"dataType">> := #{<<"type">> := Type} = DataType, <<"identifier">> := Identifier, <<"moduleType">> := ModuleType, <<"isstorage">> := true} ->
+<<<<<<< HEAD
                         LowerIdentifier = dgiot_tdengine_field:sanitize_name(Identifier),
+=======
+                        LowerIdentifier = list_to_binary(string:to_lower(binary_to_list(Identifier))),
+>>>>>>> origin/dgaiot-plugins
                         LowerType = dgiot_tdengine_field:get_field_type(Type),
                         FieldType = get_fieldtype(ModuleType),
                         case maps:find(LowerIdentifier, TdColumn) of
@@ -282,6 +300,10 @@ get_addSql(ProductId, TdColumn, Database, TableName) ->
                             {ok, LowerType} ->
                                 Acc;
                             _ ->
+<<<<<<< HEAD
+=======
+                                %% 类型改变, 先删除列, 再重新添加
+>>>>>>> origin/dgaiot-plugins
                                 DROP = <<"ALTER TABLE ", Database/binary, TableName/binary, " DROP ", FieldType/binary, " ", LowerIdentifier/binary, ";">>,
                                 ADD = dgiot_tdengine_field:add_field(DataType, Database, TableName, LowerIdentifier, FieldType),
                                 Acc ++ [DROP, ADD]
@@ -297,4 +319,9 @@ get_addSql(ProductId, TdColumn, Database, TableName) ->
 get_fieldtype(<<"tags">>) ->
     <<"TAG">>;
 get_fieldtype(_) ->
+<<<<<<< HEAD
     <<"COLUMN">>.
+=======
+    <<"COLUMN">>.
+
+>>>>>>> origin/dgaiot-plugins

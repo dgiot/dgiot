@@ -618,7 +618,11 @@
               "properties": {
                 "to": {
                   "type": "array",
+<<<<<<< HEAD
                   "example": "463544084@qq.com,46354408412@qq.com",
+=======
+                  "example": "demo@dgiot.com,demo@dgiot.com",
+>>>>>>> origin/dgaiot-plugins
                   "description": "收件人邮箱,多个按','分隔"
                 },
                 "subject": {
@@ -630,13 +634,21 @@
                 "fromdes": {
                   "type": "string",
                   "required": true,
+<<<<<<< HEAD
                   "example": "18257190166@163.com",
+=======
+                  "example": "demo@dgiot.com",
+>>>>>>> origin/dgaiot-plugins
                   "description": "发件人描述"
                 },
                 "todes": {
                   "type": "string",
                   "required": true,
+<<<<<<< HEAD
                   "example": "463544084@qq.com",
+=======
+                  "example": "demo@dgiot.com",
+>>>>>>> origin/dgaiot-plugins
                   "description": "收件人描述"
                 },
                 "data": {

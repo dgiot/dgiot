@@ -65,7 +65,11 @@ main(Args) ->
         ["stop"] ->
             io:format("~p\n", [rpc:call(TargetNode, init, stop, [], 60000)]);
         ["restart", "-config", ConfigFile | _RestArgs1] ->
+<<<<<<< HEAD
             io:format("~p\n", [rpc:call(TargetNode, emqx, restart, [ConfigFile], 60000)]);
+=======
+            io:format("~p\n", [rpc:call(TargetNode, dgiot, restart, [ConfigFile], 60000)]);
+>>>>>>> origin/dgaiot-plugins
         ["rpc", Module, Function | RpcArgs] ->
             case rpc:call(TargetNode, list_to_atom(Module), list_to_atom(Function),
                           [RpcArgs], 60000) of

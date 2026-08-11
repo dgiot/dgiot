@@ -4,7 +4,11 @@
 export PATH=$PATH:/usr/local/bin
 
 function help() {
+<<<<<<< HEAD
   echo "Usage: $(basename $0) -v [single | cluster | devops | ci |  otp | atomgit] -s [dgiot_n] -p [your_dgiot_plugin] -m [dgiotmd5 | atomplugin] -e [pg_eip] -a [pg_auth] -n [islanip]"
+=======
+  echo "Usage: $(basename $0) -v [single | cluster | devops | ci | otp | atomgit] -s [dgiot_n] -p [your_dgiot_plugin] -m [dgiotmd5 | atomplugin] -e [pg_eip] -a [pg_auth] -n [islanip] -f [gofastdfs | minio]"
+>>>>>>> origin/dgaiot-plugins
   exit 0
 }
 
@@ -425,7 +429,11 @@ function yum_install_postgres() {
   ${csudo} yum install -y zlib zlib-devel &>/dev/null
   ${csudo} yum install -y pam-devel libxml2-devel libxslt-devel &>/dev/null
   ${csudo} yum install -y openldap-devel systemd-devel &>/dev/null
+<<<<<<< HEAD
   ${csudo} yum install -y tcl-devel uuid-devel libuuid-devel &>/dev/null
+=======
+  ${csudo} yum install -y tcl-devel &>/dev/null
+>>>>>>> origin/dgaiot-plugins
 }
 
 ### 安装dgaiot
@@ -482,11 +490,16 @@ function install_xinference() {
   echo 'export XINFERENCE_HOME=/data/dgiot/models/xinference' >> ~/.bashrc   &>/dev/null
   /bin/bash -c 'source ~/.bashrc' &>/dev/null
 
+<<<<<<< HEAD
   cd /data/dgiot
+=======
+  cd /data/dgiot  
+>>>>>>> origin/dgaiot-plugins
   python3 -m venv xinference  &>/dev/null
   sudo dnf install -y libgomp &>/dev/null
   sudo ln -sf /usr/lib/gcc/x86_64-openEuler-linux/12/libgomp.so /usr/lib/libgomp.so.1   &>/dev/null
   sudo dnf install -y mesa-libGL  &>/dev/null
+<<<<<<< HEAD
   /bin/bash -c 'source xinference/bin/activate &&
   pip install --upgrade pip &&
   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64  &&
@@ -497,6 +510,18 @@ function install_xinference() {
 
   install_service2 "dgiot_xinference" "simple" "/data/dgiot/xinference/bin/xinference-local --host 0.0.0.0 --port 9997"
 
+=======
+  /bin/bash -c 'source xinference/bin/activate && 
+  pip install --upgrade pip &&
+  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64  &&
+  pip install llama-cpp-python==0.3.2 && 
+  pip install xinference && 
+  rm -rf /data/dgiot/xinference/lib64/python3.11/site-packages/nvidia/nvjitlink/lib/libcusparse.so.12 && 
+  ln -s /data/dgiot/xinference/lib64/python3.11/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12 /data/dgiot/xinference/lib64/python3.11/site-packages/nvidia/cusparse/lib/libnvJitLink.so.12' &>/dev/null
+  
+  install_service2 "dgiot_xinference" "simple" "/data/dgiot/xinference/bin/xinference-local --host 0.0.0.0 --port 9997" 
+  
+>>>>>>> origin/dgaiot-plugins
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} install milvus sueccess${NC}"
 }
 
@@ -507,7 +532,11 @@ function install_miniconda3() {
   miniconda3_software="Miniconda3-py311_25.1.1-2-Linux-x86_64.sh"
 
   rm -rf ${miniconda3_software}
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> origin/dgaiot-plugins
   ${csudo} wget ${fileserver}/${miniconda3_software} -O ${script_dir}/${miniconda3_software}  &>/dev/null
   bash Miniconda3-py311_25.1.1-2-Linux-x86_64.sh &>/dev/null
   source ~/.bashrc
@@ -532,7 +561,11 @@ function install_milvus() {
   ${csudo} wget ${fileserver}/standalone_embed.sh -O ${install_dir}/milvus/standalone_embed.sh &>/dev/null
   chmod 777 ${install_dir}/milvus/standalone_embed.sh &>/dev/null
 
+<<<<<<< HEAD
   install_service2 "dgiot_milvus" "simple" "${install_dir}/milvus/standalone_embed.sh start"
+=======
+  install_service2 "dgiot_milvus" "simple" "${install_dir}/milvus/standalone_embed.sh start" 
+>>>>>>> origin/dgaiot-plugins
 
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} install milvus sueccess${NC}"
 }
@@ -540,9 +573,17 @@ function install_milvus() {
 ### 安装dify
 function install_dify() {
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} install dify${NC}"
+<<<<<<< HEAD
   cd ${script_dir}
   ##下载软件
   dify_software="dify-0.15.3.tar.gz"
+=======
+  yum install -y go  &>/dev/null
+  go env -w GOPROXY=https://goproxy.cn,direct &>/dev/null
+  cd ${script_dir}
+  ##下载软件
+  dify_software="dify.tar.gz"
+>>>>>>> origin/dgaiot-plugins
   if [ ! -f ${script_dir}/${dify_software} ]; then
     ${csudo} wget ${fileserver}/${dify_software} -O ${script_dir}/${dify_software} &>/dev/null
   fi
@@ -556,6 +597,7 @@ function install_dify() {
   # sed -i "s/127.0.0.1/${wlanip}/g" .env
   yum install -y python  &>/dev/null
   yum install -y python-pip  &>/dev/null
+<<<<<<< HEAD
   pip config set global.extra-index-url https://mirrors.cloud.tencent.com/pypi/simple/
   pip install --upgrade pip &>/dev/null
   # 安装poetry
@@ -574,6 +616,25 @@ function install_dify() {
   # sed -i "s/localhost/${wlanip}/g" .env.local
 
   /bin/bash -c 'npm install && npm run build'  &>/dev/null
+=======
+  pip config set global.extra-index-url https://mirrors.cloud.tencent.com/pypi/simple/ &>/dev/null
+  pip install --upgrade pip &>/dev/null
+  # 安装poetry
+  pip install poetry  &>/dev/null
+
+  poetry install  &>/dev/null
+  poetry run flask db upgrade  &>/dev/null
+  
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install dify api sueccess${NC}"
+  
+  # 安装前端
+  install_node 
+  cd /data/dgiot/dify/web
+  cp -R .env.example .env.local
+  # sed -i "s/localhost/${wlanip}/g" .env.local
+  
+  pnpm install  &>/dev/null
+>>>>>>> origin/dgaiot-plugins
 
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} install dify web sueccess${NC}"
 
@@ -610,6 +671,10 @@ function install_node() {
 
   ln -s /data/dgiot/node-v22.14.0-linux-x64/bin/node /usr/local/bin/node &>/dev/null
   ln -s /data/dgiot/node-v22.14.0-linux-x64/bin/npm /usr/local/bin/npm &>/dev/null
+<<<<<<< HEAD
+=======
+  ln -s /data/dgiot/node-v22.14.0-linux-x64/bin/pnpm /usr/local/bin/pnpm &>/dev/null
+>>>>>>> origin/dgaiot-plugins
 
   npm config set registry https://registry.npmmirror.com/ &>/dev/null
 
@@ -646,7 +711,11 @@ function build_polardb() {
         perl-Pod-Html xz gcc-c++ \
         protobuf-compiler protobuf-c protobuf-devel perl-CPAN \
   clang llvm llvm-devel lz4-devel libzstd-devel \
+<<<<<<< HEAD
   libunwind-devel perl-IPC-Run openssl-devel e2fsprogs-devel &>/dev/null
+=======
+  libunwind-devel perl-IPC-Run openssl-devel e2fsprogs-devel  uuid-devel libuuid-devel &>/dev/null
+>>>>>>> origin/dgaiot-plugins
 
   cd /home/dgiot/PolarDB-${pg_version}/external/zlog-1.2.18
   make install &>/dev/null
@@ -672,7 +741,11 @@ function build_polardb() {
   cd /home/dgiot/PolarDB-${pg_version}/external/pgvector &>/dev/null
   make &>/dev/null
   make install &>/dev/null
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> origin/dgaiot-plugins
   cd ${script_dir}  &>/dev/null
   rm ${script_dir}/PolarDB-${pg_version} -rf &>/dev/null
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} build polardb sueccess${NC}"
@@ -857,7 +930,11 @@ EOF
   pg_hba_conf="${install_dir}/dgiot_pg_writer/data/pg_hba.conf"
   # METHOD "trust", "reject","md5","password","scram-sha-256","gss","sspi","ident","peer","pam","ldap","radius","cert"
   ${csudo} bash -c "echo 'host    all             all             ${pg_eip}/24           password'    >> ${pg_hba_conf}"
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> origin/dgaiot-plugins
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} ${postgresql_conf}${NC}"
 }
 
@@ -898,7 +975,11 @@ function deploy_postgres() {
   if [ ${pg_version} == "15" ]; then
     sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -c "create extension vector;"   &>/dev/null
   fi
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> origin/dgaiot-plugins
 
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} deploy postgres success${NC}"
 }
@@ -1176,6 +1257,52 @@ function install_go_fastdfs() {
   mv ${script_dir}/dgiot_dashboard ${install_dir}/go_fastdfs/files/ &>/dev/null
 }
 
+<<<<<<< HEAD
+=======
+#4b 安装MinIO对象存储 (替代go_fastdfs)
+function install_minio() {
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install MinIO${NC}"
+  if [ -d ${install_dir}/minio/ ]; then
+    clean_service minio
+    mv ${install_dir}/minio ${backup_dir}/
+  fi
+  mkdir -p ${install_dir}/minio/files/
+
+  # 下载MinIO单二进制
+  minio_bin="minio-${os_name}-${cpu_name}"
+  if [ ! -f ${script_dir}/minio ]; then
+    curl -L -o ${script_dir}/minio https://dl.min.io/server/minio/release/linux-${cpu_name}/minio &>/dev/null
+    chmod +x ${script_dir}/minio
+  fi
+  cp ${script_dir}/minio /usr/local/bin/minio
+
+  # 生成随机密码
+  minio_user=dgiot_admin
+  minio_pass=$(openssl rand -hex 16)
+  echo ${minio_pass} > /etc/dgiot/minio_secret
+
+  # systemd 服务
+  cat > /lib/systemd/system/minio.service << EOF
+[Unit]
+Description=MinIO Object Storage
+After=network-online.target
+[Service]
+Type=simple
+User=root
+Environment="MINIO_ROOT_USER=${minio_user}"
+Environment="MINIO_ROOT_PASSWORD=${minio_pass}"
+ExecStart=/usr/local/bin/minio server ${install_dir}/minio/files --console-address \":9001\" --address \":9000\"
+Restart=always
+[Install]
+WantedBy=multi-user.target
+EOF
+  systemctl daemon-reload
+  systemctl enable minio &>/dev/null
+  systemctl start minio &>/dev/null
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} MinIO started :9000 (console :9001)${NC}"
+}
+
+>>>>>>> origin/dgaiot-plugins
 #4 安装文件数据服务器
 function install_word_report() {
   clean_service dgiot_report
@@ -1283,14 +1410,22 @@ function update_dgiot() {
   rm ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf -rf
   cp ${install_dir}/dgiot/etc/plugins/dgiot_parse.conf ${install_dir}/go_fastdfs/files/package/dgiot/etc/plugins/dgiot_parse.conf
   cp ${install_dir}/dgiot/etc/plugins/dgiot_http.conf ${install_dir}/go_fastdfs/files/package/dgiot/etc/plugins/dgiot_http.conf
+<<<<<<< HEAD
   cp ${install_dir}/dgiot/etc/emqx.conf ${install_dir}/go_fastdfs/files/package/dgiot/etc/emqx.conf
+=======
+  cp ${install_dir}/dgiot/etc/dgiot.conf ${install_dir}/go_fastdfs/files/package/dgiot/etc/dgiot.conf
+>>>>>>> origin/dgaiot-plugins
   if [ -d ${install_dir}/dgiot/ ]; then
     clean_service dgiot
     mv ${install_dir}/dgiot ${backup_dir}/dgiot/
   fi
   mv ${install_dir}/go_fastdfs/files/package/dgiot/ ${install_dir}/
 
+<<<<<<< HEAD
   install_service dgiot "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start" "root" "HOME=${install_dir}/dgiot/erts-12.3.2.2" "/bin/sh /data/dgiot/bin/emqx stop"
+=======
+  install_service dgiot "forking" "/bin/sh ${install_dir}/dgiot/bin/dgiot start" "root" "HOME=${install_dir}/dgiot/erts-12.3.2.2" "/bin/sh /data/dgiot/bin/dgiot stop"
+>>>>>>> origin/dgaiot-plugins
 }
 
 function update_tdengine_server() {
@@ -1417,7 +1552,11 @@ function install_dgiot() {
   fi
   mv ${install_dir}/go_fastdfs/files/package/dgiot ${install_dir}/
 
+<<<<<<< HEAD
   install_service dgiot "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start" "root" "HOME=${install_dir}/dgiot/erts-12.3.2.2" "/bin/sh /data/dgiot/bin/emqx stop"
+=======
+  install_service dgiot "forking" "/bin/sh ${install_dir}/dgiot/bin/dgiot start" "root" "HOME=${install_dir}/dgiot/erts-12.3.2.2" "/bin/sh /data/dgiot/bin/dgiot stop"
+>>>>>>> origin/dgaiot-plugins
 }
 
 #6 运维监控
@@ -1552,7 +1691,11 @@ function install_grafana() {
 
 function build_nginx() {
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} build_nginx ${NC}"
+<<<<<<< HEAD
   clean_service nginx
+=======
+  clean_service nginx 
+>>>>>>> origin/dgaiot-plugins
   if systemctl is-active --quiet nginx; then
     echo -e "$(date +%F_%T) $LINENO: ${GREEN} nginx is running, stopping it...${NC}"
     rpm -e nginx
@@ -1568,8 +1711,13 @@ function build_nginx() {
     ${csudo} useradd -g nginx nginx &>/dev/null
   fi
   ### install nginx
+<<<<<<< HEAD
   yum -y install pcre-devel --nogpgcheck &>/dev/null
   yum install openssl-devel --nogpgcheck  &>/dev/null
+=======
+  yum -y install pcre-devel &>/dev/null
+  yum install openssl-devel &>/dev/null
+>>>>>>> origin/dgaiot-plugins
   if [ ! -f ${script_dir}/nginx-1.25.1.zip ]; then
     wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/nginx-1.25.1.zip -O ${script_dir}/nginx-1.25.1.zip &>/dev/null
   fi
@@ -1703,10 +1851,17 @@ function pre_ci_dgiot() {
   fi
 
   cd ${script_dir}
+<<<<<<< HEAD
   rm ${script_dir}/$plugin/_build/emqx/rel/ -rf
 
   if [ -d ${script_dir}/dgiot/emqx/rel/ ]; then
     rm ${script_dir}/dgiot/emqx/rel -rf
+=======
+  rm ${script_dir}/$plugin/_build/dgiot/rel/ -rf
+
+  if [ -d ${script_dir}/dgiot/dgiot/rel/ ]; then
+    rm ${script_dir}/dgiot/dgiot/rel -rf
+>>>>>>> origin/dgaiot-plugins
   fi
 
   rm ${script_dir}/$plugin/rebar.config -rf
@@ -1758,14 +1913,22 @@ function pre_build_dgiot() {
   fi
 
   cd ${script_dir}
+<<<<<<< HEAD
   rm ${script_dir}/$plugin/_build/emqx/rel/ -rf
+=======
+  rm ${script_dir}/$plugin/_build/dgiot/rel/ -rf
+>>>>>>> origin/dgaiot-plugins
 
   if [ ! -d ${script_dir}/iotView/dist ]; then
       build_iotView
   fi
 
   if [ -d ${script_dir}/iotView/dist ]; then
+<<<<<<< HEAD
       rm ${script_dir}/$plugin/_build/emqx/lib/dgiot_api -rf
+=======
+      rm ${script_dir}/$plugin/_build/dgiot/lib/dgiot_api -rf
+>>>>>>> origin/dgaiot-plugins
       rm ${script_dir}/$plugin/apps/dgiot_api/priv/www/ -rf
       cp ${script_dir}/iotView/dist/ ${script_dir}/$plugin/apps/dgiot_api/priv/www/ -rf
   fi
@@ -1778,8 +1941,13 @@ function pre_build_dgiot() {
     cp ${script_dir}/iotEdit/dist/ ${script_dir}/$plugin/apps/dgiot_api/priv/www/admin -rf
   fi
 
+<<<<<<< HEAD
   if [ -d ${script_dir}/dgiot/emqx/rel/ ]; then
     rm ${script_dir}/dgiot/emqx/rel -rf
+=======
+  if [ -d ${script_dir}/dgiot/dgiot/rel/ ]; then
+    rm ${script_dir}/dgiot/dgiot/rel -rf
+>>>>>>> origin/dgaiot-plugins
   fi
 
   rm ${script_dir}/$plugin/rebar.config -rf
@@ -1803,8 +1971,13 @@ function pre_build_dgiot() {
 }
 
 function post_build_dgiot() {
+<<<<<<< HEAD
   mv ${script_dir}/$plugin/_build/emqx/rel/emqx/ ${script_dir}/$plugin/_build/emqx/rel/dgiot
   cd ${script_dir}/$plugin/_build/emqx/rel
+=======
+  mv ${script_dir}/$plugin/_build/dgiot/rel/dgiot/ ${script_dir}/$plugin/_build/dgiot/rel/dgiot
+  cd ${script_dir}/$plugin/_build/dgiot/rel
+>>>>>>> origin/dgaiot-plugins
 
   tar czf ${software}.tar.gz ./dgiot
   rm ./dgiot -rf
@@ -1899,13 +2072,31 @@ function centos() {
     deploy_postgres
     restore_parse_data     # 档案数据
     deploy_tdengine_server # 时序数据
+<<<<<<< HEAD
     install_go_fastdfs     # 文件数据
+=======
+    # 文件存储: -f minio 选择MinIO, 默认go_fastdfs
+    if [ "${file_storage}" == "minio" ]; then
+      install_minio
+    else
+      install_go_fastdfs
+    fi
+>>>>>>> origin/dgaiot-plugins
     #install_word_report    # 报告服务
     deploy_parse_server # Api网关
     #install_erlang_otp
     install_dgiot
 #    install_n2n
     build_nginx
+<<<<<<< HEAD
+=======
+    
+    install_ollama
+    install_dify
+
+
+    #install_dgaiot # dgaiot
+>>>>>>> origin/dgaiot-plugins
     #install_node_exporter
   fi
 }
@@ -2053,12 +2244,20 @@ software="dgiot_b51"                        # [dgiot_b20| dgiot_n]
 dgiotmd5="82b496806acf9bf3124ecdbe9ad757fa" # [dgiotmd5]
 pg_eip="changeyourip"                       # [datanode_eip]
 pg_auth='changeyourpassword'                # [pg_auth]
+<<<<<<< HEAD
 islanip="false"                             # [islanip]
+=======
+islanip="true"                             # [islanip]
+>>>>>>> origin/dgaiot-plugins
 html_software="dgiot_html_4.9.0"            # [dgiot_html_4.8.2| dgiot_html_n]
 htmlmd5="e66d8175a797b5cba0cb5c6287f9b133"  # [htmlmd5]
 atomplugin="atomgit"                        # [atomgit | jt808]
 
+<<<<<<< HEAD
 while getopts "v:s:p:m:d:e:a:n" arg; do
+=======
+while getopts "v:s:p:m:d:e:a:n:f:" arg; do
+>>>>>>> origin/dgaiot-plugins
   case $arg in
   v)
     echo -e "$(date +%F_%T) $LINENO: ${GREEN} deployType=$OPTARG${NC}"
@@ -2089,6 +2288,13 @@ while getopts "v:s:p:m:d:e:a:n" arg; do
     echo -e "$(date +%F_%T) $LINENO: ${GREEN} islanip=$OPTARG${NC}"
     islanip=$(echo $OPTARG)
     ;;
+<<<<<<< HEAD
+=======
+  f)
+    echo -e "$(date +%F_%T) $LINENO: ${GREEN} file_storage=$OPTARG${NC}"
+    file_storage=$(echo $OPTARG)
+    ;;
+>>>>>>> origin/dgaiot-plugins
   ?) #unknow option
     help
     ;;
@@ -2110,3 +2316,8 @@ echo -e "$(date +%F_%T) $LINENO: ${BLUE} parse_info: username=${parse_user} pass
 echo -e "$(date +%F_%T) $LINENO: ${BLUE} dashboard: http://${wlanip}/# ${NC}"
 echo -e "$(date +%F_%T) $LINENO: ${BLUE} dashboard: username=dgiot_dev password=dgiot_dev ${NC}"
 echo -e "$(date +%F_%T) $LINENO: ${BLUE} software: ${software}  ${html_software} ${NC}"
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> origin/dgaiot-plugins

@@ -42,6 +42,10 @@
 
 %% for debug purposes
 -export([dump/0]).
+<<<<<<< HEAD
+=======
+-export([remove_resource/1]).
+>>>>>>> origin/dgaiot-plugins
 
 %% gen_server Callbacks
 -export([ init/1
@@ -70,6 +74,7 @@
 -spec(mnesia(boot | copy) -> ok).
 mnesia(boot) ->
     %% Optimize storage
+<<<<<<< HEAD
     StoreProps = [{ets, [{read_concurrency, true}]}],
     %% Rule table
     ok = ekka_mnesia:create_table(?RULE_TAB, [
@@ -82,6 +87,21 @@ mnesia(boot) ->
 mnesia(copy) ->
     %% Copy rule table
     ok = ekka_mnesia:copy_table(?RULE_TAB, ram_copies).
+=======
+    %% Rule table
+    case mnesia:create_table(?RULE_TAB, [
+                {ram_copies, [node()]},
+                {record_name, rule},
+                {index, [#rule.for]},
+                {attributes, record_info(fields, rule)}]) of
+        {atomic, ok} -> ok;
+        {aborted, {already_exists, _}} -> ok
+    end;
+
+mnesia(copy) ->
+    %% Copy rule table
+    {atomic, ok} = mnesia:add_table_copy(?RULE_TAB, node(), ram_copies).
+>>>>>>> origin/dgaiot-plugins
 
 dump() ->
     io:format("Rules: ~p~n",
@@ -95,11 +115,22 @@ dump() ->
 start_link() ->
     gen_server:start_link({local, ?REGISTRY}, ?MODULE, [], []).
 
+<<<<<<< HEAD
+=======
+%% @doc Resource removal stub — resources are managed externally (emqx/local_rule).
+-spec(remove_resource(binary()) -> ok).
+remove_resource(_ResId) -> ok.
+
+>>>>>>> origin/dgaiot-plugins
 %%------------------------------------------------------------------------------
 %% Rule Management
 %%------------------------------------------------------------------------------
 
+<<<<<<< HEAD
 -spec(get_rules() -> list(emqx_rule_engine:rule())).
+=======
+-spec(get_rules() -> list(#rule{})).
+>>>>>>> origin/dgaiot-plugins
 get_rules() ->
     get_all_records(?RULE_TAB).
 
@@ -111,6 +142,7 @@ get_rules_ordered_by_ts() ->
     {atomic, List} = mnesia:transaction(F),
     List.
 
+<<<<<<< HEAD
 -spec(get_rules_for(Topic :: binary()) -> list(emqx_rule_engine:rule())).
 get_rules_for(Topic) ->
     [Rule || Rule = #rule{for = For} <- get_rules(),
@@ -119,19 +151,36 @@ get_rules_for(Topic) ->
 -spec(get_rules_with_same_event(Topic :: binary()) -> list(emqx_rule_engine:rule())).
 get_rules_with_same_event(Topic) ->
     EventName = emqx_rule_events:event_name(Topic),
+=======
+-spec(get_rules_for(Topic :: binary()) -> list(#rule{})).
+get_rules_for(Topic) ->
+    [Rule || Rule = #rule{for = For} <- get_rules(),
+             lists:any(fun(F) -> dgiot_topic:match(Topic, F) end, For)].
+
+-spec(get_rules_with_same_event(Topic :: binary()) -> list(#rule{})).
+get_rules_with_same_event(Topic) ->
+    EventName = dgiot_rule_events:event_name(Topic),
+>>>>>>> origin/dgaiot-plugins
     [Rule || Rule = #rule{for = For} <- get_rules(),
              lists:any(fun(T) -> is_of_event_name(EventName, T) end, For)].
 
 is_of_event_name(EventName, Topic) ->
+<<<<<<< HEAD
     EventName =:= emqx_rule_events:event_name(Topic).
 
 -spec(get_rule(Id :: rule_id()) -> {ok, emqx_rule_engine:rule()} | not_found).
+=======
+    EventName =:= dgiot_rule_events:event_name(Topic).
+
+-spec(get_rule(Id :: rule_id()) -> {ok, #rule{}} | not_found).
+>>>>>>> origin/dgaiot-plugins
 get_rule(Id) ->
     case mnesia:dirty_read(?RULE_TAB, Id) of
         [Rule] -> {ok, Rule};
         [] -> not_found
     end.
 
+<<<<<<< HEAD
 -spec(add_rule(emqx_rule_engine:rule()) -> ok).
 add_rule(Rule) when is_record(Rule, rule) ->
     add_rules([Rule]).
@@ -145,6 +194,21 @@ remove_rule(RuleOrId) ->
     remove_rules([RuleOrId]).
 
 -spec(remove_rules(list(emqx_rule_engine:rule()) | list(rule_id())) -> ok).
+=======
+-spec(add_rule(#rule{}) -> ok).
+add_rule(Rule) when is_record(Rule, rule) ->
+    add_rules([Rule]).
+
+-spec(add_rules(list(#rule{})) -> ok).
+add_rules(Rules) ->
+    gen_server:call(?REGISTRY, {add_rules, Rules}, ?T_CALL).
+
+-spec(remove_rule(#rule{} | rule_id()) -> ok).
+remove_rule(RuleOrId) ->
+    remove_rules([RuleOrId]).
+
+-spec(remove_rules(list(#rule{}) | list(rule_id())) -> ok).
+>>>>>>> origin/dgaiot-plugins
 remove_rules(Rules) ->
     gen_server:call(?REGISTRY, {remove_rules, Rules}, ?T_CALL).
 
@@ -164,13 +228,21 @@ delete_rule(Rule) ->
     mnesia:delete_object(?RULE_TAB, Rule, write).
 
 load_hooks_for_rule(#rule{for = Topics}) ->
+<<<<<<< HEAD
     lists:foreach(fun emqx_rule_events:load/1, Topics).
+=======
+    lists:foreach(fun dgiot_rule_events:load/1, Topics).
+>>>>>>> origin/dgaiot-plugins
 
 unload_hooks_for_rule(#rule{id = Id, for = Topics}) ->
     lists:foreach(fun(Topic) ->
             case get_rules_with_same_event(Topic) of
                 [#rule{id = Id}] -> %% we are now deleting the last rule
+<<<<<<< HEAD
                     emqx_rule_events:unload(Topic);
+=======
+                    dgiot_rule_events:unload(Topic);
+>>>>>>> origin/dgaiot-plugins
                 _ -> ok
             end
         end, Topics).

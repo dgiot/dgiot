@@ -289,7 +289,11 @@ do_request(get_maintenancefinish, #{<<"number">> := Number}, #{<<"sessionToken">
 %% 请求:POST /iotapi/post_maintenance
 do_request(post_maintenance, Args, #{<<"sessionToken">> := SessionToken}, _Req) ->
     Isbridge = application:get_env(dgiot_http, isbridge, false),
+<<<<<<< HEAD
     Url = application:get_env(dgiot_http, dgiot_bridge_url, "https://prod.iotn2n.com") ++ "/iotapi/maintenance",
+=======
+    Url = application:get_env(dgiot_http, dgiot_bridge_url, "https://demo.dgiot.com") ++ "/iotapi/maintenance",
+>>>>>>> origin/dgaiot-plugins
     Result = dgiot_umeng:create_maintenance(Args, SessionToken),
     case Isbridge of
         true ->

@@ -19,7 +19,11 @@
 -author("johnliu").
 -define(CHANNEL(Type, Id), binary_to_atom(get_name(ChannelType, ChannelId), utf8)).
 -behaviour(gen_server).
+<<<<<<< HEAD
 -include("logger.hrl").
+=======
+-include_lib("dgiot/include/logger.hrl").
+>>>>>>> origin/dgaiot-plugins
 
 %% API
 -export([
@@ -31,8 +35,12 @@
     do_event/3, do_event/4, do_event/5, send_after/3,
     do_message/2, do_message/3, do_message/4,
     call/3, call/4, call2/3, call2/4,
+<<<<<<< HEAD
     start_link/1,
     lookup/1]).
+=======
+    start_link/1]).
+>>>>>>> origin/dgaiot-plugins
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -180,6 +188,7 @@ get_name(ChannelType, ChannelId) when is_binary(ChannelId) ->
 get_name(ChannelType, ChannelId) ->
     list_to_binary(lists:concat([ChannelType, "/", ChannelId])).
 
+<<<<<<< HEAD
 %% @doc 查找通道信息
 %% @spec lookup(ChannelId) -> {ok, ChannelInfo} | {error, not_found}
 lookup(ChannelId) ->
@@ -191,6 +200,8 @@ lookup(ChannelId) ->
             {ok, #{channel_type => ChannelType, channel_id => ChannelId, pool_name => Pool}}
     end.
 
+=======
+>>>>>>> origin/dgaiot-plugins
 start_link([Mod, State]) ->
     gen_server:start_link(?MODULE, [Mod, State], []).
 

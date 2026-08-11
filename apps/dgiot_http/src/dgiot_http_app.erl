@@ -19,7 +19,14 @@
 
 -behaviour(application).
 
+<<<<<<< HEAD
 -emqx_plugin(?MODULE).
+=======
+-dgiot_plugin(?MODULE).
+-ifdef(DGIOT_WITH_EMQX).
+-emqx_plugin(?MODULE).
+-endif.
+>>>>>>> origin/dgaiot-plugins
 -include("dgiot_http.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -logger_header("[dgiot_http]").

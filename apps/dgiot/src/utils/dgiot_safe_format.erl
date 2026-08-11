@@ -12,8 +12,12 @@
 %% API
 -export([
     safe_format/2,          %% 安全格式化字符串（解决中文打印问题）
+<<<<<<< HEAD
     safe_format/4,           %% 安全格式化字符串（带文件行号）
     ensure_utf8_binary/1   %% 确保值为UTF-8编码的二进制
+=======
+    safe_format/4           %% 安全格式化字符串（带文件行号）
+>>>>>>> origin/dgaiot-plugins
 ]).
 
 -include("dgiot.hrl").
@@ -29,12 +33,21 @@
 %% @param Format 格式化字符串，可以包含中文
 %% @param Args 格式化参数列表
 safe_format(Format, Args) ->
+<<<<<<< HEAD
     % 将格式字符串转换为列表，确保UTF-8编码
     ListFormat = ensure_utf8_list(Format),
     % 将参数转换为UTF-8列表格式
     ListArgs = lists:map(fun ensure_utf8_list/1, Args),
     % 使用io:format打印，使用~ts格式说明符确保UTF-8正确显示
     io:format(ListFormat, ListArgs).
+=======
+    % 将格式字符串转换为二进制，确保UTF-8编码
+    BinaryFormat = ensure_utf8_binary(Format),
+    % 将参数转换为二进制格式
+    BinaryArgs = lists:map(fun ensure_utf8_binary/1, Args),
+    % 使用io:format打印
+    io:format(BinaryFormat, BinaryArgs).
+>>>>>>> origin/dgaiot-plugins
 
 %% @doc 安全格式化字符串，带文件行号
 %% 自动添加文件路径和行号信息，便于调试
@@ -45,11 +58,19 @@ safe_format(Format, Args) ->
 %% @param Args 格式化参数列表
 safe_format(File, Line, Format, Args) ->
     % 构建带文件行号的格式字符串
+<<<<<<< HEAD
     FullFormat = "~ts ~p " ++ Format,
     % 将文件路径转换为UTF-8列表
     ListFile = ensure_utf8_list(File),
     % 构建完整的参数列表
     FullArgs = [ListFile, Line | Args],
+=======
+    FullFormat = "~s ~p " ++ Format,
+    % 将文件路径转换为二进制
+    BinaryFile = ensure_utf8_binary(File),
+    % 构建完整的参数列表
+    FullArgs = [BinaryFile, Line | Args],
+>>>>>>> origin/dgaiot-plugins
     % 调用safe_format/2
     safe_format(FullFormat, FullArgs).
 
@@ -58,6 +79,7 @@ safe_format(File, Line, Format, Args) ->
 %%%===================================================================
 
 %% @private
+<<<<<<< HEAD
 %% @doc 确保值为UTF-8编码的列表
 %% 如果是二进制，转换为UTF-8列表
 %% 如果是列表，确保是有效的UTF-8
@@ -108,6 +130,8 @@ ensure_utf8_list(Value) ->
     lists:flatten(io_lib:format("~p", [Value])).
 
 %% @private
+=======
+>>>>>>> origin/dgaiot-plugins
 %% @doc 确保值为UTF-8编码的二进制
 %% 如果是字符串，转换为二进制并添加/utf8标志
 %% 如果是二进制，直接返回

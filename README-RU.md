@@ -1,3 +1,4 @@
+<<<<<<< HEAD
  http://localhost http://localhost http://localhost#  DGIOT
 
 [![GitHub Release](https://img.shields.io/github/release/dgiot/dgiot?color=brightgreen)](https://github.com/dgiot/dgiot/releases)
@@ -137,3 +138,17 @@ Visit [DGIOT FAQ](https://www.dgiotcloud.cn/?page_id=12) to get help on frequent
 
 ## Лицензия с открытым исходным кодом
 Apache License 2.0, Смотрите подробности [LICENSE](./LICENSE)。
+=======
+# dgaiot
+[English/中文](README.md) | [Japanese](README-JP.md)
+
+## Обзор
+
+dgaiot — высокопроизводительный IoT-движок агрегации на Erlang/OTP.
+
+- Shadow Device (gen_statem)
+- DLAS Ontology (Data·Logic·Action·Security)
+- FDE Pipeline (Model→Ontology→Device→TimeSeries→Rules→Dashboard)
+
+Подробнее: [docs/DGAIOT_ONTOLOGY.md](docs/DGAIOT_ONTOLOGY.md)
+>>>>>>> origin/dgaiot-plugins

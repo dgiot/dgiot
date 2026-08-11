@@ -777,7 +777,11 @@ format(Format, Args) ->
     re:replace(lists:flatten(io_lib:format(Format, Args)), "\"|\n|\s+", " ", [global, {return, binary}]).
 
 guid() ->
+<<<<<<< HEAD
     <<<<Y>> || <<X:4>> <= emqx_guid:gen(), Y <- integer_to_list(X, 16)>>.
+=======
+    <<<<Y>> || <<X:4>> <= dgiot_guid:gen(), Y <- integer_to_list(X, 16)>>.
+>>>>>>> origin/dgaiot-plugins
 
 new_counter(Name, Max) ->
     dgiot_data:insert({{Name, counter}, max}, Max),

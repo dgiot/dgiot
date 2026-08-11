@@ -86,7 +86,11 @@ start_link(ServerName, ChannelType, ChannelId, Mod) ->
 
 
 init([sup, ServerName, ChannelType, ChannelId, Mod]) ->
+<<<<<<< HEAD
     case supervisor:init({self(), ?MODULE, [ChannelType, ChannelId, Mod]}) of
+=======
+    case supervisor:init({self, ?MODULE, [ChannelType, ChannelId, Mod]}) of
+>>>>>>> origin/dgaiot-plugins
         {ok, State} ->
             WorkerState = erase(worker_state),
             dgiot_data:insert({ServerName, channel2}, ChannelId),

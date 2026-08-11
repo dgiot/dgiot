@@ -14,17 +14,28 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
+<<<<<<< HEAD
 %% @doc 增强版UDP服务器模块
 %% 修复多播组加入问题
 -module(dgiot_udp_server).
 -author("johnliu").
 -include("logger.hrl").
+=======
+%% @doc 精简UDP服务器模块
+%% 应用层入口，专注于服务器启动和配置
+-module(dgiot_udp_server).
+-author("johnliu").
+-include("../../include/logger.hrl").
+>>>>>>> origin/dgaiot-plugins
 
 %% API导出
 -export([start_link/1, start_link/3, child_spec/3, child_spec/4, get_status/1]).
 -export([join_multicast_group/2, leave_multicast_group/2, send/2, send/3, send/4, send_multicast/4, get_available_multicast_groups/0]).
 -export([start_multicast_server/2, start_multicast_server/1, get_multicast_status/1, broadcast_to_groups/3, stop/1]).
+<<<<<<< HEAD
 -export([ensure_multicast_joined/2, debug_socket/1]).  % 新增导出
+=======
+>>>>>>> origin/dgaiot-plugins
 
 %%%===================================================================
 %%% API函数
@@ -32,11 +43,15 @@
 
 %% @doc 启动UDP服务器
 start_link(Args) ->
+<<<<<<< HEAD
     ?LOG(error, "[UDP_SERVER] 启动参数: ~p", [Args]),
+=======
+>>>>>>> origin/dgaiot-plugins
     dgiot_udp_session:start_link([{mode, server} | Args]).
 
 %% @doc 启动UDP服务器（兼容旧接口）
 start_link(Mod, Opts, State) ->
+<<<<<<< HEAD
     ?LOG(error, "[UDP_SERVER] 启动: 模块=~p, 选项=~p", [Mod, Opts]),
     
     BaseArgs = [
@@ -57,6 +72,15 @@ start_link(Mod, Opts, State) ->
     Result = dgiot_udp_session:start_link(Args),
     ?LOG(error, "[UDP_SERVER] 启动结果: ~p", [Result]),
     Result.
+=======
+    Args = [
+        {mode, server},
+        {mod, Mod},
+        {options, Opts},
+        {state, State}
+    ],
+    dgiot_udp_session:start_link(Args).
+>>>>>>> origin/dgaiot-plugins
 
 %% @doc 创建子进程规格
 child_spec(Mod, Port, State) ->
@@ -65,6 +89,7 @@ child_spec(Mod, Port, State) ->
 child_spec(Mod, Port, State, Opts) ->
     Name = Mod,
     ok = esockd:start(),
+<<<<<<< HEAD
     
     ?LOG(error, "[UDP_SERVER_CHILD_SPEC] 开始创建UDP子进程规格"),
     ?LOG(error, "[UDP_SERVER_CHILD_SPEC] 模块: ~p, 端口: ~p", [Mod, Port]),
@@ -78,11 +103,18 @@ child_spec(Mod, Port, State, Opts) ->
         {ok, DefActiveN, DefRateLimit, UDPOpts} ->
             ?LOG(error, "[UDP_SERVER_CHILD_SPEC] 获取UDP选项成功"),
             
+=======
+    io:format("~s ~p Creating UDP child spec for port ~p.~n", [?FILE, ?LINE, Port]),
+    
+    case dgiot_transport:get_opts(udp, Port) of
+        {ok, DefActiveN, DefRateLimit, UDPOpts} ->
+>>>>>>> origin/dgaiot-plugins
             ActiveN = proplists:get_value(active_n, Opts, DefActiveN),
             RateLimit = proplists:get_value(rate_limit, Opts, DefRateLimit),
             Opts1 = lists:foldl(fun(Key, Acc) -> proplists:delete(Key, Acc) end, Opts, [active_n, rate_limit]),
             NewOpts = [{active_n, ActiveN}, {rate_limit, RateLimit}] ++ Opts1,
             
+<<<<<<< HEAD
             % 提取并处理多播选项
             {MulticastGroupsFinal, FinalUDPOpts} = extract_multicast_options(NewOpts, UDPOpts),
             
@@ -183,16 +215,28 @@ debug_socket(ServerPid) ->
     end,
     ok.
 
+=======
+            MFArgs = {?MODULE, start_link, [Mod, NewOpts, State]},
+            esockd:udp_child_spec(Name, Port, UDPOpts, MFArgs);
+        _ ->
+            []
+    end.
+
+>>>>>>> origin/dgaiot-plugins
 %% @doc 获取服务器状态
 get_status(ServerPid) ->
     dgiot_udp_session:get_status(ServerPid).
 
 %% @doc 加入多播组
 join_multicast_group(ServerPid, MulticastGroup) ->
+<<<<<<< HEAD
     ?LOG(error, "[JOIN_MULTICAST_GROUP] 加入多播组: ~p", [MulticastGroup]),
     Result = dgiot_udp_session:join_multicast_group(ServerPid, MulticastGroup),
     ?LOG(error, "[JOIN_MULTICAST_GROUP] 结果: ~p", [Result]),
     Result.
+=======
+    dgiot_udp_session:join_multicast_group(ServerPid, MulticastGroup).
+>>>>>>> origin/dgaiot-plugins
 
 %% @doc 离开多播组
 leave_multicast_group(ServerPid, MulticastGroup) ->
@@ -220,8 +264,13 @@ get_available_multicast_groups() ->
 
 %% @doc 启动带多播组的服务器
 start_multicast_server(Port, MulticastGroups) when is_list(MulticastGroups) ->
+<<<<<<< HEAD
     ?LOG(error, "[START_MULTICAST_SERVER] 启动多播服务器: 端口=~p, 组=~p", 
          [Port, MulticastGroups]),
+=======
+    io:format("~s ~p Event = Starting multicast server on port ~p with groups: ~p~n", 
+              [?FILE, ?LINE, Port, MulticastGroups]),
+>>>>>>> origin/dgaiot-plugins
     
     Args = [
         {port, Port},
@@ -232,11 +281,21 @@ start_multicast_server(Port, MulticastGroups) when is_list(MulticastGroups) ->
         {ok, Pid} ->
             % 加入指定的多播组
             lists:foreach(fun(Group) ->
+<<<<<<< HEAD
                 case ensure_multicast_joined(Pid, Group) of
                     ok ->
                         ?LOG(error, "[START_MULTICAST_SERVER] ✅ 加入多播组: ~p", [Group]);
                     Error ->
                         ?LOG(error, "[START_MULTICAST_SERVER] ❌ 加入失败 ~p: ~p", [Group, Error])
+=======
+                case join_multicast_group(Pid, Group) of
+                    ok ->
+                        io:format("~s ~p Event = SUCCESS: Joined multicast group ~p~n", 
+                                 [?FILE, ?LINE, Group]);
+                    Error ->
+                        io:format("~s ~p Event = WARNING: Failed to join multicast group ~p: ~p~n", 
+                                 [?FILE, ?LINE, Group, Error])
+>>>>>>> origin/dgaiot-plugins
                 end
             end, MulticastGroups),
             {ok, Pid};
@@ -269,6 +328,7 @@ broadcast_to_groups(ServerPid, Port, Message) ->
     case get_status(ServerPid) of
         {ok, Status} ->
             MulticastGroups = proplists:get_value(multicast_groups, Status, []),
+<<<<<<< HEAD
             ?LOG(error, "[BROADCAST] 广播到 ~p 个组", [length(MulticastGroups)]),
             
             Results = lists:map(fun(Group) ->
@@ -278,6 +338,19 @@ broadcast_to_groups(ServerPid, Port, Message) ->
                         {Group, success};
                     Error -> 
                         ?LOG(error, "[BROADCAST] ❌ 发送失败 ~p: ~p", [Group, Error]),
+=======
+            io:format("~s ~p Event = Broadcasting message to ~p groups on port ~p~n", 
+                     [?FILE, ?LINE, length(MulticastGroups), Port]),
+            Results = lists:map(fun(Group) ->
+                case send_multicast(ServerPid, Group, Port, Message) of
+                    ok -> 
+                        io:format("~s ~p Event = ✓ Broadcast to group ~p successful~n", 
+                                 [?FILE, ?LINE, Group]),
+                        {Group, success};
+                    Error -> 
+                        io:format("~s ~p Event = ✗ Broadcast to group ~p failed: ~p~n", 
+                                 [?FILE, ?LINE, Group, Error]),
+>>>>>>> origin/dgaiot-plugins
                         {Group, Error}
                 end
             end, MulticastGroups),
@@ -289,6 +362,7 @@ broadcast_to_groups(ServerPid, Port, Message) ->
 %% @doc 停止服务器
 stop(ServerPid) ->
     gen_server:stop(ServerPid).
+<<<<<<< HEAD
 
 %%%===================================================================
 %%% 内部函数
@@ -441,3 +515,5 @@ get_interface_ip(IfName) ->
         _ ->
             {0,0,0,0}
     end.
+=======
+>>>>>>> origin/dgaiot-plugins

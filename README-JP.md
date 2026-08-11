@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #  DGIOT
 
 [![GitHub Release](https://img.shields.io/github/release/dgiot/dgiot?color=brightgreen)](https://github.com/dgiot/dgiot/releases)
@@ -120,3 +121,17 @@ You are welcome to submit any bugs, issues and feature requests to [dgiot/dgiot]
 
 ## オープンソースライセンス
 Apache License 2.0, 详见 [LICENSE](./LICENSE)。
+=======
+# dgaiot
+[English/中文](README.md) | [Russian](README-RU.md)
+
+## 概要
+
+dgaiot は Erlang/OTP 高性能 IoT 集約エンジンです。
+
+- シャドウデバイス (gen_statem)
+- DLAS オントロジー (Data·Logic·Action·Security)
+- FDE パイプライン (Model→Ontology→Device→TimeSeries→Rules→Dashboard)
+
+詳細: [docs/DGAIOT_ONTOLOGY.md](docs/DGAIOT_ONTOLOGY.md)
+>>>>>>> origin/dgaiot-plugins

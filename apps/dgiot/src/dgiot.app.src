@@ -4,7 +4,11 @@
         {vsn, "4.3.0"},
         {modules, [dgiot_udp_sdk]},
         {registered, [dgiot_sup]},
+<<<<<<< HEAD
         {applications, [kernel, stdlib,prometheus]},
+=======
+        {applications, [kernel, stdlib, prometheus, gproc, mnesia, ekka]},
+>>>>>>> origin/dgaiot-plugins
         {mod, {dgiot_app, []}},
         {licenses, ["Apache-2.0"]},
         {maintainers, ["DGIOT Team"]},

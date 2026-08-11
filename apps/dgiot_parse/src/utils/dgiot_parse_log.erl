@@ -110,7 +110,11 @@ log(Method, {Url, Header, _, Body}) ->
     IsLog andalso ?LOG(info, "~s ~s Header:~p  Body:~p", [dgiot_parse_rest:method(Method), Url, Header, Body]).
 
 load_LogLevel() ->
+<<<<<<< HEAD
     Level = emqx_logger:get_primary_log_level(),
+=======
+    Level = element(2, logger:get_primary_config()),
+>>>>>>> origin/dgaiot-plugins
     case create_logconfig(Level, <<"0">>, <<"dgiot">>, <<"system">>, 0, <<"$dgiot/log/#">>) of
         {ok, #{<<"objectId">> := DgiotlogId}} ->
             create_logconfig(Level, DgiotlogId, <<"dgiot_handle">>, <<"dgiot_handle">>, 2, <<"$dgiot/trace/#">>),

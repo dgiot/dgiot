@@ -88,6 +88,7 @@ handle_call({read, Name, Config}, _From, #state{swagger = List} = State) ->
             case load_schema(?MODULE, ?SWAGGER(Name, Version), [{labels, binary}, return_maps]) of
                 {ok, Schema} ->
                     NewSchema = maps:merge(Schema, Map),
+<<<<<<< HEAD
                     %% 过滤掉未启动插件的 API
                     FilteredSchema = filter_by_running_apps(NewSchema),
                     FinSchema =
@@ -97,6 +98,15 @@ handle_call({read, Name, Config}, _From, #state{swagger = List} = State) ->
                             TagsB ->
                                 Tags = re:split(TagsB, <<",">>),
                                 get_swagger_by_tags(FilteredSchema, Tags)
+=======
+                    FinSchema =
+                        case maps:get(<<"tags">>, Config, no) of
+                            no ->
+                                NewSchema;
+                            TagsB ->
+                                Tags = re:split(TagsB, <<",">>),
+                                get_swagger_by_tags(NewSchema, Tags)
+>>>>>>> origin/dgaiot-plugins
                         end,
                     {reply, {ok, FinSchema}, State};
                 {error, Reason} ->
@@ -125,6 +135,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%% 内部函数
 %%%===================================================================
 
+<<<<<<< HEAD
 %% @doc 过滤掉未启动插件的 API
 filter_by_running_apps(Schema) ->
     RunningApps = get_running_dgiot_apps(),
@@ -181,6 +192,8 @@ tag_to_app(Tag) when is_list(Tag) ->
     tag_to_app(list_to_binary(Tag));
 tag_to_app(_) -> undefined.
 
+=======
+>>>>>>> origin/dgaiot-plugins
 %% 产生swagger
 generate(Name, Path, Hand) ->
     generate(Name, Path, #{}, Hand).

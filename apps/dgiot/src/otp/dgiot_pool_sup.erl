@@ -60,6 +60,11 @@ start_link(Pool, Type, Size, MFA) ->
 
 init([Pool, Type, Size, {M, F, Args}]) ->
     ok = ensure_pool(Pool, Type, [{size, Size}]),
+<<<<<<< HEAD
+=======
+    %% gproc_pool process registers asynchronously after new/3 returns
+    timer:sleep(200),
+>>>>>>> origin/dgaiot-plugins
     {ok, {{one_for_one, 10, 3600}, [
         begin
             ensure_pool_worker(Pool, {Pool, I}, I),
@@ -72,6 +77,7 @@ init([Pool, Type, Size, {M, F, Args}]) ->
         end || I <- lists:seq(1, Size)]}}.
 
 ensure_pool(Pool, Type, Opts) ->
+<<<<<<< HEAD
     try gproc_pool:new(Pool, Type, Opts)
     catch
         error:exists -> ok
@@ -81,5 +87,32 @@ ensure_pool_worker(Pool, Name, Slot) ->
     try gproc_pool:add_worker(Pool, Name, Slot)
     catch
         error:exists -> ok
+=======
+    ensure_pool(Pool, Type, Opts, 10).
+
+ensure_pool(_Pool, _Type, _Opts, 0) ->
+    ok;
+ensure_pool(Pool, Type, Opts, Retry) ->
+    try gproc_pool:new(Pool, Type, Opts)
+    catch
+        error:exists -> ok;
+        _:_ ->
+            timer:sleep(500),
+            ensure_pool(Pool, Type, Opts, Retry - 1)
+    end.
+
+ensure_pool_worker(Pool, Name, Slot) ->
+    ensure_pool_worker(Pool, Name, Slot, 10).
+
+ensure_pool_worker(_Pool, _Name, _Slot, 0) ->
+    ok;
+ensure_pool_worker(Pool, Name, Slot, Retry) ->
+    try gproc_pool:add_worker(Pool, Name, Slot)
+    catch
+        error:exists -> ok;
+        _:_ ->
+            timer:sleep(500),
+            ensure_pool_worker(Pool, Name, Slot, Retry - 1)
+>>>>>>> origin/dgaiot-plugins
     end.
 

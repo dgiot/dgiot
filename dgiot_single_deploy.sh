@@ -42,13 +42,21 @@ function show_help() {
 
 function detect_system() {
   echo -e "${GREEN}[1/6] 检测系统环境...${NC}"
+<<<<<<< HEAD
   
+=======
+
+>>>>>>> origin/dgaiot-plugins
   # 检查root权限
   if [ "$(id -u)" != "0" ]; then
     echo -e "${RED}错误: 请使用root权限运行此脚本${NC}"
     exit 1
   fi
+<<<<<<< HEAD
   
+=======
+
+>>>>>>> origin/dgaiot-plugins
   # 检测操作系统
   if [ -f /etc/os-release ]; then
     . /etc/os-release
@@ -58,6 +66,7 @@ function detect_system() {
     OS=$(uname -s)
     VER=$(uname -r)
   fi
+<<<<<<< HEAD
   
   echo -e "操作系统: $OS $VER"
   
@@ -68,6 +77,45 @@ function detect_system() {
   # 检查CPU架构
   ARCH=$(uname -m)
   echo -e "CPU架构: $ARCH"
+=======
+
+  # 中标麒麟/银河麒麟/OpenEuler 兼容检测
+  if echo "$OS" | grep -qwi "Kylin"; then
+    OS_TYPE="kylin"
+    echo -e "检测到中标麒麟/银河麒麟 $VER"
+  elif echo "$OS" | grep -qwi "openEuler"; then
+    OS_TYPE="openEuler"
+    echo -e "检测到 openEuler $VER"
+  elif echo "$OS" | grep -qwi "CentOS"; then
+    OS_TYPE="centos"
+  elif echo "$OS" | grep -qwi "Ubuntu"; then
+    OS_TYPE="ubuntu"
+  elif echo "$OS" | grep -qwi "Debian"; then
+    OS_TYPE="debian"
+  else
+    OS_TYPE="linux"
+  fi
+
+  echo -e "操作系统: $OS $VER ($OS_TYPE)"
+
+  # 获取IP地址
+  lanip=$(hostname -I | awk '{print $1}')
+  echo -e "服务器IP: $lanip"
+
+  # 检查CPU架构
+  ARCH=$(uname -m)
+  echo -e "CPU架构: $ARCH"
+
+  # 麒麟/openEuler 特需: 关闭安全策略(部署期间)
+  if [ "$OS_TYPE" = "kylin" ] || [ "$OS_TYPE" = "openEuler" ]; then
+    echo -e "${YELLOW}麒麟/openEuler 系统: 关闭 SELinux/KYSEC...${NC}"
+    setenforce 0 2>/dev/null || true
+    if systemctl is-active --quiet firewalld; then
+      systemctl stop firewalld 2>/dev/null || true
+      systemctl disable firewalld 2>/dev/null || true
+    fi
+  fi
+>>>>>>> origin/dgaiot-plugins
 }
 
 ###############################################################################
@@ -100,18 +148,41 @@ function install_basic_tools() {
 EOF
   
   # 根据系统类型安装工具
+<<<<<<< HEAD
   if command -v apt-get &> /dev/null; then
+=======
+  if command -v dnf &> /dev/null; then
+    # openEuler / 中标麒麟 / 银河麒麟 / Fedora
+    echo -e "安装必要工具 (dnf)..."
+    dnf install -y wget curl git nginx > /dev/null 2>&1
+    # Docker: 麒麟/openEuler 可能没有docker包, 用官方脚本
+    if ! command -v docker &> /dev/null; then
+      curl -fsSL https://get.docker.com | bash > /dev/null 2>&1
+    fi
+    systemctl start docker > /dev/null 2>&1
+    systemctl enable docker > /dev/null 2>&1
+  elif command -v yum &> /dev/null; then
+    # CentOS/RHEL
+    echo -e "安装必要工具 (yum)..."
+    yum install -y wget curl git docker docker-compose nginx > /dev/null 2>&1
+    systemctl start docker > /dev/null 2>&1
+    systemctl enable docker > /dev/null 2>&1
+  elif command -v apt-get &> /dev/null; then
+>>>>>>> origin/dgaiot-plugins
     # Debian/Ubuntu
     echo -e "更新包列表..."
     apt-get update > /dev/null 2>&1
     echo -e "安装必要工具..."
     apt-get install -y wget curl git docker.io docker-compose nginx > /dev/null 2>&1
+<<<<<<< HEAD
   elif command -v yum &> /dev/null; then
     # CentOS/RHEL/Fedora
     echo -e "安装必要工具..."
     yum install -y wget curl git docker docker-compose nginx > /dev/null 2>&1
     systemctl start docker > /dev/null 2>&1
     systemctl enable docker > /dev/null 2>&1
+=======
+>>>>>>> origin/dgaiot-plugins
   else
     echo -e "${YELLOW}警告: 未知包管理器，尝试安装Docker...${NC}"
     curl -fsSL https://get.docker.com | bash > /dev/null 2>&1

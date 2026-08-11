@@ -272,6 +272,7 @@ do_request(post_trace, #{<<"action">> := Action, <<"tracetype">> := Tracetype, <
             {400, #{<<"code">> => 400, <<"error">> => dgiot_utils:format("~p", [Reason])}}
     end;
 
+<<<<<<< HEAD
 %% 备份Parse数据库
 do_request(post_backup_parse, _Args, _Context, _Req) ->
     Date = erlang:localtime(),
@@ -380,6 +381,8 @@ do_request(post_teststep_order, Args, _Context, _Req) ->
             {error, <<"获取测试项失败">>}
     end;
 
+=======
+>>>>>>> origin/dgaiot-plugins
 
 %%  服务器不支持的API接口
 do_request(OperationId, Args, _Context, _Req) ->

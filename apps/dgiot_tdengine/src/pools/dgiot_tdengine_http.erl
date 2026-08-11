@@ -54,8 +54,11 @@ do_request(Url, Authorization, Sql) when is_binary(Sql) ->
     do_request(Url, Authorization, binary_to_list(Sql));
 
 do_request(Url, Authorization, Sql) ->
+<<<<<<< HEAD
     % 增加调试打印：输出请求的 URL 和 SQL
     % io:format("[HTTP Request] Url: ~s, Sql: ~s~n", [Url, Sql]),
+=======
+>>>>>>> origin/dgaiot-plugins
     Header = [{"Authorization", Authorization}],
     {Sql1, Formatter} =
         case re:run(Sql, <<"tbname\s+as\s+([^\s,]+)">>, [{capture, all_but_first, binary}]) of
@@ -70,8 +73,12 @@ do_request(Url, Authorization, Sql) ->
     timer:sleep(1),
     case catch httpc:request(post, Request, ?HTTPOption, ?REQUESTOption, Profile) of
         {ok, {{_HTTPVersion, StatusCode, _ReasonPhrase}, _Headers, Body}} ->
+<<<<<<< HEAD
             % 增加调试打印：输出状态码和返回的 Body
             % io:format("[HTTP Response] Status: ~p, Body: ~p~n", [StatusCode, Body]),
+=======
+%%            io:format("~p ~p ~p ~n",[?FILE, ?LINE, StatusCode]),
+>>>>>>> origin/dgaiot-plugins
             format_body(StatusCode, Body, Formatter);
         {error, {failed_connect, _}} ->
             dgiot_metrics:inc(dgiot_tdengine,<<"tdengine_save_failed">>,1),
@@ -82,6 +89,10 @@ do_request(Url, Authorization, Sql) ->
             {error, Reason}
     end.
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/dgaiot-plugins
 %% head: 表的定义，如果不返回结果集，仅有一列“affected_rows”
 %% 返回受影响行数
 format_body(_StatusCode, #{
@@ -114,6 +125,10 @@ format_body(StatusCode, Body, Formatter) when is_binary(Body) ->
 format_body(_StatusCode, Body, _Formatter) ->
     {ok, Body}.
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/dgaiot-plugins
 format_head([], [], Acc, _Formatter) -> Acc;
 format_head([<<"struct_", H/binary>> | Headers], [V | Values], Acc, Formatter) ->
     [P, S] = re:split(H, <<"_">>),
@@ -136,6 +151,10 @@ format_head([H0 | Headers], [V | Values], Acc, Formatter) ->
             format_head(Headers, Values, Acc#{H0 => V}, Formatter)
     end.
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/dgaiot-plugins
 show_database(Url, UserName, Password) ->
     request(Url, UserName, Password, <<"SHOW DATABASES;">>).
 
@@ -170,7 +189,14 @@ test_alter() ->
     lists:map(fun(X) ->
         Binx = dgiot_utils:to_binary(X),
         Sql = <<"ALTER STABLE test_alter ADD COLUMN field", Binx/binary, " int;">>,
+<<<<<<< HEAD
         % io:format("Sql ~p~n", [Sql]),
         request(<<"http://127.0.0.1:6041/rest/sql/test_alter">>, <<"root">>, <<"taosdata">>, Sql),
         timer:sleep(100)
               end, lists:seq(1, 4096)).
+=======
+        io:format("Sql ~p~n", [Sql]),
+        request(<<"http://127.0.0.1:6041/rest/sql/test_alter">>, <<"root">>, <<"taosdata">>, Sql),
+        timer:sleep(100)
+              end, lists:seq(1, 4096)).
+>>>>>>> origin/dgaiot-plugins

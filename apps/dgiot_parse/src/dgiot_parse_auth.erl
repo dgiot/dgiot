@@ -807,7 +807,11 @@ create_user_for_app(App) ->
                 <<"nick">> => AppUser,
                 <<"password">> => new_token(),
                 <<"phone">> => AppUser,
+<<<<<<< HEAD
                 <<"email">> => <<AppUser/binary, "@iotn2n.com">>
+=======
+                <<"email">> => <<AppUser/binary, "@dgiot.com">>
+>>>>>>> origin/dgaiot-plugins
             },
             case dgiot_parse:create_object(<<"_User">>, Data) of
                 {ok, #{<<"objectId">> := UserId}} ->

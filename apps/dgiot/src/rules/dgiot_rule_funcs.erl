@@ -16,7 +16,11 @@
 
 -module(dgiot_rule_funcs).
 
+<<<<<<< HEAD
 -include("rule_engine.hrl").
+=======
+-include_lib("dgiot/include/rule_engine.hrl").
+>>>>>>> origin/dgaiot-plugins
 
 %% IoT Funcs
 -export([ msgid/0
@@ -211,6 +215,12 @@
 
 -define(is_var(X), is_binary(X)).
 
+<<<<<<< HEAD
+=======
+-type topic_filter() :: {binary(), #{qos => 0..2}}.
+-type topic_filters() :: [topic_filter()].
+
+>>>>>>> origin/dgaiot-plugins
 %% @doc "msgid()" Func
 msgid() ->
     fun(#{id := MsgId}) -> MsgId; (_) -> undefined end.
@@ -264,7 +274,11 @@ payload(Path) ->
 
 %% @doc Check if a topic_filter contains a specific topic
 %% TopicFilters = [{<<"t/a">>, #{qos => 0}].
+<<<<<<< HEAD
 -spec(contains_topic(emqx_mqtt_types:topic_filters(), emqx_types:topic())
+=======
+-spec(contains_topic(topic_filters(), topic())
+>>>>>>> origin/dgaiot-plugins
         -> true | false).
 contains_topic(TopicFilters, Topic) ->
     case find_topic_filter(Topic, TopicFilters, fun eq/2) of
@@ -277,7 +291,11 @@ contains_topic(TopicFilters, Topic, QoS) ->
         _ -> false
     end.
 
+<<<<<<< HEAD
 -spec(contains_topic_match(emqx_mqtt_types:topic_filters(), emqx_types:topic())
+=======
+-spec(contains_topic_match(topic_filters(), topic())
+>>>>>>> origin/dgaiot-plugins
         -> true | false).
 contains_topic_match(TopicFilters, Topic) ->
     case find_topic_filter(Topic, TopicFilters, fun dgiot_topic:match/2) of

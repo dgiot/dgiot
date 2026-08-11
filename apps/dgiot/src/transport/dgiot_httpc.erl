@@ -97,6 +97,7 @@ url_join(List) ->
 url_join([], URL) -> URL;
 url_join([Path | Other], URL) when is_binary(Path) ->
     url_join([binary_to_list(Path) | Other], URL);
+<<<<<<< HEAD
 url_join([Path | Other], "") -> url_join(Other, Path);
 url_join([Path | Other], URL) when is_list(Path) ->
     Url1 =
@@ -110,6 +111,33 @@ url_join([Path | Other], URL) when is_list(Path) ->
             Rest -> lists:concat([Url1, Rest])
         end,
     url_join(Other, Url2).
+=======
+url_join([Path | _Other], _URL) when not is_list(Path) ->
+    {error, {invalid_url_component, Path}};
+url_join([Path | Other], "") ->
+    case is_safe_path(Path) of
+        true -> url_join(Other, Path);
+        false -> {error, {path_traversal, Path}}
+    end;
+url_join([Path | Other], URL) when is_list(Path) ->
+    case is_safe_path(Path) of
+        true ->
+            Url1 = case lists:reverse(URL) of
+                "/" ++ _ -> URL;
+                _ -> lists:concat([URL, "/"])
+            end,
+            Url2 = case Path of
+                "/" ++ Rest -> lists:concat([Url1, Rest]);
+                Rest -> lists:concat([Url1, Rest])
+            end,
+            url_join(Other, Url2);
+        false ->
+            {error, {path_traversal, Path}}
+    end.
+
+is_safe_path(Path) ->
+    nomatch =:= string:find(Path, "..").
+>>>>>>> origin/dgaiot-plugins
 
 
 

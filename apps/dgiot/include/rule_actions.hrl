@@ -14,7 +14,13 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
+<<<<<<< HEAD
 -compile({parse_transform, emqx_rule_actions_trans}).
+=======
+-ifdef(DGIOT_WITH_EMQX).
+-compile({parse_transform, emqx_rule_actions_trans}).
+-endif.
+>>>>>>> origin/dgaiot-plugins
 
 -type selected_data() :: map().
 -type env_vars() :: map().

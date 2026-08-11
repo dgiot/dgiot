@@ -107,7 +107,11 @@ refresh_rules() ->
 
 refresh_rule(#rule{id = _RuleId, for = Topics}) ->
 %%    ok = emqx_rule_metrics:create_rule_metrics(RuleId),
+<<<<<<< HEAD
     lists:foreach(fun emqx_rule_events:load/1, Topics).
+=======
+    lists:foreach(fun dgiot_rule_events:load/1, Topics).
+>>>>>>> origin/dgaiot-plugins
 
 -dialyzer([{nowarn_function, may_update_rule_params/2}]).
 may_update_rule_params(Rule, Params = #{rawsql := SQL}) ->
@@ -147,7 +151,11 @@ rule_id() ->
     gen_id("rule:", fun dgiot_rule_registry:get_rule/1).
 
 gen_id(Prefix, TestFun) ->
+<<<<<<< HEAD
     Id = iolist_to_binary([Prefix, emqx_rule_id:gen()]),
+=======
+    Id = iolist_to_binary([Prefix, dgiot_guid:to_hexstr(dgiot_guid:gen())]),
+>>>>>>> origin/dgaiot-plugins
     case TestFun(Id) of
         not_found -> Id;
         _Res -> gen_id(Prefix, TestFun)
@@ -166,7 +174,11 @@ test() ->
 
 envs_examp() ->
     #{
+<<<<<<< HEAD
         id => emqx_guid:to_hexstr(emqx_guid:gen()),
+=======
+        id => dgiot_guid:to_hexstr(dgiot_guid:gen()),
+>>>>>>> origin/dgaiot-plugins
         payload => <<"{\"id\": 1, \"a\": 1}">>,
         topic => <<"t/a">>
     }.

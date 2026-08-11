@@ -36,6 +36,12 @@
         , run/2
         , run_fold/3
         , lookup/1
+<<<<<<< HEAD
+=======
+        %% emqx_hooks compatibility wrappers
+        , hook/3
+        , unhook/2
+>>>>>>> origin/dgaiot-plugins
         ]).
 
 -export([ callback_action/1
@@ -138,6 +144,19 @@ put(HookPoint, Callback) ->
         {error, already_exists} -> ok
     end.
 
+<<<<<<< HEAD
+=======
+%% @doc emqx_hooks compatibility: hook/3 = add(HookPoint, Fun, InitArgs)
+-spec(hook(hookpoint(), function(), list()) -> ok_or_error(already_exists)).
+hook(HookPoint, Fun, InitArgs) ->
+    add(HookPoint, Fun, InitArgs).
+
+%% @doc emqx_hooks compatibility: unhook/2 = del(HookPoint, Fun)
+-spec(unhook(hookpoint(), function()) -> ok).
+unhook(HookPoint, Fun) ->
+    del(HookPoint, Fun).
+
+>>>>>>> origin/dgaiot-plugins
 %% @doc Unregister a callback.
 -spec(del(hookpoint(), action() | {module(), atom()}) -> ok).
 del(HookPoint, Action) ->

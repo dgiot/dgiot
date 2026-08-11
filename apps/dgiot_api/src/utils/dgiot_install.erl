@@ -28,7 +28,10 @@
     generate_users/1,
     generate_menus/1,
     generate_rule/1,
+<<<<<<< HEAD
     generate_rule_batch/1,  %% 新增：分批处理版本
+=======
+>>>>>>> origin/dgaiot-plugins
     get_roletemp/1,
     save_tables/1,
     save_menu/3]).
@@ -559,6 +562,7 @@ get_OperationID(OperationID1) ->
             _ ->
                 Acc
         end
+<<<<<<< HEAD
                 end,  OperationID, dgiot_data:get(swaggerApi)).
 
 %% 权限入库 - 分批处理版本（处理大量API时使用）
@@ -664,3 +668,6 @@ process_batch([{Path, Methods} | Rest], BaseSecurity, Tags, Acc) ->
             %% 跳过这个路径，继续处理
             process_batch(Rest, BaseSecurity, Tags, Acc)
     end.
+=======
+                end,  OperationID, dgiot_data:get(swaggerApi)).
+>>>>>>> origin/dgaiot-plugins

@@ -19,7 +19,11 @@
 -module(dgiot_udp_session).
 -author("johnliu").
 -behaviour(gen_server).
+<<<<<<< HEAD
 -include("logger.hrl").
+=======
+-include("../../include/logger.hrl").
+>>>>>>> origin/dgaiot-plugins
 
 %% API导出
 -export([
@@ -100,7 +104,11 @@ send_multicast(ClientPid, MulticastGroup, Port, Message) ->
 
 %% @doc 初始化会话
 init(Args) ->
+<<<<<<< HEAD
     io:format("~s ~p [UDP_SESSION] Args = ~p.~n", [?FILE, ?LINE, Args]),
+=======
+    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
+>>>>>>> origin/dgaiot-plugins
     
     % 处理参数类型，支持map、proplists和混合类型
     {Mode, Mod, Options, UserState} = case Args of
@@ -171,6 +179,7 @@ init(Args) ->
             end
     end,
     
+<<<<<<< HEAD
     io:format("~s ~p [UDP_SESSION] Parsed: Mode=~p, Mod=~p, Options=~p, UserState=~p~n", 
               [?FILE, ?LINE, Mode, Mod, Options, UserState]),
     
@@ -187,13 +196,24 @@ init(Args) ->
             % 加入多播组（如果有配置）
             JoinedGroups = join_multicast_groups(Socket, MulticastGroups),
             
+=======
+    io:format("~s ~p Parsed: Mode=~p, Mod=~p, Options=~p, UserState=~p~n", 
+              [?FILE, ?LINE, Mode, Mod, Options, UserState]),
+    
+    case dgiot_udp_protocol:create_socket(Options) of
+        {ok, Socket} ->
+>>>>>>> origin/dgaiot-plugins
             State = #state{
                 mode = Mode,
                 socket = Socket,
                 mod = Mod,
                 options = Options,
+<<<<<<< HEAD
                 state = UserState,
                 multicast_groups = JoinedGroups
+=======
+                state = UserState
+>>>>>>> origin/dgaiot-plugins
             },
             
             % 如果是服务器模式，调用回调模块的init函数
@@ -201,6 +221,7 @@ init(Args) ->
                 server when Mod =/= undefined ->
                     case Mod:init(UserState) of
                         {ok, NewUserState} ->
+<<<<<<< HEAD
                             io:format("~s ~p [UDP_SESSION] Callback module init success~n", 
                                      [?FILE, ?LINE]),
                             {ok, State#state{state = NewUserState}};
@@ -217,6 +238,17 @@ init(Args) ->
         {error, Reason} ->
             io:format("~s ~p [UDP_SESSION] Socket creation failed: ~p~n", 
                      [?FILE, ?LINE, Reason]),
+=======
+                            {ok, State#state{state = NewUserState}};
+                        {stop, Reason} ->
+                            {stop, Reason}
+                    end;
+                _ ->
+                    {ok, State}
+            end;
+        {error, Reason} ->
+            io:format("~s ~p Socket creation failed: ~p~n", [?FILE, ?LINE, Reason]),
+>>>>>>> origin/dgaiot-plugins
             {stop, Reason}
     end.
 
@@ -332,6 +364,7 @@ terminate(_Reason, #state{socket = Socket}) ->
 %% @doc 代码变更
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
+<<<<<<< HEAD
 
 %%%===================================================================
 %%% 内部函数
@@ -358,3 +391,5 @@ join_multicast_groups(Socket, MulticastGroups) ->
     io:format("~s ~p [UDP_SESSION] Total joined groups: ~p~n", 
               [?FILE, ?LINE, length(JoinedGroups)]),
     JoinedGroups.
+=======
+>>>>>>> origin/dgaiot-plugins

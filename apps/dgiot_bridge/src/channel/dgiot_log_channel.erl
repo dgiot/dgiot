@@ -101,6 +101,7 @@ handle_message(_Message, State) ->
     {ok, State}.
 
 stop(_ChannelType, _ChannelId, _State) ->
+<<<<<<< HEAD
     try
         dgiot_mqtt:unsubscribe(<<"dashboard_task/#">>),
         dgiot_mqtt:unsubscribe(<<"dgiot_topics/#">>),
@@ -110,6 +111,11 @@ stop(_ChannelType, _ChannelId, _State) ->
             ?LOG(error, "stop unsubscribe failed: ~p:~p, Stack: ~p", [Error, Reason, Stack]),
             ok
     end.
+=======
+    dgiot_mqtt:unsubscribe(<<"dashboard_task/#">>),
+    dgiot_mqtt:unsubscribe(<<"dgiot_topics/#">>),
+    ok.
+>>>>>>> origin/dgaiot-plugins
 
 subscribe_topic(SessionToken, #{<<"topic">> := Topic, <<"topickey">> := TopicKey}) ->
     case is_list(Topic) of

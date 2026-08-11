@@ -19,7 +19,14 @@
 -include("dgiot.hrl").
 
 -behaviour(application).
+<<<<<<< HEAD
 -emqx_plugin(?MODULE).
+=======
+-dgiot_plugin(?MODULE).
+-ifdef(DGIOT_WITH_EMQX).
+-emqx_plugin(?MODULE).
+-endif.
+>>>>>>> origin/dgaiot-plugins
 
 -export([start/2, stop/1]).
 
@@ -28,19 +35,42 @@ start(_StartType, _StartArgs) ->
     dgiot_data:search_data(),
     dgiot_datetime:start_time(),
     start_mnesia(),
+<<<<<<< HEAD
+=======
+    init_broker(),
+>>>>>>> origin/dgaiot-plugins
     dgiot:init_plugins(),
     {ok, Sup} = dgiot_sup:start_link(),
     dgiot_cron_timer:start(),
     start_plugin(Sup),
     dgiot_pushgateway:start_link(),
     dgiot_metrics:start(dgiot),
+<<<<<<< HEAD
     {ok, Sup}.
 
+=======
+    start_mqtt_listeners(),
+    {ok, Sup}.
+
+start_mqtt_listeners() ->
+    try esockd:start() catch _:_ -> ok end,
+    MqttOpts = [{tcp_options,[{backlog,512},{keepalive,true},{nodelay,true},{reuseaddr,true},binary,{packet,raw},{exit_on_close,true}]},{acceptors,8},{max_connections,1024000}],
+    try esockd:open(external, 1883, MqttOpts, {dgiot_broker_native, start_link, []}) catch _:_ -> ok end.
+
+init_broker() ->
+    try dgiot_broker_native:init() catch _:_ -> ok end,
+    try dgiot_mqtt:init_ets() catch _:_ -> ok end.
+
+>>>>>>> origin/dgaiot-plugins
 stop(_State) ->
     ok.
 
 start_mnesia() ->
     dgiot_mnesia:mnesia(boot),
+<<<<<<< HEAD
+=======
+    try dgiot_mnesia_helper:mnesia(boot) catch _:_ -> ok end,
+>>>>>>> origin/dgaiot-plugins
     Env = [
         {mnesia_monitor, dc_dump_limit, 50000},
         {mnesia_monitor, dump_log_time_threshold, 300000},

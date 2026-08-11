@@ -86,8 +86,13 @@ get_trace({Type, Id}) when is_atom(Id) ->
 get_trace({clientid, ClientId}) ->
     ets:member(?DGIOT_CLIENT_TRACE, ClientId);
 get_trace({topic, Topic}) ->
+<<<<<<< HEAD
     lists:any(fun({emqx_topic_trace, TopicFilter, _}) ->
         emqx_topic:match(Topic, TopicFilter)
+=======
+    lists:any(fun({dgiot_topic_trace, TopicFilter, _}) ->
+        dgiot_topic:match(Topic, TopicFilter)
+>>>>>>> origin/dgaiot-plugins
               end, ets:tab2list(?DGIOT_TOPIC_TRACE));
 get_trace(_) ->
     false.

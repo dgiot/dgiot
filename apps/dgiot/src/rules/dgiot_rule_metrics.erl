@@ -18,7 +18,11 @@
 
 -behaviour(gen_server).
 
+<<<<<<< HEAD
 -include("rule_engine.hrl").
+=======
+-include_lib("dgiot/include/rule_engine.hrl").
+>>>>>>> origin/dgaiot-plugins
 
 %% API functions
 -export([ start_link/0
@@ -131,7 +135,11 @@ get(Id, Metric) ->
 
 -spec(get_overall(atom()) -> number()).
 get_overall(Metric) ->
+<<<<<<< HEAD
     emqx_metrics:val(Metric).
+=======
+    dgiot_metrics_adapter:val(Metric).
+>>>>>>> origin/dgaiot-plugins
 
 -spec(get_rule_speed(rule_id()) -> map()).
 get_rule_speed(Id) ->
@@ -179,7 +187,11 @@ inc(Id, Metric, Val) ->
 
 -spec(inc_overall(atom(), pos_integer()) -> ok).
 inc_overall(Metric, Val) ->
+<<<<<<< HEAD
     emqx_metrics:inc(Metric, Val).
+=======
+    dgiot_metrics_adapter:inc(Metric, Val).
+>>>>>>> origin/dgaiot-plugins
 
 inc_rules_matched(Id) ->
     inc_rules_matched(Id, 1).
@@ -235,7 +247,11 @@ start_link() ->
 init([]) ->
     erlang:process_flag(trap_exit, true),
     %% the overall counters
+<<<<<<< HEAD
     [ok = emqx_metrics:ensure(Metric)|| Metric <- overall_metrics()],
+=======
+    [ok = dgiot_metrics_adapter:ensure(Metric)|| Metric <- overall_metrics()],
+>>>>>>> origin/dgaiot-plugins
     %% the speed metrics
     erlang:send_after(timer:seconds(?SAMPLING), self(), ticking),
     {ok, #state{overall_rule_speed = #rule_speed{}}}.
@@ -305,10 +321,17 @@ handle_info(_Info, State) ->
 code_change({down, Vsn}, State = #state{metric_ids = MIDs}, _Extra)
         when Vsn =:= "4.2.0";
              Vsn =:= "4.2.1" ->
+<<<<<<< HEAD
     emqx_metrics:ensure('actions.failure'),
     emqx_metrics:set('actions.failure',
                      emqx_metrics:val('actions.error')
                      + emqx_metrics:val('actions.exception')),
+=======
+    dgiot_metrics_adapter:ensure('actions.failure'),
+    dgiot_metrics_adapter:set('actions.failure',
+                     dgiot_metrics_adapter:val('actions.error')
+                     + dgiot_metrics_adapter:val('actions.exception')),
+>>>>>>> origin/dgaiot-plugins
     [begin
         Matched = get_rules_matched(Id),
         Succ = get_actions_success(Id),
@@ -325,12 +348,20 @@ code_change({down, Vsn}, State = #state{metric_ids = MIDs}, _Extra)
 code_change(Vsn, State = #state{metric_ids = MIDs}, _Extra)
         when Vsn =:= "4.2.0";
              Vsn =:= "4.2.1" ->
+<<<<<<< HEAD
     [emqx_metrics:ensure(Name)
+=======
+    [dgiot_metrics_adapter:ensure(Name)
+>>>>>>> origin/dgaiot-plugins
      || Name <-
         ['actions.error', 'actions.taken',
          'actions.exception', 'actions.retry'
         ]],
+<<<<<<< HEAD
     emqx_metrics:set('actions.error', emqx_metrics:val('actions.failure')),
+=======
+    dgiot_metrics_adapter:set('actions.error', dgiot_metrics_adapter:val('actions.failure')),
+>>>>>>> origin/dgaiot-plugins
     [begin
         Matched = get_rules_matched(Id),
         Succ = get_actions_success(Id),
@@ -358,7 +389,11 @@ stop() ->
 %%------------------------------------------------------------------------------
 
 async_refresh_resource_status() ->
+<<<<<<< HEAD
     spawn(emqx_rule_engine, refresh_resource_status, []).
+=======
+    ok.
+>>>>>>> origin/dgaiot-plugins
 
 create_counters(Id) ->
     case couters_ref(Id) of
