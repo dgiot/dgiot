@@ -140,8 +140,11 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup, PR process, and 
 | **GitHub Discussions** | [github.com/dgiot/dgiot/discussions](https://github.com/dgiot/dgiot/discussions) |
 | **Documentation** | [docs.dgiotcloud.cn](https://docs.dgiotcloud.cn) |
 | **Website** | [dgiotcloud.cn](https://www.dgiotcloud.cn) |
-| **Discord** | *Coming soon* |
+| **Reddit** | [r/IOT community](https://www.reddit.com/user/dgaiot) |
+| **Discord** | Join our server |
 | **Gitee (中文)** | [gitee.com/dgiiot/dgiot](https://gitee.com/dgiiot/dgiot) |
+| **YouTube** | [@dgaiot-x](https://www.youtube.com/@dgaiot-x) |
+| **Dev.to** | [dev.to/lsxredrain](https://dev.to/lsxredrain) |
 
 ---
 
