@@ -1,0 +1,56 @@
+{
+    "mcpServers": {
+        "memory": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-memory"
+            ],
+            "env": {
+                "MEMORY_FILE_PATH": "/path/to/custom/memory.json"
+            }
+        },
+        "github": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-github"
+            ],
+            "env": {
+                "GITHUB_PERSONAL_ACCESS_TOKEN": "<YOUR_TOKEN>"
+            }
+        },
+        "f2c-mcp": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@f2c/mcp"
+            ],
+            "env": {
+                "personalToken": ""
+            }
+        },
+        "filesystem": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                "/Users/username/Desktop",
+                "/path/to/other/allowed/dir"
+            ]
+        },
+        "fetch": {
+            "command": "uvx",
+            "args": [
+                "mcp-server-fetch"
+            ]
+        },
+        "excel": {
+            "command": "uvx",
+            "args": [
+                "excel-mcp-server",
+                "stdio"
+            ]
+        }
+    }
+}

@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# 错误处理
+set -euo pipefail
+trap 'echo "脚本执行失败: $?" >&2' ERR
+#!/bin/bash
+# device_registration.sh - 设备注册测试模块
+
+# 模块2: 设备注册测试
+module_device_registration() {
+    log_info "模块2: 设备注册测试"
+    
+    # 发送注册报文
+    echo "2.1 发送设备注册报文..."
+    echo "设备地址: ${DEVICE_ADDR}"
+    echo "注册报文: ${TEST_DEVICE}"
+    
+    # 使用nc发送注册报文
+    echo -n "${TEST_DEVICE}" | nc -w 5 127.0.0.1 "${TEST_PORT}"
+    sleep 3
+    
+    # 验证设备注册
+    echo "2.2 验证设备注册..."
+    _build/emqx/rel/emqx/bin/emqx eval "
+        DeviceAddr = <<\"$DEVICE_ADDR\">>,
+        ProductId = <<\"$TEST_PRODUCT\">>,
+        DeviceId = dgiot_parse_id:get_deviceid(ProductId, DeviceAddr),
+        
+        case dgiot_device:lookup(DeviceId) of
+            {ok, Device} ->
+                dgiot_utils:safe_format(\"✅ 设备注册成功~n\", []),
+                io:format(\"  设备ID: ~p~n\", [DeviceId]),
+                io:format(\"  设备信息: ~p~n\", [Device]);
+            {error, not_found} ->
+                dgiot_utils:safe_format(\"❌ 设备未找到~n\", []);
+            {error, Reason} ->
+                dgiot_utils:safe_format(\"❌ 设备查询错误~n\", []),
+                io:format(\"  错误原因: ~p~n\", [Reason])
+        end.
+    "
+    
+    return 0
+}
+
+# 检查设备注册
+check_device_registration() {
+    log_info "检查设备注册状态..."
+    
+    local result=$(_build/emqx/rel/emqx/bin/emqx eval "
+        DeviceAddr = <<\"$DEVICE_ADDR\">>,
+        ProductId = <<\"$TEST_PRODUCT\">>,
+        DeviceId = dgiot_parse_id:get_deviceid(ProductId, DeviceAddr),
+        
+        case dgiot_device:lookup(DeviceId) of
+            {ok, _} -> <<\"success\">>;
+            _ -> <<\"failed\">>
+        end.
+    ")
+    
+    if [ "$result" = "success" ]; then
+        log_success "设备注册检查通过"
+        return 0
+    else
+        log_error "设备注册检查失败"
+        return 1
+    fi
+}

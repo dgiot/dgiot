@@ -1,0 +1,121 @@
+#!/bin/bash
+# PreToolUse Hook - 工具使用前Hook，集成文档转换技能检测
+
+set -e
+
+# 读取JSON输入
+INPUT_JSON=$(cat)
+TOOL_NAME=$(echo "$INPUT_JSON" | jq -r '.preToolUse.toolName // ""')
+TOOL_ARGS=$(echo "$INPUT_JSON" | jq -r '.preToolUse.toolArgs // "{}"')
+TASK_ID=$(echo "$INPUT_JSON" | jq -r '.taskId // ""')
+TIMESTAMP=$(echo "$INPUT_JSON" | jq -r '.timestamp // 0')
+
+# 初始化输出
+CANCEL=false
+CONTEXT_MOD=""
+ERROR_MSG=""
+
+# 主目标关键词（包含文档转换相关）
+MAIN_OBJECTIVE_KEYWORDS=(
+    "dgiot_uav" "无人机" "uav" "protocol" "协议"
+    "tdengine" "时序数据" "存储" "save_td"
+    "channel" "通道" "tcp" "bridge"
+    "skill" "技能" "hook" "钩子"
+    "文档转换" "pandoc" "markdown" "html" "pdf" "docx" "office"
+    "文件提取" "文档处理" "格式转换" "批量转换"
+)
+
+# 文档转换技能特定关键词
+DOCUMENT_CONVERSION_KEYWORDS=(
+    "文档转换" "pandoc转换" "markdown转html" "文档格式转换"
+    "安装pandoc" "批量文档转换" "markdown转pdf" "文档自动化处理"
+    "office文档" "word转pdf" "excel转html" "ppt转markdown"
+    "文件提取" "内容提取" "文本提取" "格式转换"
+)
+
+# 检查是否与文档转换相关
+check_document_conversion_related() {
+    local tool_name="$1"
+    local tool_args="$2"
+    
+    # 检查工具名称
+    if [[ "$tool_name" == *"pandoc"* ]] || [[ "$tool_name" == *"convert"* ]] || [[ "$tool_name" == *"document"* ]]; then
+        return 0  # 相关
+    fi
+    
+    # 检查参数中的关键词
+    for keyword in "${DOCUMENT_CONVERSION_KEYWORDS[@]}"; do
+        if [[ "$tool_args" == *"$keyword"* ]]; then
+            return 0  # 相关
+        fi
+    done
+    
+    return 1  # 不相关
+}
+
+# 检查是否与主目标相关
+check_main_objective_related() {
+    local tool_name="$1"
+    local tool_args="$2"
+    
+    # 检查工具名称
+    for keyword in "${MAIN_OBJECTIVE_KEYWORDS[@]}"; do
+        if [[ "$tool_name" == *"$keyword"* ]]; then
+            return 0  # 相关
+        fi
+    done
+    
+    # 检查参数中的关键词
+    for keyword in "${MAIN_OBJECTIVE_KEYWORDS[@]}"; do
+        if [[ "$tool_args" == *"$keyword"* ]]; then
+            return 0  # 相关
+        fi
+    done
+    
+    return 1  # 不相关
+}
+
+# 主逻辑
+if [ -n "$TOOL_NAME" ]; then
+    echo "[PreToolUse Hook] 检测工具: $TOOL_NAME" >&2
+    
+    # 检查是否与文档转换相关
+    if check_document_conversion_related "$TOOL_NAME" "$TOOL_ARGS"; then
+        echo "[PreToolUse Hook] 检测到文档转换相关操作" >&2
+        CONTEXT_MOD="检测到文档转换需求，建议使用pandoc_document_converter技能。该技能支持Office文档、PDF、HTML等多种格式转换，包含自动部署和安装功能。"
+        
+        # 添加技能调用建议
+        CONTEXT_MOD="$CONTEXT_MOD 触发短语：文档转换、pandoc转换、markdown转html、安装pandoc"
+        
+    # 检查是否与主目标相关
+    elif check_main_objective_related "$TOOL_NAME" "$TOOL_ARGS"; then
+        echo "[PreToolUse Hook] 检测到主目标相关操作" >&2
+        CONTEXT_MOD="当前操作与主目标相关，继续执行。"
+        
+    else
+        echo "[PreToolUse Hook] 警告：操作可能与主目标无关" >&2
+        CONTEXT_MOD="注意：当前操作可能与主目标关联度较低。请确保操作有助于完成主目标。"
+        
+        # 如果是文档处理相关但未使用技能，提供建议
+        if [[ "$TOOL_NAME" == *"file"* ]] || [[ "$TOOL_NAME" == *"read"* ]] || [[ "$TOOL_NAME" == *"write"* ]]; then
+            if [[ "$TOOL_ARGS" == *".doc"* ]] || [[ "$TOOL_ARGS" == *".docx"* ]] || [[ "$TOOL_ARGS" == *".pdf"* ]] || [[ "$TOOL_ARGS" == *".xls"* ]] || [[ "$TOOL_ARGS" == *".ppt"* ]]; then
+                CONTEXT_MOD="$CONTEXT_MOD 提示：检测到Office文档处理，建议使用pandoc_document_converter技能进行格式转换和内容提取。"
+            fi
+        fi
+    fi
+    
+    # 记录工具使用
+    LOG_FILE="/tmp/cline_tool_usage_${TASK_ID}.log"
+    echo "$(date -d @$((TIMESTAMP/1000)) '+%Y-%m-%dT%H:%M:%S')|$TOOL_NAME|$CONTEXT_MOD" >> "$LOG_FILE"
+fi
+
+# 输出JSON结果
+jq -n \
+    --arg cancel "$CANCEL" \
+    --arg contextMod "$CONTEXT_MOD" \
+    --arg errorMsg "$ERROR_MSG" \
+    '{
+        cancel: ($cancel == "true"),
+        contextModification: $contextMod,
+        errorMessage: $errorMsg
+    }'

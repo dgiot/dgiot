@@ -2,7 +2,7 @@
     [
         {description, "DGIOT"},
         {vsn, "4.3.0"},
-        {modules, []},
+        {modules, [dgiot_udp_sdk]},
         {registered, [dgiot_sup]},
         {applications, [kernel, stdlib,prometheus]},
         {mod, {dgiot_app, []}},

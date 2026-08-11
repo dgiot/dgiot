@@ -26,13 +26,21 @@
 -export([init/5, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -define(SERVER, ?MODULE).
+-define(PRINT(Format, Args), io:format(Format, Args)).   %% 添加调试打印宏
 
 -record(state, {mod, conn_state, active_n, incoming_bytes = 0, rate_limit, limit_timer, child = #tcp{}}).
 
+%% 强制转换为二进制，并记录错误
+ensure_binary(undefined) -> 
+    ?LOG(info, "ensure_binary received undefined from ~p", [self()]),
+    <<>>;
+ensure_binary(Bin) when is_binary(Bin) -> Bin;
+ensure_binary(Other) -> 
+    ?LOG(info, "ensure_binary received non-binary: ~p from ~p", [Other, self()]),
+    <<>>.
 
 child_spec(Mod, Port, State) ->
     child_spec(Mod, Port, State, []).
-
 
 child_spec(Mod, Port, State, Opts) ->
     Name = Mod,
@@ -79,17 +87,21 @@ init(Mod, Transport, Opts, Sock0, State) ->
 handle_call(Request, From, #state{mod = Mod, child = ChildState} = State) ->
     case Mod:handle_call(Request, From, ChildState) of
         {reply, Reply, NewChildState} ->
-            {reply, Reply, State#state{child = NewChildState}, hibernate};
+            SafeNewChild = NewChildState#tcp{buff = ensure_binary(NewChildState#tcp.buff)},
+            {reply, Reply, State#state{child = SafeNewChild}, hibernate};
         {stop, Reason, NewChildState} ->
-            {stop, Reason, State#state{child = NewChildState}}
+            SafeNewChild = NewChildState#tcp{buff = ensure_binary(NewChildState#tcp.buff)},
+            {stop, Reason, State#state{child = SafeNewChild}}
     end.
 
 handle_cast(Msg, #state{mod = Mod, child = ChildState} = State) ->
     case Mod:handle_cast(Msg, ChildState) of
         {noreply, NewChildState} ->
-            {noreply, State#state{child = NewChildState}, hibernate};
+            SafeNewChild = NewChildState#tcp{buff = ensure_binary(NewChildState#tcp.buff)},
+            {noreply, State#state{child = SafeNewChild}, hibernate};
         {stop, Reason, NewChildState} ->
-            {stop, Reason, State#state{child = NewChildState}}
+            SafeNewChild = NewChildState#tcp{buff = ensure_binary(NewChildState#tcp.buff)},
+            {stop, Reason, State#state{child = SafeNewChild}}
     end.
 
 handle_info(activate_socket, State) ->
@@ -102,8 +114,9 @@ handle_info({tcp_passive, _Sock}, State) ->
     ok = activate_socket(NState),
     {noreply, NState};
 
-%% add register function
+%% add register function (first data)
 handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{clientid = Clientid, register = false, buff = Buff, socket = Sock} = ChildState} = State) ->
+   
     dgiot_metrics:inc(dgiot, <<"tcp_recv">>, 1),
     Binary = iolist_to_binary(Data),
     NewBin =
@@ -113,23 +126,46 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{clientid = Clienti
             _ ->
                 Binary
         end,
-    DTUIP = dgiot_utils:get_ip(Sock),
-    write_log(ChildState#tcp.log, <<" RECV ", DTUIP/binary, " ", Clientid/binary>>, NewBin),
+    DTUIP = case dgiot_utils:get_ip(Sock) of
+        <<"">> -> <<"unknown_ip">>;
+        IPAddr -> IPAddr
+    end,
+    % 确保 Clientid 是二进制，否则可能引起 write_log 内部问题，但 write_log 会处理
+    SafeClientid = ensure_binary(Clientid),
+    write_log(ChildState#tcp.log, <<" RECV ", DTUIP/binary, " ", SafeClientid/binary>>, NewBin),
     Cnt = byte_size(NewBin),
     NewChildState = ChildState#tcp{buff = <<>>},
-    case Mod:handle_info({tcp, <<Buff/binary, NewBin/binary>>}, NewChildState) of
-        {noreply, #tcp{register = true, clientid = ClientId, buff = Buff, socket = Sock} = NewChild} ->
+    SafeBuff = ensure_binary(Buff),
+    SafeNewBin = ensure_binary(NewBin),
+    Merged = <<SafeBuff/binary, SafeNewBin/binary>>,
+    SafeMerged = ensure_binary(Merged),
+    case Mod:handle_info({tcp, SafeMerged}, NewChildState) of
+        {noreply, #tcp{register = true, clientid = ClientId, buff = _NewBuff, socket = Sock} = NewChild} ->
             dgiot_cm:register_channel(ClientId, self(), #{conn_mod => Mod}),
-            Ip = dgiot_utils:get_ip(Sock),
-            Port = dgiot_utils:get_port(Sock),
+            % 安全获取IP地址和端口，处理可能的socket错误
+            Ip = case dgiot_utils:get_ip(Sock) of
+                <<"">> -> <<"unknown_ip">>;
+                IPAddr1 -> IPAddr1
+            end,
+            Port = case dgiot_utils:get_port(Sock) of
+                0 -> 0;
+                P -> P
+            end,
+            %% 打印TCP连接信息
+            ?LOG(info, "TCP新连接: ClientId=~ts, IP=~ts, Port=~p, Socket=~p, Module=~p",
+                  [ClientId, Ip, Port, Sock, Mod]),
             dgiot_cm:insert_channel_info(ClientId, #{ip => Ip, port => Port, online => dgiot_datetime:now_microsecs()}, [{tcp_recv, 1}]),
-            {noreply, State#state{child = NewChild, incoming_bytes = Cnt}, hibernate};
+            SafeNewChild = NewChild#tcp{buff = ensure_binary(NewChild#tcp.buff)},
+            {noreply, State#state{child = SafeNewChild, incoming_bytes = Cnt}, hibernate};
         {noreply, NewChild} ->
-            {noreply, State#state{child = NewChild, incoming_bytes = Cnt}, hibernate};
+            SafeNewChild = NewChild#tcp{buff = ensure_binary(NewChild#tcp.buff)},
+            {noreply, State#state{child = SafeNewChild, incoming_bytes = Cnt}, hibernate};
         {stop, Reason, NewChild} ->
-            {stop, Reason, State#state{child = NewChild}}
+            SafeNewChild = NewChild#tcp{buff = ensure_binary(NewChild#tcp.buff)},
+            {stop, Reason, State#state{child = SafeNewChild}}
     end;
 
+%% handle_info for registered devices (后续数据)
 handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{clientid = Clientid, buff = Buff, socket = Sock} = ChildState} = State) ->
     dgiot_metrics:inc(dgiot, <<"tcp_recv">>, 1),
     Binary = iolist_to_binary(Data),
@@ -140,135 +176,177 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{clientid = Clienti
             _ ->
                 Binary
         end,
-    DTUIP = dgiot_utils:get_ip(Sock),
-    write_log(ChildState#tcp.log, <<"RECV ", DTUIP/binary, " ", Clientid/binary>>, NewBin),
+    DTUIP = case dgiot_utils:get_ip(Sock) of
+        <<"">> -> <<"unknown_ip">>;
+        IPAddr2 -> IPAddr2
+    end,
+    SafeClientid = ensure_binary(Clientid),
+    write_log(ChildState#tcp.log, <<"RECV ", DTUIP/binary, " ", SafeClientid/binary>>, NewBin),
     Cnt = byte_size(NewBin),
     NewChildState = ChildState#tcp{buff = <<>>},
     case NewChildState of
         #tcp{clientid = CliendId, register = true} ->
             dgiot_device:online(CliendId),
             dgiot_tracer:check_trace(CliendId, CliendId, dgiot_utils:binary_to_hex(Binary), ?MODULE, ?LINE);
-        _ ->
-            pass
+        _ -> pass
     end,
-    case Mod:handle_info({tcp, <<Buff/binary, NewBin/binary>>}, NewChildState) of
+    SafeBuff = ensure_binary(Buff),
+    SafeNewBin = ensure_binary(NewBin),
+    Merged = <<SafeBuff/binary, SafeNewBin/binary>>,
+    SafeMerged = ensure_binary(Merged),
+    Result = Mod:handle_info({tcp, SafeMerged}, NewChildState),
+    case Result of
+        {noreply, #tcp{buff = _NewBuff} = NewChild} ->
+            SafeNewChild = NewChild#tcp{buff = ensure_binary(NewChild#tcp.buff)},
+            {noreply, State#state{child = SafeNewChild, incoming_bytes = Cnt}, hibernate};
         {noreply, NewChild} ->
-            {noreply, State#state{child = NewChild, incoming_bytes = Cnt}, hibernate};
+            SafeNewChild = NewChild#tcp{buff = ensure_binary(NewChild#tcp.buff)},
+            {noreply, State#state{child = SafeNewChild, incoming_bytes = Cnt}, hibernate};
         {stop, Reason, NewChild} ->
-            {stop, Reason, State#state{child = NewChild}}
+            SafeNewChild = NewChild#tcp{buff = ensure_binary(NewChild#tcp.buff)},
+            {stop, Reason, State#state{child = SafeNewChild}}
     end;
 
 handle_info({shutdown, Reason}, #state{child = #tcp{clientid = CliendId, socket = Sock, register = true} = ChildState} = State) ->
     ?LOG(error, "shutdown, ~p, ~p~n", [Reason, ChildState#tcp.state]),
-    dgiot_cm:unregister_channel(CliendId),
-    dgiot_device:offline(CliendId),
-    DTUIP = dgiot_utils:get_ip(Sock),
-    write_log(ChildState#tcp.log, <<"ERROR ", DTUIP/binary, " ", CliendId/binary>>, list_to_binary(io_lib:format("~w", [Reason]))),
+    case CliendId of
+        undefined -> ok;
+        _ ->
+            dgiot_cm:unregister_channel(CliendId),
+            dgiot_device:offline(CliendId)
+    end,
+    DTUIP = case dgiot_utils:get_ip(Sock) of
+        <<"">> -> <<"unknown_ip">>;
+        IPAddr3 -> IPAddr3
+    end,
+    case CliendId of
+        undefined -> ok;
+        _ -> write_log(ChildState#tcp.log, <<"ERROR ", DTUIP/binary, " ", CliendId/binary>>, list_to_binary(io_lib:format("~w", [Reason])))
+    end,
     {stop, normal, State#state{child = ChildState#tcp{socket = undefined}}};
 
 handle_info({shutdown, Reason}, #state{child = #tcp{clientid = Clientid, socket = Sock} = ChildState} = State) ->
     ?LOG(error, "shutdown, ~p, ~p~n", [Reason, ChildState#tcp.state]),
-    DTUIP = dgiot_utils:get_ip(Sock),
+    DTUIP = case dgiot_utils:get_ip(Sock) of
+        <<"">> -> <<"unknown_ip">>;
+        IPAddr4 -> IPAddr4
+    end,
     write_log(ChildState#tcp.log, <<"ERROR ", DTUIP/binary, " ", Clientid/binary>>, list_to_binary(io_lib:format("~w", [Reason]))),
     {stop, normal, State#state{child = ChildState#tcp{socket = undefined}}};
 
 handle_info({tcp_error, _Sock, Reason}, #state{child = #tcp{clientid = Clientid, socket = Sock} = ChildState} = State) ->
     ?LOG(error, "tcp_error, ~p, ~p~n", [Reason, ChildState#tcp.state]),
-    DTUIP = dgiot_utils:get_ip(Sock),
+    DTUIP = case dgiot_utils:get_ip(Sock) of
+        <<"">> -> <<"unknown_ip">>;
+        IPAddr5 -> IPAddr5
+    end,
     write_log(ChildState#tcp.log, <<"ERROR ", DTUIP/binary, " ", Clientid/binary>>, list_to_binary(io_lib:format("~w", [Reason]))),
     {stop, {shutdown, Reason}, State};
 
-handle_info({tcp_closed, Sock}, #state{mod = Mod, child = #tcp{clientid = Clientid, socket = Sock} = ChildState} = State) ->
-    DTUIP = dgiot_utils:get_ip(Sock),
-    write_log(ChildState#tcp.log, <<"ERROR ", DTUIP/binary, " ", Clientid/binary>>, <<"tcp_closed">>),
+handle_info({tcp_closed, Sock}, #state{mod = Mod, child = #tcp{clientid = _Clientid, socket = Sock} = ChildState} = State) ->
+    % DTUIP = case dgiot_utils:get_ip(Sock) of
+    %     <<"">> -> <<"unknown_ip">>;
+    %     IPAddr6 -> IPAddr6
+    % end,
+    % SafeClientid = ensure_binary(Clientid),
+    % write_log(ChildState#tcp.log, <<"ERROR ", DTUIP/binary, " ", SafeClientid/binary>>, <<"tcp_closed">>),
     dgiot_metrics:dec(dgiot, <<"tcp_online">>, 1),
-%%    ?LOG(error, "tcp_closed ~p", [ChildState#tcp.state]),
     case Mod:handle_info(tcp_closed, ChildState) of
         {noreply, NewChild} ->
-            {stop, normal, State#state{child = NewChild#tcp{socket = undefined}}};
+            SafeNewChild = NewChild#tcp{buff = ensure_binary(NewChild#tcp.buff)},
+            {stop, normal, State#state{child = SafeNewChild#tcp{socket = undefined}}};
         {stop, _Reason, NewChild} ->
-            {stop, normal, State#state{child = NewChild#tcp{socket = undefined}}}
+            SafeNewChild = NewChild#tcp{buff = ensure_binary(NewChild#tcp.buff)},
+            {stop, normal, State#state{child = SafeNewChild#tcp{socket = undefined}}}
     end;
 
 handle_info(Info, #state{mod = Mod, child = ChildState} = State) ->
     case Mod:handle_info(Info, ChildState) of
         {noreply, NewChildState} ->
-            {noreply, State#state{child = NewChildState}, hibernate};
+            SafeNewChild = NewChildState#tcp{buff = ensure_binary(NewChildState#tcp.buff)},
+            {noreply, State#state{child = SafeNewChild}, hibernate};
         {stop, Reason, NewChildState} ->
-            {stop, Reason, State#state{child = NewChildState}}
+            SafeNewChild = NewChildState#tcp{buff = ensure_binary(NewChildState#tcp.buff)},
+            {stop, Reason, State#state{child = SafeNewChild}}
     end.
 
 terminate(Reason, #state{mod = Mod, child = #tcp{clientid = CliendId, register = true} = ChildState}) ->
-    dgiot_cm:unregister_channel(CliendId),
+    case CliendId of
+        undefined -> ok;
+        _ -> dgiot_cm:unregister_channel(CliendId)
+    end,
     dgiot_metrics:dec(dgiot_bridge, <<"tcp_server">>, 1),
     Mod:terminate(Reason, ChildState);
-
 terminate(Reason, #state{mod = Mod, child = ChildState}) ->
     dgiot_metrics:dec(dgiot_bridge, <<"tcp_server">>, 1),
     Mod:terminate(Reason, ChildState).
 
 code_change(OldVsn, #state{mod = Mod, child = ChildState} = State, Extra) ->
     {ok, NewChildState} = Mod:code_change(OldVsn, ChildState, Extra),
-    {ok, State#state{child = NewChildState}}.
+    SafeNewChild = NewChildState#tcp{buff = ensure_binary(NewChildState#tcp.buff)},
+    {ok, State#state{child = SafeNewChild}}.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 
 send(#tcp{clientid = CliendId, register = true, transport = Transport, socket = Socket} = ChildState, Payload) ->
-    dgiot_tracer:check_trace(CliendId, CliendId, dgiot_utils:binary_to_hex(Payload), ?MODULE, ?LINE),
+    SafePayload = ensure_binary(Payload),
+    case SafePayload of
+        <<>> -> ?LOG(error, "send called with empty/undefined payload from ~p, clientid=~s", [self(), CliendId]);
+        _ -> ok
+    end,
+    dgiot_tracer:check_trace(CliendId, CliendId, dgiot_utils:binary_to_hex(SafePayload), ?MODULE, ?LINE),
     dgiot_metrics:inc(dgiot_bridge, <<"tcp_server_send">>, 1),
     case Socket == undefined of
-        true ->
-            {error, disconnected};
+        true -> {error, disconnected};
         false ->
-            DTUIP = dgiot_utils:get_ip(Socket),
-            write_log(ChildState#tcp.log, <<"send ", DTUIP/binary, " ", CliendId/binary>>, Payload),
-            Transport:send(Socket, Payload)
+            DTUIP = case dgiot_utils:get_ip(Socket) of
+                <<"">> -> <<"unknown_ip">>;
+                IPAddr7 -> IPAddr7
+            end,
+            write_log(ChildState#tcp.log, <<"send ", DTUIP/binary, " ", CliendId/binary>>, SafePayload),
+            Transport:send(Socket, SafePayload)
     end;
 
 send(#tcp{clientid = Clientid, transport = Transport, socket = Socket} = ChildState, Payload) ->
+    SafePayload = ensure_binary(Payload),
+    case SafePayload of
+        <<>> -> ?LOG(error, "send called with empty/undefined payload from ~p, clientid=~s", [self(), Clientid]);
+        _ -> ok
+    end,
     dgiot_metrics:inc(dgiot_bridge, <<"tcp_server_send">>, 1),
     case Socket == undefined of
-        true ->
-            {error, disconnected};
+        true -> {error, disconnected};
         false ->
-            DTUIP = dgiot_utils:get_ip(Socket),
+            % 安全获取IP地址，处理可能的socket错误
+            DTUIP = case dgiot_utils:get_ip(Socket) of
+                <<"">> -> <<"unknown_ip">>;
+                IPAddr8 -> IPAddr8
+            end,
             write_log(ChildState#tcp.log, <<"send ", DTUIP/binary, " ", Clientid/binary>>, Payload),
-            Transport:send(Socket, Payload)
+            Transport:send(Socket, SafePayload)
     end.
 
 rate_limit({Rate, Burst}) ->
     esockd_rate_limit:new(Rate, Burst).
 
-activate_socket(#state{conn_state = blocked}) ->
-    ok;
+activate_socket(#state{conn_state = blocked}) -> ok;
 activate_socket(#state{child = #tcp{transport = Transport, socket = Socket}, active_n = N}) ->
-    TrueOrN =
-        case Transport:is_ssl(Socket) of
-            true -> true; %% Cannot set '{active, N}' for SSL:(
-            false -> N
-        end,
+    TrueOrN = case Transport:is_ssl(Socket) of true -> true; false -> N end,
     case Transport:setopts(Socket, [{active, TrueOrN}]) of
         ok -> ok;
-        {error, Reason} ->
-            self() ! {shutdown, Reason},
-            ok
+        {error, Reason} -> self() ! {shutdown, Reason}, ok
     end.
 
 ensure_rate_limit(State) ->
     case esockd_rate_limit:check(State#state.incoming_bytes, State#state.rate_limit) of
-        {0, RateLimit} ->
-            State#state{incoming_bytes = 0, rate_limit = RateLimit};
+        {0, RateLimit} -> State#state{incoming_bytes = 0, rate_limit = RateLimit};
         {Pause, RateLimit} ->
-            %?LOG(info,"[~p] ensure_rate_limit :~p", [Pause, ensure_rate_limit]),
             TRef = erlang:send_after(Pause, self(), activate_socket),
             State#state{conn_state = blocked, incoming_bytes = 0, rate_limit = RateLimit, limit_timer = TRef}
     end.
 
-%%write_log(false, Type, Buff) ->
-%%    write_log(file, Type, Buff),
-%%    ok;
 write_log(file, Type, Buff) ->
     [Pid] = io_lib:format("~p", [self()]),
     Date = dgiot_datetime:format("YYYY-MM-DD"),
@@ -281,9 +359,6 @@ write_log(file, Type, Buff) ->
            end,
     file:write_file(Path, <<Time/binary, " ", Type/binary, " ", Data/binary, "\r\n">>, [append]),
     ok;
-write_log({Mod, Fun}, Type, Buff) ->
-    catch apply(Mod, Fun, [Type, Buff]);
-write_log(Fun, Type, Buff) when is_function(Fun) ->
-    catch Fun(Type, Buff);
-write_log(_, _, _) ->
-    ok.
+write_log({Mod, Fun}, Type, Buff) -> catch apply(Mod, Fun, [Type, Buff]);
+write_log(Fun, Type, Buff) when is_function(Fun) -> catch Fun(Type, Buff);
+write_log(_, _, _) -> ok.

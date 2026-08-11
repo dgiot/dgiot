@@ -1,0 +1,105 @@
+#!/bin/bash
+#!/bin/bash
+# hot_reload.sh - 热编译和问题诊断模块
+
+# 模块7: 热编译和热加载
+module_hot_reload() {
+    log_info "模块7: 热编译和热加载"
+    
+    echo "7.1 编译modbus插件..."
+    _build/emqx/rel/emqx/bin/emqx eval 'dgiot_plugin:compile(dgiot_modbus).'
+    
+    echo "7.2 热加载modbus插件..."
+    _build/emqx/rel/emqx/bin/emqx eval 'dgiot_plugin:reload_plugin(dgiot_modbus).'
+    
+    echo "7.3 验证插件加载..."
+    _build/emqx/rel/emqx/bin/emqx eval '
+        dgiot_utils:safe_format("验证插件加载状态:~n", []),
+        
+        case code:which(modbus_rtu) of
+            non_existing ->
+                dgiot_utils:safe_format("❌ modbus_rtu模块未加载~n", []);
+            _ ->
+                dgiot_utils:safe_format("✅ modbus_rtu模块已加载~n", [])
+        end.
+    '
+    
+    return 0
+}
+
+# 模块9: 问题诊断
+module_problem_diagnosis() {
+    log_info "模块9: 问题诊断"
+    
+    echo "9.1 收集系统状态信息..."
+    
+    # 检查系统状态
+    _build/emqx/rel/emqx/bin/emqx eval '
+        io:format("=== 系统状态诊断 ===~n", []),
+        
+        % 检查模块加载状态
+        dgiot_utils:safe_format("模块加载状态:~n", []),
+        lists:foreach(
+            fun(Module) ->
+                case code:which(Module) of
+                    non_existing ->
+                        dgiot_utils:safe_format("  ❌ ~p: 未加载~n", [Module]);
+                    _ ->
+                        dgiot_utils:safe_format("  ✅ ~p: 已加载~n", [Module])
+                end
+            end,
+            [modbus_rtu, dgiot_modbusrtu_tcp, dgiot_task, dgiot_data]
+        ),
+        
+        % 检查产品配置
+        dgiot_utils:safe_format("产品配置状态:~n", []),
+        case dgiot_product:lookup_prod(<<"feeb43bffb">>) of
+            {ok, Product} ->
+                dgiot_utils:safe_format("  ✅ 产品配置存在~n", []),
+                
+                % 检查属性数量
+                case Product of
+                    #{<<"thing">> := #{<<"properties">> := Props}} ->
+                        PropCount = length(Props),
+                        io:format("  属性数量: ~p~n", [PropCount]);
+                    _ ->
+                        dgiot_utils:safe_format("  ⚠️  产品配置格式异常~n", [])
+                end;
+            {error, not_found} ->
+                dgiot_utils:safe_format("  ❌ 产品配置不存在~n", []);
+            {error, Reason} ->
+                dgiot_utils:safe_format("  ❌ 产品查询错误: ~p~n", [Reason])
+        end,
+        
+        % 检查缓存数据
+        dgiot_utils:safe_format("缓存数据状态:~n", []),
+        DeviceAddr = <<"wrj_dm-zqy-20000">>,
+        ProductId = <<"feeb43bffb">>,
+        DeviceId = dgiot_parse_id:get_deviceid(ProductId, DeviceAddr),
+        
+        case dgiot_data:get({last_data, DeviceId}) of
+            not_find ->
+                dgiot_utils:safe_format("  ⚠️  未找到设备缓存数据~n", []);
+            CachedData ->
+                dgiot_utils:safe_format("  ✅ 找到设备缓存数据~n", []),
+                
+                % 检查数据格式
+                case CachedData of
+                    #{<<"block_data">> := BlockData} ->
+                        dgiot_utils:safe_format("    包含block_data字段~n", []),
+                        io:format("    值: ~p~n", [BlockData]);
+                    _ ->
+                        dgiot_utils:safe_format("    ⚠️  不包含block_data字段~n", [])
+                end
+        end.
+    '
+    
+    echo ""
+    echo "9.2 建议操作:"
+    echo "  1. 检查代码中的模式匹配是否正确"
+    echo "  2. 验证产品配置中的属性定义"
+    echo "  3. 检查协议解析逻辑"
+    echo "  4. 查看详细日志定位问题"
+    
+    return 0
+}

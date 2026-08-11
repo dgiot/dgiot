@@ -215,3 +215,66 @@ ci: $(REBAR) $(PROFILE)
 .PHONY: quickrun
 quickrun:
 	@$(QUIKRUN)
+## ============================================================================
+## 插件测试框架（通过test_framework.sh）
+## ============================================================================
+
+# 列出所有插件
+.PHONY: list-plugins
+list-plugins:
+	@./scripts/test_framework.sh --list-plugins
+
+# 列出指定插件的测试用例
+.PHONY: list-testcases
+list-testcases:
+	@if [ -z "$(PLUGIN)" ]; then \
+echo "用法: make list-testcases PLUGIN=<插件名>"; \
+echo "示例: make list-testcases PLUGIN=dgiot_modbus"; \
+exit 1; \
+fi
+	@./scripts/test_framework.sh --list $(PLUGIN)
+
+# 执行插件测试用例
+.PHONY: test-plugin
+test-plugin:
+	@if [ -z "$(PLUGIN)" ] || [ -z "$(TESTCASE)" ]; then \
+echo "用法: make test-plugin PLUGIN=<插件名> TESTCASE=<测试用例名>"; \
+echo "示例: make test-plugin PLUGIN=dgiot_modbus TESTCASE=simple"; \
+echo ""; \
+echo "使用 make list-plugins 查看可用插件"; \
+echo "使用 make list-testcases PLUGIN=<插件名> 查看插件的测试用例"; \
+exit 1; \
+fi
+	@./scripts/test_framework.sh --run $(PLUGIN) $(TESTCASE)
+
+# 执行插件所有测试用例
+.PHONY: test-plugin-all
+test-plugin-all:
+	@if [ -z "$(PLUGIN)" ]; then \
+echo "用法: make test-plugin-all PLUGIN=<插件名>"; \
+echo "示例: make test-plugin-all PLUGIN=dgiot_modbus"; \
+exit 1; \
+fi
+	@./scripts/test_framework.sh --all $(PLUGIN)
+
+# 快速测试命令别名
+.PHONY: test-modbus
+test-modbus:
+	@./scripts/test_framework.sh modbus
+
+.PHONY: test-modbus-simple
+test-modbus-simple:
+	@./scripts/test_framework.sh modbus simple
+
+.PHONY: test-modbus-register
+test-modbus-register:
+	@./scripts/test_framework.sh modbus register
+
+.PHONY: test-modbus-simulator
+test-modbus-simulator:
+	@./scripts/test_framework.sh modbus simulator
+
+# 帮助信息
+.PHONY: test-help
+test-help:
+	@./scripts/test_framework.sh --help

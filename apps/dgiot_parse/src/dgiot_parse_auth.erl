@@ -748,9 +748,9 @@ find_role(UserId, DisUserId) ->
     end.
 
 find_parent(RoleIds, DisRoleId) ->
-    case dgiot_data:get(?ROLE_PARENT_ETS, DisRoleId) of
+case dgiot_data:get(?ROLE_PARENT_ETS, DisRoleId) of
         not_find ->
-            fasle;
+            false;
         ParentId ->
             case lists:member(ParentId, RoleIds) of
                 true ->
@@ -1226,6 +1226,3 @@ getuser(#{<<"objectId">> := RoleId, <<"name">> := Depname} = Role) ->
         {ok, SubChildren} ->
             #{<<"objectId">> => RoleId, <<"name">> => Depname, <<"label">> => Depname, <<"children">> => SubChildren, <<"userlist">> => NewUserList}
     end.
-
-
-

@@ -1,0 +1,124 @@
+#!/bin/bash
+# TaskComplete Hook - 任务完成Hook，评估文档转换技能使用情况
+
+set -e
+
+# 读取JSON输入
+INPUT_JSON=$(cat)
+TASK_RESULT=$(echo "$INPUT_JSON" | jq -r '.taskComplete.result // ""')
+TASK_ID=$(echo "$INPUT_JSON" | jq -r '.taskId // ""')
+TIMESTAMP=$(echo "$INPUT_JSON" | jq -r '.timestamp // 0')
+
+# 初始化输出
+CANCEL=false
+CONTEXT_MOD=""
+ERROR_MSG=""
+
+# 文档转换技能关键词
+DOCUMENT_CONVERSION_KEYWORDS=(
+    "pandoc" "文档转换" "markdown" "html" "pdf" "docx" "office"
+    "格式转换" "文件提取" "批量转换" "自动部署" "安装pandoc"
+    "deploy_pandoc" "pandoc_converter" "技能创建" "hook集成"
+)
+
+# 检查任务结果中是否包含文档转换相关内容
+check_document_conversion_achievement() {
+    local result="$1"
+    local result_lower=$(echo "$result" | tr '[:upper:]' '[:lower:]')
+    
+    local match_count=0
+    local total_keywords=${#DOCUMENT_CONVERSION_KEYWORDS[@]}
+    
+    for keyword in "${DOCUMENT_CONVERSION_KEYWORDS[@]}"; do
+        local keyword_lower=$(echo "$keyword" | tr '[:upper:]' '[:lower:]')
+        if [[ "$result_lower" == *"$keyword_lower"* ]]; then
+            ((match_count++))
+        fi
+    done
+    
+    # 计算达成度百分比
+    if [ $total_keywords -gt 0 ]; then
+        local achievement_percentage=$((match_count * 100 / total_keywords))
+        echo "$achievement_percentage"
+    else
+        echo "0"
+    fi
+}
+
+# 生成文档转换技能评估报告
+generate_document_conversion_report() {
+    local achievement_percent="$1"
+    
+    local report=""
+    
+    if [ $achievement_percent -ge 80 ]; then
+        report="🎯 文档转换技能使用评估：优秀 ($achievement_percent%)"
+        report="$report\n✅ 技能创建完整，包含自动部署功能"
+        report="$report\n✅ Hook集成完善，支持实时检测"
+        report="$report\n✅ 支持多种文档格式转换"
+        report="$report\n✅ 提供详细的配置和使用说明"
+        
+    elif [ $achievement_percent -ge 60 ]; then
+        report="📊 文档转换技能使用评估：良好 ($achievement_percent%)"
+        report="$report\n✅ 技能基本功能完整"
+        report="$report\n✅ 包含必要的Hook集成"
+        report="$report\n✅ 支持主要文档格式"
+        report="$report\n⚠️  可进一步优化部署脚本和错误处理"
+        
+    elif [ $achievement_percent -ge 40 ]; then
+        report="📈 文档转换技能使用评估：一般 ($achievement_percent%)"
+        report="$report\n✅ 技能框架已创建"
+        report="$report\n⚠️  Hook集成需要完善"
+        report="$report\n⚠️  部署功能需要加强"
+        report="$report\n💡 建议：完善自动部署脚本，增加更多格式支持"
+        
+    else
+        report="📝 文档转换技能使用评估：基础 ($achievement_percent%)"
+        report="$report\n⚠️  技能功能需要扩展"
+        report="$report\n⚠️  Hook集成需要添加"
+        report="$report\n💡 建议：参考pandoc_document_converter技能完善功能"
+    fi
+    
+    echo "$report"
+}
+
+# 主逻辑
+if [ -n "$TASK_RESULT" ]; then
+    echo "[TaskComplete Hook] 任务结果评估..." >&2
+    
+    # 检查文档转换技能使用情况
+    ACHIEVEMENT_PERCENT=$(check_document_conversion_achievement "$TASK_RESULT")
+    
+    if [ $ACHIEVEMENT_PERCENT -gt 0 ]; then
+        echo "[TaskComplete Hook] 文档转换技能使用度: $ACHIEVEMENT_PERCENT%" >&2
+        
+        # 生成评估报告
+        REPORT=$(generate_document_conversion_report "$ACHIEVEMENT_PERCENT")
+        CONTEXT_MOD="$REPORT"
+        
+        # 添加技能使用建议
+        CONTEXT_MOD="$CONTEXT_MOD\n\n📋 文档转换技能使用建议："
+        CONTEXT_MOD="$CONTEXT_MOD\n1. 对于大的Office文档，使用pandoc_document_converter技能"
+        CONTEXT_MOD="$CONTEXT_MOD\n2. 常见文档提取需求，通过Hook自动检测并建议"
+        CONTEXT_MOD="$CONTEXT_MOD\n3. 批量处理使用--batch参数"
+        CONTEXT_MOD="$CONTEXT_MOD\n4. 自定义模板在config/templates/目录"
+        
+        # 记录评估结果
+        LOG_FILE="/tmp/cline_task_assessment_${TASK_ID}.log"
+        echo "$(date -d @$((TIMESTAMP/1000)) '+%Y-%m-%dT%H:%M:%S')|文档转换技能|$ACHIEVEMENT_PERCENT%|$TASK_RESULT" >> "$LOG_FILE"
+    else
+        echo "[TaskComplete Hook] 未检测到文档转换技能使用" >&2
+        CONTEXT_MOD="本次任务未使用文档转换技能。如需处理Office文档、PDF转换等需求，建议使用pandoc_document_converter技能。"
+    fi
+fi
+
+# 输出JSON结果
+jq -n \
+    --arg cancel "$CANCEL" \
+    --arg contextMod "$CONTEXT_MOD" \
+    --arg errorMsg "$ERROR_MSG" \
+    '{
+        cancel: ($cancel == "true"),
+        contextModification: $contextMod,
+        errorMessage: $errorMsg
+    }'

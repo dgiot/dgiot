@@ -20,7 +20,12 @@
 
 -export([
     set_loglevel/3,
-    test/1]).
+    test/1,
+    log_once/3,
+    log_once/4,
+    clear_log_once/0,
+    clear_log_once/1,
+    get_log_once_keys/0]).
 
 test(N) ->
 %%    Test = <<"test">>,
@@ -54,3 +59,71 @@ set_loglevel(<<"module">>, Name, Level) ->
 
 set_loglevel(Type, _Name, _Level) ->
     {error, <<Type/binary, " error">>}.
+
+%%--------------------------------------------------------------------
+%% Log Once APIs - 每个进程只打印一次的日志
+%%--------------------------------------------------------------------
+
+%% @doc 只打印一次的日志（error级别）
+%% 使用进程字典存储已打印的key，每个进程独立维护
+%% @param Key 日志唯一标识（可以是atom、binary或任何term）
+%% @param Format 格式字符串
+%% @param Args 格式参数
+-spec log_once(term(), io:format(), [term()]) -> ok.
+log_once(Key, Format, Args) ->
+    log_once(error, Key, Format, Args).
+
+%% @doc 只打印一次的日志（指定级别）
+%% @param Level 日志级别（debug/info/warning/error）
+%% @param Key 日志唯一标识
+%% @param Format 格式字符串
+%% @param Args 格式参数
+-spec log_once(atom(), term(), io:format(), [term()]) -> ok.
+log_once(Level, Key, Format, Args) ->
+    %% 使用进程字典存储：{log_once, Key} -> true
+    case get({log_once, Key}) of
+        true ->
+            %% 已打印过，跳过
+            ok;
+        undefined ->
+            %% 首次打印，标记为已打印
+            put({log_once, Key}, true),
+            %% 调用标准日志宏
+            case Level of
+                debug   -> ?LOG(debug, Format, Args);
+                info    -> ?LOG(info, Format, Args);
+                warning -> ?LOG(warning, Format, Args);
+                error   -> ?LOG(error, Format, Args);
+                _       -> ?LOG(info, Format, Args)
+            end
+    end.
+
+%% @doc 清除所有"只打印一次"的标记（允许重新打印）
+-spec clear_log_once() -> ok.
+clear_log_once() ->
+    %% 遍历进程字典，删除所有log_once标记
+    Keys = [K || K <- get_keys(), is_log_once_key(K)],
+    lists:foreach(fun(K) -> erase(K) end, Keys),
+    ok.
+
+%% @doc 清除特定key的"只打印一次"标记
+-spec clear_log_once(term()) -> ok.
+clear_log_once(Key) ->
+    erase({log_once, Key}),
+    ok.
+
+%% @doc 获取当前进程所有"只打印一次"的key列表
+-spec get_log_once_keys() -> [term()].
+get_log_once_keys() ->
+    [extract_key(K) || K <- get_keys(), is_log_once_key(K)].
+
+%%--------------------------------------------------------------------
+%% Internal Functions
+%%--------------------------------------------------------------------
+
+%% 检查是否为log_once的key
+is_log_once_key({log_once, _}) -> true;
+is_log_once_key(_) -> false.
+
+%% 提取log_once的key
+extract_key({log_once, Key}) -> Key.

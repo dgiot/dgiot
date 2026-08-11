@@ -28,6 +28,7 @@
     generate_users/1,
     generate_menus/1,
     generate_rule/1,
+    generate_rule_batch/1,  %% 新增：分批处理版本
     get_roletemp/1,
     save_tables/1,
     save_menu/3]).
@@ -559,3 +560,107 @@ get_OperationID(OperationID1) ->
                 Acc
         end
                 end,  OperationID, dgiot_data:get(swaggerApi)).
+
+%% 权限入库 - 分批处理版本（处理大量API时使用）
+%% @doc 分批处理API权限规则，避免一次性处理太多API导致超时或内存问题
+generate_rule_batch(Result) ->
+    #{name := ServerName} = proplists:get_value(<<"webname">>, Result,  #{name => dgiot_rest}),
+    ?LOG(info, "开始处理API权限规则，服务: ~p", [ServerName]),
+    case dgiot_swagger:read(ServerName, #{}) of
+        {ok, Schema} ->
+            BaseSecurity = maps:get(<<"security">>, Schema, []),
+            Tags =
+                lists:foldl(
+                    fun(#{<<"name">> := Name, <<"description">> := Desc}, Acc) ->
+                        Acc#{Name => Desc}
+                    end, #{}, maps:get(<<"tags">>, Schema, [])),
+            Paths = maps:get(<<"paths">>, Schema, #{}),
+            TotalPaths = maps:size(Paths),
+            ?LOG(info, "发现 ~p 个API路径需要处理，开始分批处理", [TotalPaths]),
+            
+            %% 分批处理，每批处理20个路径
+            BatchSize = 20,
+            PathsList = maps:to_list(Paths),
+            Rules = process_paths_in_batches(PathsList, BaseSecurity, Tags, BatchSize, #{}, 0),
+            
+            ?LOG(info, "API权限规则分批处理完成，共处理 ~p 个API路径", [TotalPaths]),
+            [{<<"rules">>, Rules} | Result];
+        {error, Reason} ->
+            throw({error, Reason})
+    end.
+
+%% 分批处理API路径
+process_paths_in_batches([], _BaseSecurity, _Tags, _BatchSize, Acc, _Processed) ->
+    Acc;
+process_paths_in_batches(PathsList, BaseSecurity, Tags, BatchSize, Acc, Processed) ->
+    {Batch, Remaining} = 
+        if length(PathsList) > BatchSize -> 
+                lists:split(BatchSize, PathsList);
+           true -> 
+                {PathsList, []}
+        end,
+    
+    CurrentBatch = Processed div BatchSize + 1,
+    TotalBatches = (length(PathsList) + length(Remaining) + BatchSize - 1) div BatchSize,
+    ?LOG(info, "处理批次 ~p/~p: ~p 个API路径", [CurrentBatch, TotalBatches, length(Batch)]),
+    
+    %% 处理当前批次
+    NewAcc = process_batch(Batch, BaseSecurity, Tags, Acc),
+    
+    %% 批次间延迟，减轻数据库压力
+    timer:sleep(300),
+    
+    %% 处理下一批
+    process_paths_in_batches(Remaining, BaseSecurity, Tags, BatchSize, NewAcc, Processed + length(Batch)).
+
+%% 处理单个批次
+process_batch([], _BaseSecurity, _Tags, Acc) ->
+    Acc;
+process_batch([{Path, Methods} | Rest], BaseSecurity, Tags, Acc) ->
+    try
+        NewAcc = maps:fold(
+            fun(_Method, #{<<"operationId">> := OperationId} = Info, Acc1) ->
+                case maps:get(<<"security">>, Info, BaseSecurity) of
+                    [] ->
+                        %% 没有security的API跳过，不打印日志
+                        Acc1;
+                    _ ->
+                        NewOperationId = get_OperationID(OperationId),
+                        RuleName = list_to_binary(string:to_upper(binary_to_list(NewOperationId))),
+                        dgiot_data:get(swaggerApi),
+                        R = case maps:get(<<"tags">>, Info, []) of
+                                [] ->
+                                    save_rule(RuleName, <<"0">>, Info);
+                                [Tag | _] ->
+                                    PId = re:replace(Tag, <<"_">>, <<>>, [{return, binary}]),
+                                    PName = maps:get(Tag, Tags, unicode:characters_to_binary(<<PId/binary, <<"管理"/utf8>>/binary>>)),
+                                    PRuleName = <<PId/binary, "_ALL">>,
+                                    Parent = #{
+                                        <<"summary">> =>  PName,
+                                        <<"description">> => PName,
+                                        <<"tags">> => [PId]
+                                    },
+                                    case save_rule(PRuleName, <<"0">>, Parent) of
+                                        {ok, _PName, PRuleId} ->
+                                            save_rule(RuleName, PRuleId, Info);
+                                        {error, Why} ->
+                                            {error, Why}
+                                    end
+                            end,
+                        case R of
+                            {ok, Name, RuleId} ->
+                                ?LOG(debug, "规则保存成功: ~s -> ~s", [RuleName, RuleId]),
+                                Acc1#{Name => RuleId};
+                            {error, Reason} ->
+                                ?LOG(warning, "保存规则 ~s 失败: ~p", [RuleName, Reason]),
+                                Acc1  %% 继续处理其他规则，不中断
+                        end
+                end
+            end, Acc, Methods),
+        process_batch(Rest, BaseSecurity, Tags, NewAcc)
+    catch
+        Class:Reason:Stacktrace ->
+            ?LOG(error, "处理路径 ~s 时发生异常: ~p", [Path, {Class, Reason, Stacktrace}]),
+            %% 跳过这个路径，继续处理
+            process_batch(Rest, BaseSecurity, Tags, Acc)
+    end.

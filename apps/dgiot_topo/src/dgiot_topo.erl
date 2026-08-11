@@ -85,15 +85,15 @@ push(ProductId, Devaddr, DeviceId, Payload) ->
     httpc:request(post, {Url1, [], "application/json", Data1}, [], []).
 
 send_topo({<<"counter">>, CounterId, Id}, Token) ->
-%%    io:format("~s ~p CounterId = ~p,Token = ~p, Id = ~p.~n", [?FILE, ?LINE, CounterId, Token, Id]),
+    % io:format("~s ~p CounterId = ~p,Token = ~p, Id = ~p.~n", [?FILE, ?LINE, CounterId, Token, Id]),
     case dgiot_hook:run_hook({'topo', <<"counter">>}, {Token, CounterId}) of
         {ok, [{ok, Payload}]} ->
             Base64 = base64:encode(dgiot_json:encode(Payload#{<<"id">> => Id})),
             Pubtopic = <<"$dg/user/topo/", Token/binary, "/counter/report">>,
-%%            io:format("~s ~p Pubtopic ~p Base64 ~p ~n", [?FILE, ?LINE, Pubtopic, Base64]),
+            % io:format("~s ~p Pubtopic ~p Base64 ~p ~n", [?FILE, ?LINE, Pubtopic, Base64]),
             dgiot_mqtt:publish(self(), Pubtopic, Base64);
         _R ->
-            io:format("~s ~p _R ~p ~n", [?FILE, ?LINE, _R]),
+            % io:format("~s ~p _R ~p ~n", [?FILE, ?LINE, _R]),
             pass
     end;
 
@@ -113,7 +113,8 @@ send_amisdata(#{<<"dashboardId">> := DashboardId, <<"sessionToken">> := Token}) 
     {ViewIds, AmisNodes} =
         case dgiot_parse:get_object(<<"View">>, DashboardId) of
             {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
-                Rects = dgiot_product_knova:get_nodes(Stage, [<<"Rect">>, <<"Image">>, <<"Text">>, <<"Group">>]),
+            % Rects = dgiot_product_knova:get_nodes(Stage, [<<"Rect">>, <<"Image">>, <<"Text">>, <<"Group">>]),    
+            Rects = dgiot_product_knova:get_nodes(Stage, [<<"Image">>]),
                 maps:fold(
                     fun
                         (_, #{<<"amisid">> := Viewid} = AmisNode, {Idd, Acc}) ->

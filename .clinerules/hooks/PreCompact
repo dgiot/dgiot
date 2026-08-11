@@ -1,0 +1,125 @@
+#!/bin/bash
+#
+# PreCompact Hook - 压缩前处理
+# 
+# 在上下文压缩前执行
+# 
+# 输入: { taskId, preCompact: { currentContext: string }, ... }
+# 输出: { cancel: boolean, contextModification?: string, errorMessage?: string }
+# 
+# 使用场景:
+# - 保留重要信息
+# - 清理冗余内容
+# - 优化上下文结构
+# - 确保关键信息不丢失
+
+# 从标准输入读取JSON输入
+INPUT=$(cat)
+
+# 使用jq解析输入
+if command -v jq &> /dev/null; then
+  CURRENT_CONTEXT=$(echo "$INPUT" | jq -r '.preCompact.currentContext')
+  TASK_ID=$(echo "$INPUT" | jq -r '.taskId')
+else
+  CURRENT_CONTEXT=""
+  TASK_ID="unknown"
+fi
+
+echo "[PreCompact] 上下文压缩前处理: $TASK_ID" >&2
+
+# 确保编译、日志、中文编码、编程规范关键信息不丢失
+preserve_critical_information() {
+  local context="$1"
+  
+  local preserved_info=""
+  
+  # 提取编译相关信息
+  if echo "$context" | grep -q -i "编译\|compile\|make\|erlc"; then
+    preserved_info="$preserved_info\n## 编译信息\n"
+    preserved_info="$preserved_info$(echo "$context" | grep -i "编译\|compile\|make\|erlc" | head -3)"
+  fi
+  
+  # 提取日志相关信息
+  if echo "$context" | grep -q -i "日志\|log\|logger\|dgiot_safe_format"; then
+    preserved_info="$preserved_info\n## 日志信息\n"
+    preserved_info="$preserved_info$(echo "$context" | grep -i "日志\|log\|logger\|dgiot_safe_format" | head -3)"
+  fi
+  
+  # 提取中文编码相关信息
+  if echo "$context" | grep -q -i "中文\|chinese\|编码\|utf8\|/utf8"; then
+    preserved_info="$preserved_info\n## 中文编码信息\n"
+    preserved_info="$preserved_info$(echo "$context" | grep -i "中文\|chinese\|编码\|utf8\|/utf8" | head -3)"
+  fi
+  
+  # 提取编程规范相关信息
+  if echo "$context" | grep -q -i "规范\|standard\|最佳实践\|代码质量"; then
+    preserved_info="$preserved_info\n## 编程规范信息\n"
+    preserved_info="$preserved_info$(echo "$context" | grep -i "规范\|standard\|最佳实践\|代码质量" | head -3)"
+  fi
+  
+  # 提取hook相关信息
+  if echo "$context" | grep -q -i "hook\|钩子\|PreToolUse\|PostToolUse"; then
+    preserved_info="$preserved_info\n## Hook系统信息\n"
+    preserved_info="$preserved_info$(echo "$context" | grep -i "hook\|钩子\|PreToolUse\|PostToolUse" | head -3)"
+  fi
+  
+  # 提取错误信息
+  if echo "$context" | grep -q -i "错误\|error\|失败\|failed"; then
+    preserved_info="$preserved_info\n## 错误信息\n"
+    preserved_info="$preserved_info$(echo "$context" | grep -i "错误\|error\|失败\|failed" | head -3)"
+  fi
+  
+  # 提取文件路径信息
+  if echo "$context" | grep -q -E '[a-zA-Z0-9_./-]+\.(erl|hrl|js|html|css|json)'; then
+    preserved_info="$preserved_info\n## 文件引用\n"
+    preserved_info="$preserved_info$(echo "$context" | grep -E '[a-zA-Z0-9_./-]+\.(erl|hrl|js|html|css|json)' | head -5 | sort -u)"
+  fi
+  
+  if [[ -n "$preserved_info" ]]; then
+    echo -e "## 关键信息保留（压缩前）$preserved_info"
+  else
+    echo "## 关键信息保留\n未检测到需要特殊保留的关键信息。"
+  fi
+}
+
+# 清理冗余内容
+clean_redundant_content() {
+  local context="$1"
+  
+  # 移除过长的重复行
+  local cleaned=$(echo "$context" | awk '!seen[$0]++')
+  
+  # 移除过长的空白行
+  cleaned=$(echo "$cleaned" | sed '/^$/N;/^\n$/D')
+  
+  # 限制单行长度（避免过长的行）
+  cleaned=$(echo "$cleaned" | fold -w 200 | head -1000)
+  
+  echo "$cleaned"
+}
+
+# 执行关键信息保留
+PRESERVED_INFO=$(preserve_critical_information "$CURRENT_CONTEXT")
+
+# 执行清理
+CLEANED_CONTEXT=$(clean_redundant_content "$CURRENT_CONTEXT")
+
+# 构建新的上下文（保留关键信息 + 清理后的内容）
+NEW_CONTEXT="$PRESERVED_INFO\n\n## 压缩后上下文\n$CLEANED_CONTEXT"
+
+# 计算压缩效果
+ORIGINAL_SIZE=${#CURRENT_CONTEXT}
+NEW_SIZE=${#NEW_CONTEXT}
+COMPRESSION_RATIO=$(( (ORIGINAL_SIZE - NEW_SIZE) * 100 / ORIGINAL_SIZE ))
+
+echo "[PreCompact] 压缩效果: $ORIGINAL_SIZE -> $NEW_SIZE (压缩率: $COMPRESSION_RATIO%)" >&2
+echo "[PreCompact] 关键信息保留完成" >&2
+
+# 返回结果
+CONTEXT_MOD="上下文压缩完成，压缩率: $COMPRESSION_RATIO%。已确保编译、日志、中文编码、编程规范等关键信息不丢失。"
+echo "{\"cancel\":false,\"contextModification\":\"$CONTEXT_MOD\",\"errorMessage\":\"\"}"
+
+# 记录压缩日志
+LOG_FILE="/tmp/cline_precompact.log"
+TIMESTAMP=$(date +%s%3N)
+echo "$TIMESTAMP|$TASK_ID|$ORIGINAL_SIZE|$NEW_SIZE|$COMPRESSION_RATIO" >> "$LOG_FILE" 2>/dev/null || true

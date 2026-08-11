@@ -224,7 +224,7 @@ stop(ChannelId, ClientId) ->
         Pid when is_pid(Pid) ->
             case is_process_alive(Pid) of
                 true ->
-%%                    io:format("~s ~p DtuId = ~p. Pid ~p ~n", [?FILE, ?LINE, ChannelId, Pid]),
+                    % io:format("~s ~p ChannelId = ~p. Pid ~p ~n", [?FILE, ?LINE, ChannelId, Pid]),
                     supervisor:terminate_child(ChannelId, Pid);
                 _ ->
                     pass
@@ -292,16 +292,32 @@ send(ChannelId, ClientId, Topic, Payload) ->
                     Pid ! {dclient_ack, Topic, Payload},
                     ok;
                 false ->
-                    fasle
+                    false
             end;
         _ ->
-            fasle
+            false
     end.
 
 %% @doc client start_link
 -spec start_link(atom(), map()) -> result().
-start_link(Module, #{<<"channel">> := ChannelId, <<"client">> := Client} = State) ->
-    case dgiot_data:lookup(dgiot_utils:to_atom(ChannelId), Client) of
+start_link(Module, State) ->
+    %% 支持两种键格式：原子键和二进制键
+    {ChannelId, ClientId} = case State of
+        #{<<"channel">> := ChId, <<"client">> := ClId} ->
+            {ChId, ClId};
+        #{channel := ChId, client := ClId} when is_atom(ChId) ->
+            {dgiot_utils:to_binary(ChId), ClId};
+        #{channel := ChId, client := ClId} when is_binary(ChId) ->
+            {ChId, ClId};
+        #{<<"channel">> := ChId} when is_binary(ChId) ->
+            %% 尝试从其他字段获取client
+            ClId = maps:get(client, State, maps:get(<<"client">>, State, <<"unknown">>)),
+            {ChId, ClId};
+        _ ->
+            throw({invalid_state_format, State})
+    end,
+    
+    case dgiot_data:lookup(dgiot_utils:to_atom(ChannelId), ClientId) of
         {ok, Pid} when is_pid(Pid) ->
             case is_process_alive(Pid) of
                 true ->

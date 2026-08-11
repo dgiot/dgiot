@@ -14,286 +14,430 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
+%% @doc 增强版UDP服务器模块
+%% 修复多播组加入问题
 -module(dgiot_udp_server).
 -author("johnliu").
--include("dgiot_socket.hrl").
--include_lib("dgiot/include/logger.hrl").
--define(MAX_MESSAGE_ID, 65535). % 16-bit number
+-include("logger.hrl").
 
-%% API
--export([start_link/5, child_spec/3, send/2]).
+%% API导出
+-export([start_link/1, start_link/3, child_spec/3, child_spec/4, get_status/1]).
+-export([join_multicast_group/2, leave_multicast_group/2, send/2, send/3, send/4, send_multicast/4, get_available_multicast_groups/0]).
+-export([start_multicast_server/2, start_multicast_server/1, get_multicast_status/1, broadcast_to_groups/3, stop/1]).
+-export([ensure_multicast_joined/2, debug_socket/1]).  % 新增导出
 
-%% gen_server callbacks
--export([init/5, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3, esockd_send/3, esockd_send_ok/3]).
--define(VERSION, 1).
--define(SERVER, ?MODULE).
--record(coap_message, {type, method, id, token = <<>>, options = [], payload = <<>>}).
+%%%===================================================================
+%%% API函数
+%%%===================================================================
 
-%%-record(state, {mod, sock, chid, tokens, msgid_token, trans, nextmid, options, conn_state, active_n, incoming_bytes = 0, rate_limit, limit_timer, child = #udp{}}).
--record(state, {sock, chid, responder, options, mod, incoming_bytes = 0, child = #udp{}}).
-%%-record(state, {sock, chid, tokens, msgid_token, trans, nextmid, responder, options}).
--define(SOCKOPTS, [binary, {reuseaddr, true}]).
+%% @doc 启动UDP服务器
+start_link(Args) ->
+    ?LOG(error, "[UDP_SERVER] 启动参数: ~p", [Args]),
+    dgiot_udp_session:start_link([{mode, server} | Args]).
 
+%% @doc 启动UDP服务器（兼容旧接口）
+start_link(Mod, Opts, State) ->
+    ?LOG(error, "[UDP_SERVER] 启动: 模块=~p, 选项=~p", [Mod, Opts]),
+    
+    BaseArgs = [
+        {mode, server},
+        {mod, Mod},
+        {state, State}
+    ],
+    
+    Args = case Opts of
+        OptsMap when is_map(OptsMap) ->
+            BaseArgs ++ [OptsMap];
+        OptsList when is_list(OptsList) ->
+            BaseArgs ++ [{options, OptsList}];
+        _ ->
+            BaseArgs ++ [{options, Opts}]
+    end,
+    
+    Result = dgiot_udp_session:start_link(Args),
+    ?LOG(error, "[UDP_SERVER] 启动结果: ~p", [Result]),
+    Result.
+
+%% @doc 创建子进程规格
 child_spec(Mod, Port, State) ->
     child_spec(Mod, Port, State, []).
 
 child_spec(Mod, Port, State, Opts) ->
     Name = Mod,
     ok = esockd:start(),
+    
+    ?LOG(error, "[UDP_SERVER_CHILD_SPEC] 开始创建UDP子进程规格"),
+    ?LOG(error, "[UDP_SERVER_CHILD_SPEC] 模块: ~p, 端口: ~p", [Mod, Port]),
+    ?LOG(error, "[UDP_SERVER_CHILD_SPEC] 选项: ~p", [Opts]),
+    
+    % 详细检查多播选项
+    MulticastGroups = proplists:get_value(multicast_groups, Opts, []),
+    ?LOG(error, "[UDP_SERVER_CHILD_SPEC] 多播组列表: ~p", [MulticastGroups]),
+    
     case dgiot_transport:get_opts(udp, Port) of
         {ok, DefActiveN, DefRateLimit, UDPOpts} ->
+            ?LOG(error, "[UDP_SERVER_CHILD_SPEC] 获取UDP选项成功"),
+            
             ActiveN = proplists:get_value(active_n, Opts, DefActiveN),
             RateLimit = proplists:get_value(rate_limit, Opts, DefRateLimit),
             Opts1 = lists:foldl(fun(Key, Acc) -> proplists:delete(Key, Acc) end, Opts, [active_n, rate_limit]),
             NewOpts = [{active_n, ActiveN}, {rate_limit, RateLimit}] ++ Opts1,
-            MFArgs = {?MODULE, start_link, [Mod, NewOpts, State]},
-            esockd:udp_child_spec(Name, Port, UDPOpts, MFArgs);
-        _ ->
+            
+            % 提取并处理多播选项
+            {MulticastGroupsFinal, FinalUDPOpts} = extract_multicast_options(NewOpts, UDPOpts),
+            
+            ?LOG(error, "[UDP_SERVER_CHILD_SPEC] 最终多播组: ~p", [MulticastGroupsFinal]),
+            ?LOG(error, "[UDP_SERVER_CHILD_SPEC] 最终UDP选项: ~p", [FinalUDPOpts]),
+            
+            % 检查是否有多播组配置
+            case MulticastGroupsFinal of
+                [] ->
+                    ?LOG(warning, "[UDP_SERVER_CHILD_SPEC] 警告: 没有配置多播组!");
+                _ ->
+                    ?LOG(error, "[UDP_SERVER_CHILD_SPEC] 信息: 配置了多播组: ~p", [MulticastGroupsFinal])
+            end,
+            
+            % 构建参数 - 修复：确保多播组配置正确传递
+            OptionsMap = maps:from_list(NewOpts),
+            OptionsMapWithGroups = OptionsMap#{multicast_groups => MulticastGroupsFinal},
+            
+            ?LOG(error, "[UDP_SERVER_CHILD_SPEC] 传递给start_link的选项: ~p", [OptionsMapWithGroups]),
+            
+            % 关键修复：确保多播组配置被正确传递
+            MFArgs = {?MODULE, start_link, [Mod, OptionsMapWithGroups, State]},
+            
+            ChildSpec = esockd:udp_child_spec(Name, Port, FinalUDPOpts, MFArgs),
+            
+            ?LOG(error, "[UDP_SERVER_CHILD_SPEC] 最终子进程规格: ~p", [ChildSpec]),
+            
+            ?LOG(error, "[UDP_SERVER_CHILD_SPEC] ✅ 子进程规格创建完成"),
+            ChildSpec;
+        Error ->
+            ?LOG(error, "[UDP_SERVER_CHILD_SPEC] ❌ 获取UDP选项失败: ~p", [Error]),
             []
+
+    
     end.
 
-%% udp
-start_link(Socket = {udp, _SockPid, _Sock}, Sock, Mod, Opts, State) ->
-    {ok, proc_lib:spawn_link(?MODULE, init, [Mod, Socket, Sock, Opts, State])};
-%% dtls
-start_link(esockd_transport, RawSock, Mod, Opts, State) ->
-    Socket = {esockd_transport, RawSock},
-    case esockd_transport:peername(RawSock) of
-        {ok, Peername} ->
-            {ok, proc_lib:spawn_link(?MODULE, init, [Mod, Socket, Peername, Opts, State])};
-        R = {error, _} -> R
-    end.
-
-init(Mod, Socket, Sock, Opts, State) ->
-    process_flag(trap_exit, true),
-    case esockd_wait(Socket) of
-        {ok, NSocket} ->
-            ChildState = #udp{socket = Socket, sock = Sock, register = false, transport = gen_udp, state = State},
-            case Mod:init(ChildState) of
-                {ok, NewChildState} ->
-                    GState = #state{
-                        sock = NSocket,
-                        chid = Sock,
-                        options = Opts,
-                        mod = Mod,
-                        child = NewChildState
-                    },
-                    dgiot_metrics:inc(dgiot_bridge, <<"udp_server">>, 1),
-                    gen_server:enter_loop(?MODULE, [], GState);
-                {error, Reason} ->
-                    _ = esockd_close(Socket),
-                    exit_on_sock_error(Reason)
-            end;
+%% @doc 确保加入多播组（新增函数）
+ensure_multicast_joined(ServerPid, MulticastGroup) ->
+    ?LOG(error, "[ENSURE_MULTICAST] 确保加入多播组: ~p", [MulticastGroup]),
+    
+    % 首先尝试通过标准API加入
+    case join_multicast_group(ServerPid, MulticastGroup) of
+        ok ->
+            ?LOG(error, "[ENSURE_MULTICAST] ✅ 标准API加入成功");
         {error, Reason} ->
-            _ = esockd_close(Socket),
-            exit_on_sock_error(Reason)
+            ?LOG(error, "[ENSURE_MULTICAST] ❌ 标准API失败: ~p", [Reason]),
+            
+            % 尝试直接获取socket并操作
+            case get_socket_from_pid(ServerPid) of
+                {ok, Socket} ->
+                    ?LOG(error, "[ENSURE_MULTICAST] 获取到socket: ~p", [Socket]),
+                    
+                    % 解析多播地址
+                    case inet:parse_address(MulticastGroup) of
+                        {ok, MulticastIP} ->
+                            ?LOG(error, "[ENSURE_MULTICAST] 解析多播IP: ~p", [MulticastIP]),
+                            
+                            % 使用多种方法尝试加入
+                            join_with_multiple_methods(Socket, MulticastIP);
+                        {error, ParseError} ->
+                            ?LOG(error, "[ENSURE_MULTICAST] 解析地址失败: ~p", [ParseError]),
+                            {error, ParseError}
+                    end;
+                {error, SocketError} ->
+                    ?LOG(error, "[ENSURE_MULTICAST] 获取socket失败: ~p", [SocketError]),
+                    {error, SocketError}
+            end
     end.
 
-handle_call(Request, From, #state{mod = Mod, child = ChildState} = State) ->
-    case Mod:handle_call(Request, From, ChildState) of
-        {reply, Reply, NewChildState} ->
-            {reply, Reply, State#state{child = NewChildState}, hibernate};
-        {stop, Reason, NewChildState} ->
-            {stop, Reason, State#state{child = NewChildState}}
-    end.
-
-handle_cast(Msg, #state{mod = Mod, child = ChildState} = State) ->
-    case Mod:handle_cast(Msg, ChildState) of
-        {noreply, NewChildState} ->
-            {noreply, State#state{child = NewChildState}, hibernate};
-        {stop, Reason, NewChildState} ->
-            {stop, Reason, State#state{child = NewChildState}}
-    end.
-
-%%handle_info({datagram, _SockPid, Data}, State) ->
-%%    io:format("Data ~p",[Data]),
-%%    handle_info({udp, _SockPid, Data}, State);
-
-
-handle_info({ssl, _RawSock, Data}, State) ->
-    handle_info({ssl, _RawSock, Data}, State);
-
-%% add register function
-handle_info({datagram, _SockPid, Data}, #state{mod = Mod, child = #udp{register = false, buff = Buff, socket = Sock} = ChildState} = State) ->
-    dgiot_metrics:inc(dgiot_bridge, <<"udp_server_recv">>, 1),
-    Binary = iolist_to_binary(Data),
-    NewBin =
-        case binary:referenced_byte_size(Binary) of
-            Large when Large > 2 * byte_size(Binary) ->
-                binary:copy(Binary);
-            _ ->
-                Binary
-        end,
-    Cnt = byte_size(NewBin),
-    NewChildState = ChildState#udp{buff = <<>>},
-    case Mod:handle_info({udp, <<Buff/binary, NewBin/binary>>}, NewChildState) of
-        {noreply, #udp{register = true, clientid = ClientId, buff = Buff, socket = Sock} = NewChild} ->
-            dgiot_cm:register_channel(ClientId, self(), #{conn_mod => Mod}),
-            Ip = dgiot_utils:get_ip(Sock),
-            Port = dgiot_utils:get_port(Sock),
-            dgiot_cm:insert_channel_info(ClientId, #{ip => Ip, port => Port, online => dgiot_datetime:now_microsecs()}, [{udp_recv, 1}]),
-            {noreply, State#state{child = NewChild, incoming_bytes = Cnt}, hibernate};
-        {noreply, NewChild} ->
-            {noreply, State#state{child = NewChild, incoming_bytes = Cnt}, hibernate};
-        {stop, Reason, NewChild} ->
-            {stop, Reason, State#state{child = NewChild}}
-    end;
-
-handle_info({datagram, Sock, Data}, #state{mod = Mod, child = #udp{buff = Buff, socket = Sock} = ChildState} = State) ->
-    dgiot_metrics:inc(dgiot_bridge, <<"udp_server_recv">>, 1),
-    Binary = iolist_to_binary(Data),
-    NewBin =
-        case binary:referenced_byte_size(Binary) of
-            Large when Large > 2 * byte_size(Binary) ->
-                binary:copy(Binary);
-            _ ->
-                Binary
-        end,
-    Cnt = byte_size(NewBin),
-    NewChildState = ChildState#udp{buff = <<>>},
-    case NewChildState of
-        #udp{clientid = CliendId, register = true} ->
-            dgiot_device:online(CliendId),
-            dgiot_tracer:check_trace(CliendId, CliendId, dgiot_utils:binary_to_hex(Binary), ?MODULE, ?LINE);
-        _ ->
-            pass
+%% @doc 调试socket信息
+debug_socket(ServerPid) ->
+    case get_status(ServerPid) of
+        {ok, Status} ->
+            ?LOG(error, "[DEBUG_SOCKET] 服务器状态: ~p", [Status]),
+            
+            % 获取socket选项
+            case get_socket_from_pid(ServerPid) of
+                {ok, Socket} ->
+                    ?LOG(error, "[DEBUG_SOCKET] Socket: ~p", [Socket]),
+                    
+                    % 检查socket选项
+                    OptsToCheck = [
+                        active, reuseaddr, multicast_loop, multicast_ttl,
+                        recbuf, sndbuf, ip, ifaddr
+                    ],
+                    
+                    case inet:getopts(Socket, OptsToCheck) of
+                        {ok, SocketOpts} ->
+                            ?LOG(error, "[DEBUG_SOCKET] Socket选项: ~p", [SocketOpts]);
+                        {error, OptsError} ->
+                            ?LOG(error, "[DEBUG_SOCKET] 获取选项失败: ~p", [OptsError])
+                    end;
+                {error, Error} ->
+                    ?LOG(error, "[DEBUG_SOCKET] 获取socket失败: ~p", [Error])
+            end;
+        Error ->
+            ?LOG(error, "[DEBUG_SOCKET] 获取状态失败: ~p", [Error])
     end,
-    case Mod:handle_info({udp, <<Buff/binary, NewBin/binary>>}, NewChildState) of
-        {noreply, NewChild} ->
-            {noreply, State#state{child = NewChild, incoming_bytes = Cnt}, hibernate};
-        {stop, Reason, NewChild} ->
-            {stop, Reason, State#state{child = NewChild}}
-    end;
-
-handle_info({shutdown, Reason}, #state{child = #udp{clientid = CliendId, register = true} = ChildState} = State) ->
-    ?LOG(error, "shutdown, ~p, ~p~n", [Reason, ChildState#udp.state]),
-    dgiot_cm:unregister_channel(CliendId),
-    dgiot_device:offline(CliendId),
-    {stop, normal, State#state{child = ChildState#udp{socket = undefined}}};
-
-handle_info({shutdown, Reason}, #state{child = ChildState} = State) ->
-    ?LOG(error, "shutdown, ~p, ~p~n", [Reason, ChildState#udp.state]),
-    {stop, normal, State#state{child = ChildState#udp{socket = undefined}}};
-
-handle_info({udp_error, _Sock, Reason}, #state{child = _ChildState} = State) ->
-    {stop, {shutdown, Reason}, State};
-
-handle_info({udp_closed, Sock}, #state{mod = Mod, child = #udp{socket = Sock} = ChildState} = State) ->
-    ?LOG(error, "udp_closed ~p", [ChildState#udp.state]),
-    case Mod:handle_info(udp_closed, ChildState) of
-        {noreply, NewChild} ->
-            {stop, normal, State#state{child = NewChild#udp{socket = undefined}}};
-        {stop, _Reason, NewChild} ->
-            {stop, normal, State#state{child = NewChild#udp{socket = undefined}}}
-    end;
-
-handle_info(Info, #state{mod = Mod, child = ChildState} = State) ->
-    io:format("~s ~p Info: ~p~n", [?FILE, ?LINE, Info]),
-    case Mod:handle_info(Info, ChildState) of
-        {noreply, NewChildState} ->
-            {noreply, State#state{child = NewChildState}, hibernate};
-        {stop, Reason, NewChildState} ->
-            {stop, Reason, State#state{child = NewChildState}}
-    end;
-
-handle_info({timeout, _TrId, _Event}, State) ->
-    {noreply, State, hibernate};
-
-handle_info({request_complete, #coap_message{token = _Token, id = _Id}}, State) ->
-    {noreply, State, hibernate};
-
-handle_info({'EXIT', Resp, Reason}, State = #state{responder = Resp}) ->
-    ?LOG(info, "channel received exit from responder: ~p, reason: ~p", [Resp, Reason]),
-    {stop, Reason, State};
-
-handle_info({'EXIT', _Pid, _Reason}, State = #state{}) ->
-    ?LOG(error, "channel received exit from stranger: ~p, reason: ~p", [_Pid, _Reason]),
-    {noreply, State, hibernate};
-
-handle_info(Info, State) ->
-    ?LOG(warning, "unexpected massage ~p~n", [Info]),
-    {noreply, State, hibernate}.
-
-terminate(Reason, #state{mod = Mod, child = #udp{clientid = CliendId, register = true} = ChildState}) ->
-    dgiot_cm:unregister_channel(CliendId),
-    dgiot_metrics:dec(dgiot_bridge, <<"udp_server">>, 1),
-    Mod:terminate(Reason, ChildState);
-
-terminate(Reason, #state{mod = Mod, child = ChildState}) ->
-    dgiot_metrics:dec(dgiot_bridge, <<"udp_server">>, 1),
-    Mod:terminate(Reason, ChildState).
-
-code_change(OldVsn, #state{mod = Mod, child = ChildState} = State, Extra) ->
-    {ok, NewChildState} = Mod:code_change(OldVsn, ChildState, Extra),
-    {ok, State#state{child = NewChildState}}.
-
-%%--------------------------------------------------------------------
-%% Handle datagram
-%%--------------------------------------------------------------------
-
-
-%%%===================================================================
-%%% Internal functions
-%%%===================================================================
-
-send(#udp{clientid = CliendId, register = true, transport = Transport, socket = Socket, sock = Sock}, Payload) ->
-    dgiot_tracer:check_trace(CliendId, CliendId, dgiot_utils:binary_to_hex(Payload), ?MODULE, ?LINE),
-    dgiot_metrics:inc(dgiot_bridge, <<"udp_server_send">>, 1),
-    case Socket == undefined of
-        true ->
-            {error, disconnected};
-        false ->
-            esockd_send_ok(Transport, Socket, Sock, Payload)
-%%            Transport:send(Socket, Payload)
-    end;
-
-send(#udp{transport = Transport, socket = Socket, sock = Sock}, Payload) ->
-    dgiot_metrics:inc(dgiot_bridge, <<"udp_server_send">>, 1),
-    case Socket == undefined of
-        true ->
-            {error, disconnected};
-        false ->
-%%            Transport:send(Socket, Payload)
-            esockd_send_ok(Transport, Socket, Sock, Payload)
-    end.
-
-%%--------------------------------------------------------------------
-%% Wrapped codes for esockd udp/dtls
--spec exit_on_sock_error(_) -> no_return().
-exit_on_sock_error(Reason) when Reason =:= einval;
-    Reason =:= enotconn;
-    Reason =:= closed ->
-    erlang:exit(normal);
-exit_on_sock_error(timeout) ->
-    erlang:exit({shutdown, ssl_upgrade_timeout});
-exit_on_sock_error(Reason) ->
-    erlang:exit({shutdown, Reason}).
-
-esockd_wait(Socket = {udp, _SockPid, _Sock}) ->
-    {ok, Socket};
-esockd_wait({esockd_transport, Sock}) ->
-    case esockd_transport:wait(Sock) of
-        {ok, NSock} -> {ok, {esockd_transport, NSock}};
-        R = {error, _} -> R
-    end.
-
-
-esockd_send_ok(Transport, {udp, _SockPid, Sock}, {Ip, Port}, Data) ->
-    Transport:send(Sock, Ip, Port, Data);
-
-esockd_send_ok(Transport, {esockd_transport, Sock}, {_Ip, _Port}, Data) ->
-    Transport:async_send(Sock, Data).
-
-esockd_send_ok(Socket, Dest, Data) ->
-    _ = esockd_send(Socket, Dest, Data),
     ok.
 
-esockd_send({udp, _SockPid, Sock}, {Ip, Port}, Data) ->
-    gen_udp:send(Sock, Ip, Port, Data);
-esockd_send({esockd_transport, Sock}, {_Ip, _Port}, Data) ->
-    esockd_transport:async_send(Sock, Data).
+%% @doc 获取服务器状态
+get_status(ServerPid) ->
+    dgiot_udp_session:get_status(ServerPid).
 
-esockd_close({udp, _SockPid, Sock}) ->
-    gen_udp:close(Sock);
-esockd_close({esockd_transport, Sock}) ->
-    esockd_transport:fast_close(Sock).
+%% @doc 加入多播组
+join_multicast_group(ServerPid, MulticastGroup) ->
+    ?LOG(error, "[JOIN_MULTICAST_GROUP] 加入多播组: ~p", [MulticastGroup]),
+    Result = dgiot_udp_session:join_multicast_group(ServerPid, MulticastGroup),
+    ?LOG(error, "[JOIN_MULTICAST_GROUP] 结果: ~p", [Result]),
+    Result.
+
+%% @doc 离开多播组
+leave_multicast_group(ServerPid, MulticastGroup) ->
+    dgiot_udp_session:leave_multicast_group(ServerPid, MulticastGroup).
+
+%% @doc 发送数据（使用已连接的套接字）
+send(ServerPid, Data) ->
+    dgiot_udp_session:send(ServerPid, Data).
+
+%% @doc 发送数据到指定地址（兼容旧接口）
+send(ServerPid, Addr, Data) ->
+    dgiot_udp_session:send(ServerPid, Addr, Data).
+
+%% @doc 发送数据到指定地址和端口
+send(ServerPid, Addr, Port, Data) ->
+    dgiot_udp_session:send(ServerPid, Addr, Port, Data).
+
+%% @doc 发送多播消息
+send_multicast(ServerPid, MulticastGroup, Port, Message) ->
+    dgiot_udp_session:send_multicast(ServerPid, MulticastGroup, Port, Message).
+
+%% @doc 获取可用的多播组列表
+get_available_multicast_groups() ->
+    dgiot_udp_multicast:get_available_multicast_groups().
+
+%% @doc 启动带多播组的服务器
+start_multicast_server(Port, MulticastGroups) when is_list(MulticastGroups) ->
+    ?LOG(error, "[START_MULTICAST_SERVER] 启动多播服务器: 端口=~p, 组=~p", 
+         [Port, MulticastGroups]),
+    
+    Args = [
+        {port, Port},
+        {multicast_groups, MulticastGroups}
+    ],
+    
+    case start_link(Args) of
+        {ok, Pid} ->
+            % 加入指定的多播组
+            lists:foreach(fun(Group) ->
+                case ensure_multicast_joined(Pid, Group) of
+                    ok ->
+                        ?LOG(error, "[START_MULTICAST_SERVER] ✅ 加入多播组: ~p", [Group]);
+                    Error ->
+                        ?LOG(error, "[START_MULTICAST_SERVER] ❌ 加入失败 ~p: ~p", [Group, Error])
+                end
+            end, MulticastGroups),
+            {ok, Pid};
+        Error ->
+            Error
+    end.
+
+%% @doc 启动多播服务器并加入所有可用多播组
+start_multicast_server(Port) ->
+    MulticastGroups = get_available_multicast_groups(),
+    start_multicast_server(Port, MulticastGroups).
+
+%% @doc 获取服务器多播状态
+get_multicast_status(ServerPid) ->
+    case get_status(ServerPid) of
+        {ok, Status} ->
+            MulticastGroups = proplists:get_value(multicast_groups, Status, []),
+            {ok, [
+                {server_pid, ServerPid},
+                {multicast_groups_joined, MulticastGroups},
+                {total_groups, length(MulticastGroups)},
+                {status, running}
+            ]};
+        Error ->
+            Error
+    end.
+
+%% @doc 发送多播消息到所有已加入的组
+broadcast_to_groups(ServerPid, Port, Message) ->
+    case get_status(ServerPid) of
+        {ok, Status} ->
+            MulticastGroups = proplists:get_value(multicast_groups, Status, []),
+            ?LOG(error, "[BROADCAST] 广播到 ~p 个组", [length(MulticastGroups)]),
+            
+            Results = lists:map(fun(Group) ->
+                case send_multicast(ServerPid, Group, Port, Message) of
+                    ok -> 
+                        ?LOG(error, "[BROADCAST] ✅ 发送到组: ~p", [Group]),
+                        {Group, success};
+                    Error -> 
+                        ?LOG(error, "[BROADCAST] ❌ 发送失败 ~p: ~p", [Group, Error]),
+                        {Group, Error}
+                end
+            end, MulticastGroups),
+            {ok, Results};
+        Error ->
+            Error
+    end.
+
+%% @doc 停止服务器
+stop(ServerPid) ->
+    gen_server:stop(ServerPid).
+
+%%%===================================================================
+%%% 内部函数
+%%%===================================================================
+
+%% @doc 提取多播选项并转换为UDP选项 - 修复版
+extract_multicast_options(NewOpts, UDPOpts) ->
+    MulticastGroups = proplists:get_value(multicast_groups, NewOpts, []),
+    
+    ?LOG(error, "[EXTRACT_MULTICAST] 原始多播组: ~p", [MulticastGroups]),
+    ?LOG(error, "[EXTRACT_MULTICAST] 原始NewOpts: ~p", [NewOpts]),
+    
+    case MulticastGroups of
+        [] ->
+            % 没有多播组
+            ?LOG(warning, "[EXTRACT_MULTICAST] 警告：多播组列表为空！"),
+            {[], UDPOpts};
+        _ ->
+            ?LOG(error, "[EXTRACT_MULTICAST] ✅ 找到多播组: ~p", [MulticastGroups]),
+            
+            % 获取默认网络接口IP（动态检测）
+            InterfaceIP = case dgiot_udp_multicast:get_default_interface() of
+                {ok, IP} -> 
+                    ?LOG(error, "[EXTRACT_MULTICAST] 使用接口IP: ~p", [IP]),
+                    IP;
+                {error, Reason} -> 
+                    ?LOG(error, "[EXTRACT_MULTICAST] 获取接口IP失败: ~p，使用0.0.0.0", [Reason]),
+                    {0,0,0,0}
+            end,
+            
+            % 构建多播相关的UDP选项 - 修复：确保所有多播选项都正确传递
+            MulticastUDPOpts = [
+                {multicast_ttl, proplists:get_value(multicast_ttl, NewOpts, 32)},
+                {multicast_loop, proplists:get_value(multicast_loop, NewOpts, true)},
+                {reuseaddr, proplists:get_value(reuseaddr, NewOpts, true)},
+                {broadcast, proplists:get_value(broadcast, NewOpts, false)},
+                {ip, InterfaceIP},  % 修复：使用动态检测的接口IP
+                
+                % 添加更多多播选项以确保正确加入多播组
+                {multicast_if, InterfaceIP},
+                {add_membership, {hd(MulticastGroups), InterfaceIP}}  % 添加多播组成员关系
+            ],
+            
+            ?LOG(error, "[EXTRACT_MULTICAST] 多播UDP选项: ~p", [MulticastUDPOpts]),
+            
+            % 合并UDP选项 - 修复：确保不覆盖重要的UDP选项
+            FinalUDPOpts = lists:foldl(fun({Key, Value}, Acc) ->
+                case lists:keymember(Key, 1, Acc) of
+                    true -> 
+                        ?LOG(debug, "[EXTRACT_MULTICAST] 选项已存在: ~p", [Key]),
+                        Acc;
+                    false -> 
+                        ?LOG(debug, "[EXTRACT_MULTICAST] 添加选项: ~p = ~p", [Key, Value]),
+                        [{Key, Value} | Acc]
+                end
+            end, UDPOpts, MulticastUDPOpts),  % 注意：这里顺序改为UDPOpts在前
+            
+            ?LOG(error, "[EXTRACT_MULTICAST] 最终UDP选项: ~p", [FinalUDPOpts]),
+            ?LOG(error, "[EXTRACT_MULTICAST] 返回多播组: ~p", [MulticastGroups]),
+            
+            {MulticastGroups, FinalUDPOpts}
+    end.
+
+%% @doc 从进程获取socket
+get_socket_from_pid(Pid) ->
+    try
+        % 尝试获取进程信息
+        case process_info(Pid, dictionary) of
+            {dictionary, Dict} ->
+                case lists:keyfind('$socket', 1, Dict) of
+                    {'$socket', Socket} ->
+                        {ok, Socket};
+                    false ->
+                        {error, no_socket_in_dict}
+                end;
+            undefined ->
+                {error, no_process_dict}
+        end
+    catch
+        _:Error ->
+            {error, Error}
+    end.
+
+%% @doc 使用多种方法尝试加入多播组
+join_with_multiple_methods(Socket, MulticastIP) ->
+    ?LOG(error, "[JOIN_MULTIPLE_METHODS] 尝试多种方法加入多播组: ~p", [MulticastIP]),
+    
+    Methods = [
+        % 方法1: 传统方式
+        {method1, fun() -> 
+            inet:setopts(Socket, [{add_membership, {MulticastIP, {0,0,0,0}}}])
+        end},
+        % 方法2: 使用enp3s0接口
+        {method2, fun() -> 
+            InterfaceIP = get_interface_ip("enp3s0"),
+            inet:setopts(Socket, [{add_membership, {MulticastIP, InterfaceIP}}])
+        end},
+        % 方法3: 使用回环接口
+        {method3, fun() -> 
+            inet:setopts(Socket, [{add_membership, {MulticastIP, {127,0,0,1}}}])
+        end},
+        % 方法4: 新API格式
+        {method4, fun() -> 
+            IpMreq = #{multiaddr => MulticastIP, interface => {0,0,0,0}},
+            inet:setopts(Socket, [{add_membership, IpMreq}])
+        end}
+    ],
+    
+    lists:foldl(fun({MethodName, MethodFun}, Acc) ->
+        case Acc of
+            ok -> ok;  % 已经成功
+            _ ->
+                ?LOG(error, "[JOIN_MULTIPLE_METHODS] 尝试方法: ~p", [MethodName]),
+                case MethodFun() of
+                    ok ->
+                        ?LOG(error, "[JOIN_MULTIPLE_METHODS] ✅ 方法 ~p 成功", [MethodName]),
+                        
+                        % 设置其他多播选项
+                        inet:setopts(Socket, [
+                            {multicast_loop, true},
+                            {multicast_ttl, 32}
+                        ]),
+                        
+                        ok;
+                    {error, ealready} ->
+                        ?LOG(error, "[JOIN_MULTIPLE_METHODS] ℹ️ 已经加入多播组"),
+                        ok;
+                    {error, Reason} ->
+                        ?LOG(error, "[JOIN_MULTIPLE_METHODS] ❌ 方法 ~p 失败: ~p", 
+                             [MethodName, Reason]),
+                        {error, Reason}
+                end
+        end
+    end, {error, not_tried}, Methods).
+
+%% @doc 获取接口IP
+get_interface_ip(IfName) ->
+    case inet:getifaddrs() of
+        {ok, Interfaces} ->
+            case lists:keyfind(IfName, 1, Interfaces) of
+                {IfName, Props} ->
+                    case proplists:get_value(addr, Props) of
+                        {A,_B,_C,_D} = Addr when A =/= 127 ->
+                            Addr;
+                        _ -> {0,0,0,0}
+                    end;
+                false ->
+                    {0,0,0,0}
+            end;
+        _ ->
+            {0,0,0,0}
+    end.

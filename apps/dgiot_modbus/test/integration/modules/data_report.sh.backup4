@@ -1,0 +1,120 @@
+#!/bin/bash
+#!/bin/bash
+# data_report.sh - Modbus数据上报测试模块
+
+# 模块3: Modbus数据上报测试
+module_modbus_data_report() {
+    log_info "模块3: Modbus数据上报测试"
+    
+    # Modbus RTU数据块（用户提供的十六进制数据）
+    MODBUS_HEX_DATA="01 03 60 0C 19 0E 13 03 11 00 39 02 B2 00 02 08 80 00 00 00 00 00 00 00 00 00 00 00 00 00 6A 00 9E 9F B5 05 92 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 2F FD ED F1 F8 86 8A F7 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 43 65 00 00 00 00 7D B3"
+    
+    echo "3.1 发送Modbus数据块..."
+    echo "数据包长度: 101字节"
+    echo "从机地址: 0x01"
+    echo "功能码: 0x03 (读取保持寄存器)"
+    
+    # 使用Python发送二进制数据
+    python3 << 'EOF'
+import socket
+import time
+
+# 将十六进制字符串转换为二进制数据
+hex_data = """$MODBUS_HEX_DATA"""
+hex_bytes = hex_data.replace(' ', '')
+data = bytes.fromhex(hex_bytes)
+
+print('发送Modbus数据包: {}字节'.format(len(data)))
+print('十六进制: {}...'.format(hex_bytes[:50]))
+
+# 连接到服务器
+try:
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(5)
+    s.connect(('127.0.0.1', $TEST_PORT))
+    
+    # 发送数据
+    s.sendall(data)
+    print('✅ Modbus数据发送成功')
+    
+    # 可选：接收响应（如果有）
+    try:
+        response = s.recv(1024)
+        if response:
+            print('收到响应: {}...'.format(response.hex()[:50]))
+    except socket.timeout:
+        print('未收到响应（正常情况）')
+    
+    s.close()
+except Exception as e:
+    print('❌ 发送失败: {}'.format(e))
+EOF
+    
+    # 等待数据处理
+    sleep 3
+    
+    # 验证数据解析
+    echo "3.2 验证数据解析..."
+    _build/emqx/rel/emqx/bin/emqx eval "
+        DeviceAddr = <<\"$DEVICE_ADDR\">>,
+        ProductId = <<\"$TEST_PRODUCT\">>,
+        DeviceId = dgiot_parse_id:get_deviceid(ProductId, DeviceAddr),
+        
+        dgiot_utils:safe_format(\"检查Modbus数据解析:~n\", []),
+        
+        % 检查缓存数据
+        case dgiot_data:get({last_data, DeviceId}) of
+            not_find ->
+                dgiot_utils:safe_format(\"⚠️  未找到last_data缓存~n\", []);
+            CachedData ->
+                dgiot_utils:safe_format(\"✅ 找到last_data缓存~n\", []),
+                
+                % 检查是否包含Modbus数据
+                case CachedData of
+                    #{<<"block_data">> := BlockData} ->
+                        dgiot_utils:safe_format(\"  包含block_data字段~n\", []),
+                        io:format(\"  数据值: ~p~n\", [BlockData]);
+                    _ ->
+                        dgiot_utils:safe_format(\"  不包含block_data字段~n\", [])
+                end
+        end.
+    "
+    
+    return 0
+}
+
+# 检查数据解析
+check_data_parsing() {
+    log_info "检查数据解析状态..."
+    
+    local result=$(_build/emqx/rel/emqx/bin/emqx eval "
+        DeviceAddr = <<\"$DEVICE_ADDR\">>,
+        ProductId = <<\"$TEST_PRODUCT\">>,
+        DeviceId = dgiot_parse_id:get_deviceid(ProductId, DeviceAddr),
+        
+        case dgiot_data:get({last_data, DeviceId}) of
+            not_find -> <<\"no_cache\">>;
+            #{<<"block_data">> := _} -> <<\"has_block_data\">>;
+            _ -> <<\"no_block_data\">>
+        end.
+    ")
+    
+    case "$result" in
+        "has_block_data")
+            log_success "数据解析检查通过（包含block_data）"
+            return 0
+            ;;
+        "no_cache")
+            log_error "数据解析检查失败（无缓存数据）"
+            return 1
+            ;;
+        "no_block_data")
+            log_error "数据解析检查失败（无block_data字段）"
+            return 1
+            ;;
+        *)
+            log_error "数据解析检查失败（未知状态: $result）"
+            return 1
+            ;;
+    esac
+}

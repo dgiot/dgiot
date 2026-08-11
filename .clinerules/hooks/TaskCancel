@@ -1,0 +1,113 @@
+#!/bin/bash
+#
+# TaskCancel Hook - 任务取消处理
+# 
+# 在任务取消时执行
+# 
+# 输入: { taskId, taskCancel: { reason: string }, ... }
+# 输出: { cancel: boolean, contextModification?: string, errorMessage?: string }
+# 
+# 使用场景:
+# - 记录取消原因
+# - 清理临时文件
+# - 分析取消原因
+# - 提供改进建议
+
+# 从标准输入读取JSON输入
+INPUT=$(cat)
+
+# 使用jq解析输入
+if command -v jq &> /dev/null; then
+  TASK_ID=$(echo "$INPUT" | jq -r '.taskId')
+  CANCEL_REASON=$(echo "$INPUT" | jq -r '.taskCancel.reason // "unknown"')
+else
+  TASK_ID="unknown"
+  CANCEL_REASON="unknown"
+fi
+
+echo "[TaskCancel] 任务取消: $TASK_ID" >&2
+echo "[TaskCancel] 取消原因: $CANCEL_REASON" >&2
+
+# 分析取消原因是否与编译、日志、中文编码相关
+analyze_cancel_reason() {
+  local reason="$1"
+  
+  local analysis=""
+  
+  # 检查是否与编译相关
+  if echo "$reason" | grep -q -i "编译\|compile\|make\|erlc\|错误\|error"; then
+    analysis="$analysis 检测到编译相关问题导致取消。"
+  fi
+  
+  # 检查是否与编码相关
+  if echo "$reason" | grep -q -i "中文\|编码\|utf8\|乱码\|unicode"; then
+    analysis="$analysis 检测到中文编码相关问题导致取消。"
+  fi
+  
+  # 检查是否与日志相关
+  if echo "$reason" | grep -q -i "日志\|log\|logger\|打印\|输出"; then
+    analysis="$analysis 检测到日志相关问题导致取消。"
+  fi
+  
+  # 检查是否与规范相关
+  if echo "$reason" | grep -q -i "规范\|standard\|质量\|最佳实践"; then
+    analysis="$analysis 检测到编程规范相关问题导致取消。"
+  fi
+  
+  if [[ -z "$analysis" ]]; then
+    analysis="通用原因导致任务取消。"
+  fi
+  
+  echo "$analysis"
+}
+
+# 清理临时文件
+cleanup_temp_files() {
+  echo "[TaskCancel] 清理临时文件..." >&2
+  
+  # 清理编译临时文件
+  local temp_files=(
+    "/tmp/*.beam"
+    "/tmp/*.erl"
+    "/tmp/cline_*"
+  )
+  
+  for pattern in "${temp_files[@]}"; do
+    if ls $pattern 1>/dev/null 2>&1; then
+      echo "[TaskCancel] 清理: $pattern" >&2
+      rm -f $pattern 2>/dev/null || true
+    fi
+  done
+  
+  echo "[TaskCancel] 临时文件清理完成" >&2
+}
+
+# 执行分析
+ANALYSIS=$(analyze_cancel_reason "$CANCEL_REASON")
+
+# 执行清理
+cleanup_temp_files
+
+# 提供改进建议
+if [[ "$ANALYSIS" == *"编译"* ]]; then
+  SUGGESTION="建议：下次遇到编译问题时，先使用erlc检查单个文件，再使用make compile进行全量编译。"
+elif [[ "$ANALYSIS" == *"中文编码"* ]]; then
+  SUGGESTION="建议：确保所有中文字符串使用<<\"中文\"/utf8>>格式，使用dgiot_safe_format:safe_format进行打印。"
+elif [[ "$ANALYSIS" == *"日志"* ]]; then
+  SUGGESTION="建议：遵循DGIOT日志规范，使用统一的日志宏定义。"
+elif [[ "$ANALYSIS" == *"规范"* ]]; then
+  SUGGESTION="建议：参考docs/目录下的编程规范文档，遵循Erlang最佳实践。"
+else
+  SUGGESTION="建议：任务开始前充分分析需求，任务执行中及时沟通问题。"
+fi
+
+# 构建上下文修改
+CONTEXT_MOD="任务已取消。原因分析：$ANALYSIS 改进建议：$SUGGESTION"
+
+# 返回结果
+echo "{\"cancel\":false,\"contextModification\":\"$CONTEXT_MOD\",\"errorMessage\":\"\"}"
+
+# 记录取消日志
+LOG_FILE="/tmp/cline_task_cancel.log"
+TIMESTAMP=$(date +%s%3N)
+echo "$TIMESTAMP|$TASK_ID|$CANCEL_REASON" >> "$LOG_FILE" 2>/dev/null || true

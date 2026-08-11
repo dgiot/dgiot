@@ -54,10 +54,28 @@ check_auth(OperationID, #{<<"apiKey">> := ApiKey}, Req) ->
 pre_check(_OperationID, _LogicHandler, [], Req) ->
     {error, <<"unauthorized">>, Req};
 
-pre_check(OperationID, LogicHandler, [{<<"BasicAuth">> = Key, _Map} | AuthList], Req) ->
+% 首先检查Bearer token（无论认证配置如何）
+pre_check(OperationID, LogicHandler, AuthList, Req) when is_list(AuthList) ->
+    % 检查Authorization头中的Bearer token
     case dgiot_req:get_value(<<"header">>, <<"authorization">>, Req) of
         {undefined, Req1} ->
-            pre_check(OperationID, LogicHandler, AuthList, Req1);
+            pre_check_impl(OperationID, LogicHandler, AuthList, Req1);
+        {<<"Bearer ", Token/binary>>, Req1} ->
+            % 将Bearer token视为apiKey
+            Args = #{
+                <<"type">> => <<"apiKey">>,
+                <<"apiKey">> => Token
+            },
+            {ok, Args, Req1};
+        {_Other, Req1} ->
+            pre_check_impl(OperationID, LogicHandler, AuthList, Req1)
+    end.
+
+% 原始实现
+pre_check_impl(OperationID, LogicHandler, [{<<"BasicAuth">> = Key, _Map} | AuthList], Req) ->
+    case dgiot_req:get_value(<<"header">>, <<"authorization">>, Req) of
+        {undefined, Req1} ->
+            pre_check_impl(OperationID, LogicHandler, AuthList, Req1);
         {<<"Basic ", Bin/binary>>, Req1} ->
             case re:split(base64:decode(Bin), <<":">>) of
                 [UserName, Password] when byte_size(UserName) > 0, byte_size(Password) > 0 ->
@@ -68,21 +86,27 @@ pre_check(OperationID, LogicHandler, [{<<"BasicAuth">> = Key, _Map} | AuthList],
                     },
                     {ok, Args, Req1};
                 _ ->
-                    pre_check(OperationID, LogicHandler, AuthList, Req1)
-            end
+                    pre_check_impl(OperationID, LogicHandler, AuthList, Req1)
+            end;
+        {_Other, Req1} ->
+            % 其他格式的Authorization头，继续检查其他认证方式
+            pre_check_impl(OperationID, LogicHandler, AuthList, Req1)
     end;
 
-pre_check(OperationID, LogicHandler, [{Key, #{<<"in">> := From, <<"name">> := Name}} | AuthList], Req) ->
+pre_check_impl(OperationID, LogicHandler, [{Key, #{<<"in">> := From, <<"name">> := Name}} | AuthList], Req) ->
     case dgiot_req:get_value(From, Name, Req) of
         {undefined, Req1} ->
-            pre_check(OperationID, LogicHandler, AuthList, Req1);
+            pre_check_impl(OperationID, LogicHandler, AuthList, Req1);
         {ApiKey, Req1} ->
             Args = #{
                 <<"type">> => Key,
                 <<"apiKey">> => ApiKey
             },
             {ok, Args, Req1}
-    end.
+    end;
+
+pre_check_impl(_OperationID, _LogicHandler, [], Req) ->
+    {error, <<"unauthorized">>, Req}.
 
 
 %%%===================================================================

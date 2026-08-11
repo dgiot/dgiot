@@ -24,6 +24,8 @@
     , safe_encode/2
 ]).
 
+-export([to_ejson/1]).
+
 -compile({inline,
     [encode/1
         , encode/2

@@ -17,77 +17,61 @@
 -module(dgiot_parsex).
 -author("kenneth").
 -include("dgiot_parse.hrl").
+
 -include_lib("dgiot/include/logger.hrl").
 -define(DEFField, re:split(application:get_env(?MODULE, delete_field, ""), ",")).
 
 %% API
--export([
-    health/0,
-    health/1,
-    init_database/2,
-    create_object/2,
-    create_object/3,
-    create_object/4,
-    get_object/2,
-    get_object/3,
-    get_object/4,
-    update_object/3,
-    update_object/4,
-    update_object/5,
-    del_object/2,
-    del_object/4,
-    del_table/1,
-    get_schemas/0,
-    get_schemas/1,
-    get_schemas/2,
-    create_schemas/1,
-    create_schemas/2,
-    update_schemas/1,
-    update_schemas/2,
-    del_schemas/1,
-    del_schemas/2,
-    set_class_level/2,
-    del_filed_schemas/2,
-    del_filed_schemas/3,
-    query_object/2,
-    query_object/3,
-    query_object/4,
-    aggregate_object/2,
-    aggregate_object/4,
-    read_page/4,
-    read_page/5,
-    format_data/2,
-    batch/1,
-    batch/2,
-    batch/3,
-    batch/4,
-    import/5,
-    import/6,
-    request/4,
-    request/5,
-    get_token/1,
-    get_qs/1
-]).
+-export([health/0, health/1,
+         init_database/2,
+         create_object/2, create_object/3, create_object/4,
+         get_object/2, get_object/3, get_object/4,
+         update_object/3, update_object/4, update_object/5,
+         del_object/2, del_object/4,
+         del_table/1,
+         get_schemas/0, get_schemas/1, get_schemas/2,
+         create_schemas/1, create_schemas/2,
+         update_schemas/1, update_schemas/2,
+         del_schemas/1, del_schemas/2,
+         set_class_level/2,
+         del_filed_schemas/2, del_filed_schemas/3,
+         query_object/2, query_object/3, query_object/4,
+         aggregate_object/2, aggregate_object/4,
+         read_page/4, read_page/5,
+         format_data/2,
+         batch/1, batch/2, batch/3, batch/4,
+         import/5, import/6,
+         request/4, request/5,
+         get_token/1,
+         get_qs/1]).
 
--export([
-    request_rest/6,
-    get_header_token/2,
-    get_view_token/2
-]).
+-export([request_rest/6,
+         get_header_token/2,
+         get_view_token/2]).
+
 
 health() ->
     health(?DEFAULT).
+
+
 health(Name) ->
     Path = <<"/health">>,
     request_rest(Name, 'GET', [], Path, #{}, [{from, rest}]).
 
+
 %% 创建对象
 create_object(Class, Map) ->
     create_object(?DEFAULT, Class, Map).
+
+
 create_object(Name, Class, Map) ->
     create_object(Name, Class, Map, [], [{from, master}]).
+
+
 create_object(Class, Map, Header, Options) ->
     create_object(?DEFAULT, Class, Map, Header, Options).
+
+
 create_object(Name, Class, #{<<"objectId">> := _ObjectId} = Map, Header, Options) ->
     Path = <<"/classes/", Class/binary>>,
     request_rest(Name, 'POST', Header, Path, Map, Options);
@@ -99,10 +83,16 @@ create_object(Name, Class, Map, Header, Options) ->
 %% 获取对象
 get_object(Class, ObjectId) ->
     get_object(?DEFAULT, Class, ObjectId).
+
+
 get_object(Name, Class, ObjectId) ->
     get_object(Name, Class, ObjectId, [], [{from, master}]).
+
+
 get_object(Class, ObjectId, Header, Options) ->
     get_object(?DEFAULT, Class, ObjectId, Header, Options).
+
+
 get_object(Name, Class, ObjectId, Header, Options) ->
     Path = <<"/classes/", Class/binary, "/", ObjectId/binary>>,
     request_rest(Name, 'GET', Header, Path, #{}, Options).
@@ -111,10 +101,16 @@ get_object(Name, Class, ObjectId, Header, Options) ->
 %% 更新对象
 update_object(Class, ObjectId, Map) ->
     update_object(?DEFAULT, Class, ObjectId, Map).
+
+
 update_object(Name, Class, ObjectId, Map) ->
     update_object(Name, Class, ObjectId, Map, [], [{from, master}]).
+
+
 update_object(Class, ObjectId, Map, Header, Options) ->
     update_object(?DEFAULT, Class, ObjectId, Map, Header, Options).
+
+
 update_object(Name, Class, ObjectId, Map, Header, Options) ->
     Path = <<"/classes/", Class/binary, "/", ObjectId/binary>>,
     request_rest(Name, 'PUT', Header, Path, Map, Options).
@@ -123,41 +119,58 @@ update_object(Name, Class, ObjectId, Map, Header, Options) ->
 %% 批处理
 batch(Requests) ->
     batch(?DEFAULT, Requests).
+
+
 batch(Name, Requests) ->
     batch(Name, Requests, [], [{from, master}]).
+
+
 batch(Requests, Header, Opts) ->
     batch(?DEFAULT, Requests, Header, Opts).
+
+
 batch(Name, Requests, Header, Opts) ->
     request_rest(Name, 'POST', Header, <<"/batch">>, #{<<"requests">> => Requests}, Opts).
+
 
 del_filed_schemas(Class, Fileds) ->
     del_filed_schemas(?DEFAULT, Class, Fileds).
 %%
+
+
 del_filed_schemas(Name, Class, Fileds) ->
     Path = <<"/schemas/", Class/binary>>,
     NewFields = lists:foldl(
-        fun(X, Acc) ->
-            Acc#{X => #{<<"__op">> => <<"Delete">>}}
-        end, #{}, Fileds),
+                  fun(X, Acc) ->
+                          Acc#{X => #{<<"__op">> => <<"Delete">>}}
+                  end,
+                  #{},
+                  Fileds),
 
     Method = <<"PUT">>,
     Body = #{
-        <<"className">> => <<Class/binary>>,
-        <<"fields">> => NewFields,
-        <<"_method">> => Method
-    },
+             <<"className">> => <<Class/binary>>,
+             <<"fields">> => NewFields,
+             <<"_method">> => Method
+            },
     request_rest(Name, 'PUT', [], Path, Body, [{from, master}]).
+
 
 %% 创建表结构
 create_schemas(Fields) ->
     create_schemas(?DEFAULT, Fields).
+
+
 create_schemas(Name, #{<<"className">> := Class} = Fields) ->
     Path = <<"/schemas/", Class/binary>>,
     request_rest(Name, 'POST', [], Path, Fields, [{from, master}]).
 
+
 %% 更新表结构
 update_schemas(Fields) ->
     update_schemas(?DEFAULT, Fields).
+
+
 update_schemas(Name, #{<<"className">> := Class} = Fields) ->
     Path = <<"/schemas/", Class/binary>>,
     request_rest(Name, 'PUT', [], Path, Fields, [{from, master}]).
@@ -166,49 +179,73 @@ update_schemas(Name, #{<<"className">> := Class} = Fields) ->
 %% 删除表结构
 del_schemas(Class) ->
     del_schemas(?DEFAULT, Class).
+
+
 del_schemas(Name, Class) ->
     Path = <<"/schemas/", Class/binary>>,
     request_rest(Name, 'DELETE', [], Path, #{}, [{from, master}]).
 
+
 %% 获取表结构
 get_schemas() ->
     get_schemas(<<>>).
+
+
 get_schemas(Class) ->
     get_schemas(?DEFAULT, Class).
+
+
 get_schemas(Name, Class) ->
     Path = <<"/schemas/", Class/binary>>,
     request_rest(Name, 'GET', [], Path, #{}, [{from, master}]).
 
+
 %% 设置表权限
 set_class_level(Class, Permissions) ->
     set_class_level(?DEFAULT, Class, Permissions).
+
+
 set_class_level(Name, Class, Permissions) ->
     Path = <<"/schemas/", Class/binary>>,
     Body = #{<<"classLevelPermissions">> => Permissions},
     request_rest(Name, 'PUT', [], Path, Body, [{from, master}]).
+
 
 %% limit和skip参数进行分页
 %% 传递order逗号分隔列表按多个字段进行排序
 %% http://docs.parseplatform.org/rest/guide/#query-constraints
 query_object(Class, Args) ->
     query_object(?DEFAULT, Class, Args).
+
+
 query_object(Name, Class, Args) ->
     query_object(Name, Class, Args, [], [{from, master}]).
+
+
 query_object(Class, Args, Header, Options) ->
     query_object(?DEFAULT, Class, Args, Header, Options).
+
+
 query_object(Name, Class, Args, Header, Options) ->
     Path = <<"/classes/", Class/binary>>,
     request_rest(Name, 'GET', Header, Path, Args, Options).
+
 
 %% limit和skip参数进行分页
 %% 传递order逗号分隔列表按多个字段进行排序
 %% http://docs.parseplatform.org/rest/guide/#query-constraints
 aggregate_object(Class, Args) ->
     aggregate_object(?DEFAULT, Class, Args).
+
+
 aggregate_object(Name, Class, Args) ->
     aggregate_object(Name, Class, Args, [], [{from, master}]).
+
+
 aggregate_object(Class, Args, Header, Options) ->
     aggregate_object(?DEFAULT, Class, Args, Header, Options).
+
+
 aggregate_object(Name, Class, Args, Header, Options) ->
     Path = <<"/aggregate/", Class/binary>>,
     request_rest(Name, 'GET', Header, Path, Args, Options).
@@ -217,23 +254,35 @@ aggregate_object(Name, Class, Args, Header, Options) ->
 %% 删除对象
 del_object(Class, ObjectId) ->
     del_object(?DEFAULT, Class, ObjectId).
+
+
 del_object(Name, Class, ObjectId) ->
     del_object(Name, Class, ObjectId, [], [{from, master}]).
+
+
 del_object(Class, ObjectId, Header, Options) ->
     del_object(?DEFAULT, Class, ObjectId, Header, Options).
+
+
 del_object(Name, Class, ObjectId, Header, Options) ->
     Path = <<"/classes/", Class/binary, "/", ObjectId/binary>>,
     request_rest(Name, 'DELETE', Header, Path, #{}, Options).
 
+
 %% 删除表格
 del_table(Class) ->
     del_table(?DEFAULT, Class).
+
+
 del_table(Name, Class) ->
     Path = <<"/purge/", Class/binary>>,
     request_rest(Name, 'DELETE', [], Path, #{}, [{from, master}]).
 
+
 read_page(Class, Query, Skip, PageSize) ->
     read_page(?DEFAULT, Class, Query, Skip, PageSize).
+
+
 read_page(Name, Class, Query, Skip, PageSize) ->
     %?LOG(info,"~p~n", [ Query#{<<"limit">> => PageSize, <<"skip">> => Skip}]),
     case query_object(Name, Class, Query#{<<"limit">> => PageSize, <<"skip">> => Skip}) of
@@ -243,8 +292,10 @@ read_page(Name, Class, Query, Skip, PageSize) ->
             {ok, Page}
     end.
 
+
 import(Class, Datas, Count, Fun, Acc) ->
     import(?DEFAULT, Class, Datas, Count, Fun, Acc).
+
 
 import(Name, Class, {json, Path}, Count, Fun, Acc) ->
     case file:read_file(Path) of
@@ -262,6 +313,7 @@ import(Name, Class, {json, Path}, Count, Fun, Acc) ->
 import(Name, Class, Datas, Count, Fun, Acc) ->
     import(Name, Class, Datas, Count, [], Fun, Acc).
 
+
 import(Name, Class, Datas, Count, Requests, Fun, Acc) when length(Requests) == Count; Datas == [] ->
     case batch(Name, Requests) of
         {error, Reason} ->
@@ -277,13 +329,13 @@ import(Name, Class, Datas, Count, Requests, Fun, Acc) when length(Requests) == C
 import(Name, Class, [Data | Other], Count, Requests, Fun, Acc) when length(Requests) < Count ->
     try
         NewRequests = [#{
-            <<"method">> => <<"POST">>,
-            <<"path">> => <<"/classes/", Class/binary>>,
-            <<"body">> => Data
-        } | Requests],
+                         <<"method">> => <<"POST">>,
+                         <<"path">> => <<"/classes/", Class/binary>>,
+                         <<"body">> => Data
+                        } | Requests],
         import(Name, Class, Other, Count, NewRequests, Fun, Acc)
     catch
-        _: {error, not_add} ->
+        _:{error, not_add} ->
             import(Name, Class, Other, Count, Requests, Fun, Acc)
     end.
 
@@ -299,6 +351,7 @@ get_token(Header) ->
             Token1
     end.
 
+
 get_header_token(<<"/classes/_Role", _/binary>>, Header) ->
     Header;
 
@@ -310,16 +363,18 @@ get_header_token(<<"/classes/_Session", _/binary>>, Header) ->
 
 get_header_token(_, Header) ->
     lists:foldl(
-        fun
-            ({<<"X-Parse-Session-Token">>, Token}, Acc) ->
-                DepartToken = dgiot_parse_auth:get_depart_session(Token),
-                Acc ++ [{<<"X-Parse-Session-Token">>, DepartToken}];
-            ({"X-Parse-Session-Token", Token}, Acc) ->
-                DepartToken = dgiot_parse_auth:get_depart_session(Token),
-                Acc ++ [{<<"X-Parse-Session-Token">>, DepartToken}];
-            ({K, V}, Acc) ->
-                Acc ++ [{K, V}]
-        end, [], Header).
+      fun({<<"X-Parse-Session-Token">>, Token}, Acc) ->
+              DepartToken = dgiot_parse_auth:get_depart_session(Token),
+              Acc ++ [{<<"X-Parse-Session-Token">>, DepartToken}];
+         ({"X-Parse-Session-Token", Token}, Acc) ->
+              DepartToken = dgiot_parse_auth:get_depart_session(Token),
+              Acc ++ [{<<"X-Parse-Session-Token">>, DepartToken}];
+         ({K, V}, Acc) ->
+              Acc ++ [{K, V}]
+      end,
+      [],
+      Header).
+
 
 get_view_token(Header, ViewId) ->
     UserToken =
@@ -331,23 +386,27 @@ get_view_token(Header, ViewId) ->
         end,
     dgiot_parse_auth:put_view_session(UserToken, ViewId).
 
+
 get_qs(Map) ->
     lists:foldl(
-        fun
-            ({N, V}, <<>>) ->
-                NewV = format_value(V),
-                <<"?", N/binary, "=", NewV/binary>>;
-            ({N, V}, Acc) ->
-                NewV = format_value(V),
-                <<Acc/binary, "&", N/binary, "=", NewV/binary>>
-        end, <<>>, maps:to_list(Map)).
+      fun({N, V}, <<>>) ->
+              NewV = format_value(V),
+              <<"?", N/binary, "=", NewV/binary>>;
+         ({N, V}, Acc) ->
+              NewV = format_value(V),
+              <<Acc/binary, "&", N/binary, "=", NewV/binary>>
+      end,
+      <<>>,
+      maps:to_list(Map)).
+
 
 format_value(V) when is_binary(V) ->
     dgiot_httpc:urlencode(V);
 format_value(V) ->
     Json = dgiot_json:encode(V),
-%%    V1 = re:replace(Json, <<"\[.*?\]">>, <<"">>, [global, {return, binary}, unicode]),
+    %%    V1 = re:replace(Json, <<"\[.*?\]">>, <<"">>, [global, {return, binary}, unicode]),
     dgiot_httpc:urlencode(Json).
+
 
 read_file(Path) ->
     case file:read_file(Path) of
@@ -362,6 +421,7 @@ read_file(Path) ->
             {error, Reason}
     end.
 
+
 %% 根据Map查找出关联数据
 format_data(<<"Dict">>, Data) ->
     NewData =
@@ -370,33 +430,38 @@ format_data(<<"Dict">>, Data) ->
             _ -> Data#{<<"key">> => dgiot_utils:to_md5(dgiot_json:encode(Data))}
         end,
     maps:fold(
-        fun(Key, Value, Acc) ->
-            case format_value(<<"Dict">>, Key, Value) of
-                not_add ->
-                    throw({error, not_add});
-                {<<"Pointer">>, ParentId} ->
-                    Acc#{Key => Value#{<<"objectId">> => ParentId}};
-                {<<"AddRelation">>, Objects} ->
-                    Acc#{Key => Value#{<<"objects">> => Objects}};
-                NValue ->
-                    Acc#{Key => NValue}
-            end
-        end, #{}, NewData);
+      fun(Key, Value, Acc) ->
+              case format_value(<<"Dict">>, Key, Value) of
+                  not_add ->
+                      throw({error, not_add});
+                  {<<"Pointer">>, ParentId} ->
+                      Acc#{Key => Value#{<<"objectId">> => ParentId}};
+                  {<<"AddRelation">>, Objects} ->
+                      Acc#{Key => Value#{<<"objects">> => Objects}};
+                  NValue ->
+                      Acc#{Key => NValue}
+              end
+      end,
+      #{},
+      NewData);
 
 format_data(Class, Data) ->
     maps:fold(
-        fun(Key, Value, Acc) ->
-            case format_value(Class, Key, Value) of
-                not_add ->
-                    throw({error, not_add});
-                {<<"Pointer">>, ParentId} ->
-                    Acc#{Key => Value#{<<"objectId">> => ParentId}};
-                {<<"AddRelation">>, Objects} ->
-                    Acc#{Key => Value#{<<"objects">> => Objects}};
-                NValue ->
-                    Acc#{Key => NValue}
-            end
-        end, #{}, Data).
+      fun(Key, Value, Acc) ->
+              case format_value(Class, Key, Value) of
+                  not_add ->
+                      throw({error, not_add});
+                  {<<"Pointer">>, ParentId} ->
+                      Acc#{Key => Value#{<<"objectId">> => ParentId}};
+                  {<<"AddRelation">>, Objects} ->
+                      Acc#{Key => Value#{<<"objects">> => Objects}};
+                  NValue ->
+                      Acc#{Key => NValue}
+              end
+      end,
+      #{},
+      Data).
+
 
 format_value(_Class, _Key, #{<<"__type">> := <<"Pointer">>, <<"className">> := ClassName, <<"objectId">> := #{<<"where">> := Where}}) ->
     case query_object(ClassName, #{<<"where">> => Where}) of
@@ -411,21 +476,24 @@ format_value(_Class, _Key, #{<<"__type">> := <<"Pointer">>, <<"className">> := C
 format_value(Class, Key, #{<<"__op">> := <<"AddRelation">>, <<"objects">> := Objects}) ->
     Fun =
         fun(ClassName, ObjectId) ->
-            #{
-                <<"__type">> => <<"Pointer">>,
-                <<"className">> => ClassName,
-                <<"objectId">> => ObjectId
-            }
+                #{
+                  <<"__type">> => <<"Pointer">>,
+                  <<"className">> => ClassName,
+                  <<"objectId">> => ObjectId
+                 }
         end,
-    {<<"AddRelation">>, lists:foldl(
-        fun(#{<<"className">> := ClassName} = Object, Acc) ->
-            case format_value(Class, Key, Object) of
-                {<<"Pointer">>, ObjectId} ->
-                    [Fun(ClassName, ObjectId) | Acc];
-                {error, _Reason} ->
-                    Acc
-            end
-        end, [], Objects)};
+    {<<"AddRelation">>,
+     lists:foldl(
+       fun(#{<<"className">> := ClassName} = Object, Acc) ->
+               case format_value(Class, Key, Object) of
+                   {<<"Pointer">>, ObjectId} ->
+                       [Fun(ClassName, ObjectId) | Acc];
+                   {error, _Reason} ->
+                       Acc
+               end
+       end,
+       [],
+       Objects)};
 format_value(Class, Key, #{<<"iskey">> := IsKey, <<"value">> := Value}) ->
     case IsKey of
         false ->
@@ -445,9 +513,11 @@ format_value(_Class, _Key, Value) when is_binary(Value) ->
     Node = atom_to_list(node()),
     [NodeName, Host] = string:tokens(Node, "@"),
     lists:foldl(
-        fun({RE, Replace}, New) ->
-            re:replace(New, RE, Replace, [global, {return, binary}])
-        end, Value, [{<<"\\{host\\}">>, Host}, {<<"\\{node\\}">>, Node}, {<<"\\{nodename\\}">>, NodeName}]);
+      fun({RE, Replace}, New) ->
+              re:replace(New, RE, Replace, [global, {return, binary}])
+      end,
+      Value,
+      [{<<"\\{host\\}">>, Host}, {<<"\\{node\\}">>, Node}, {<<"\\{nodename\\}">>, NodeName}]);
 format_value(_Class, _Key, Value) ->
     Value.
 
@@ -456,10 +526,16 @@ format_value(_Class, _Key, Value) ->
 request_rest(Name, Method, Header, Path, Body, Options) ->
     Response = request(Name, Method, Header, Path, Body, Options),
     handle_response(Response).
+
+
 request(Method, Header, Path, Options) ->
     request(Method, Header, Path, <<>>, Options).
+
+
 request(Method, Header, Path0, Body, Options) ->
     request(?DEFAULT, Method, Header, Path0, Body, Options).
+
+
 request(Name, Method, Header, Path0, Body, Options) ->
     case dgiot_parse_channel:get_config(Name) of
         {ok, Cfg} ->
@@ -469,25 +545,30 @@ request(Name, Method, Header, Path0, Body, Options) ->
             {error, Reason}
     end.
 
+
 get_tables(Dirs) -> get_tables(Dirs, []).
+
+
 get_tables([], Acc) -> Acc;
 get_tables([Dir | Other], Acc) ->
     Dir0 = Dir ++ "/tables/",
     case file:list_dir(Dir0) of
         {ok, Files} ->
             Acc2 = lists:foldl(
-                fun(File, Acc1) ->
-                    Path = Dir0 ++ File,
-                    case filelib:is_file(Path) andalso read_file(Path) of
-                        {ok, Data} ->
-                            lists:concat([Data, Acc1]);
-                        false ->
-                            Acc1;
-                        {error, Reason} ->
-                            ?LOG(error, "load error ~p,~p~n", [Path, Reason]),
-                            Acc1
-                    end
-                end, Acc, Files),
+                     fun(File, Acc1) ->
+                             Path = Dir0 ++ File,
+                             case filelib:is_file(Path) andalso read_file(Path) of
+                                 {ok, Data} ->
+                                     lists:concat([Data, Acc1]);
+                                 false ->
+                                     Acc1;
+                                 {error, Reason} ->
+                                     ?LOG(error, "load error ~p,~p~n", [Path, Reason]),
+                                     Acc1
+                             end
+                     end,
+                     Acc,
+                     Files),
             get_tables(Other, Acc2);
         {error, enoent} ->
             get_tables(Other, Acc)
@@ -497,20 +578,24 @@ get_tables([Dir | Other], Acc) ->
 %% 初始化数据库，op : 如果已经存在是删除还是合并
 init_database(Dirs, Op) ->
     init_database(?DEFAULT, Dirs, Op).
+
+
 init_database(Name, Dirs, Op) when Op == merge; Op == delete ->
     case get_schemas(Name, <<>>) of
         {ok, #{<<"results">> := OldSchemas1}} ->
             OldSchemas =
                 lists:foldl(
-                    fun(#{<<"className">> := Class} = Tab, Acc) ->
-                        Fields = maps:without(?DEFField, maps:get(<<"fields">>, Tab, #{})),
-                        case maps:size(Fields) == 0 of
-                            true ->
-                                Acc#{Class => Tab};
-                            false ->
-                                Acc#{Class => Tab#{<<"fields">> => Fields}}
-                        end
-                    end, #{}, OldSchemas1),
+                  fun(#{<<"className">> := Class} = Tab, Acc) ->
+                          Fields = maps:without(?DEFField, maps:get(<<"fields">>, Tab, #{})),
+                          case maps:size(Fields) == 0 of
+                              true ->
+                                  Acc#{Class => Tab};
+                              false ->
+                                  Acc#{Class => Tab#{<<"fields">> => Fields}}
+                          end
+                  end,
+                  #{},
+                  OldSchemas1),
             file:write_file("data/db.schema", dgiot_json:encode(maps:values(OldSchemas))),
             Schemas = get_tables(Dirs),
             init_tables(Name, OldSchemas, Schemas, Op);
@@ -519,94 +604,98 @@ init_database(Name, Dirs, Op) when Op == merge; Op == delete ->
             {error, Reason}
     end.
 
+
 init_tables(Name, OldSchemas, Schemas, Op) ->
     lists:foreach(
-        fun(#{<<"className">> := Class} = Schema) ->
-            NewFields = maps:get(<<"fields">>, Schema, #{}),
-            Result =
-                case maps:get(Class, OldSchemas, undefined) of
-                    undefined ->
-                        create_schemas(Name, Schema);
-                    #{<<"fields">> := OldFields} when Op == merge ->
-                        {Targets, Fields} = merge_table(Name, Class, maps:without(?DEFField, NewFields), maps:without(?DEFField, OldFields)),
-                        TargetTab = maps:keys(Targets),
-                        case length(TargetTab) > 0 of
-                            true ->
-                                % @todo 需要提前创建这些表
-                                ?LOG(info, "~p~n", [TargetTab]);
-                            false ->
-                                ok
-                        end,
-                        UpdateSchema = Schema#{<<"fields">> => Fields},
-                        case maps:size(Fields) == 0 of
-                            true ->
-                                update_schemas(Name, maps:without([<<"fields">>], UpdateSchema));
-                            false ->
-                                update_schemas(Name, UpdateSchema)
-                        end;
-                    #{<<"fields">> := _OldFields} when Op == delete ->
-                        case del_schemas(Name, Class) of
-                            {ok, _} ->
-                                create_schemas(Name, Schema);
-                            Err ->
-                                Err
-                        end
-                end,
-            case Result of
-                {error, #{<<"message">> := Why}} ->
-                    ?LOG(error, "~p:~p~n", [Class, Why]);
-                {error, #{<<"error">> := Why}} ->
-                    ?LOG(error, "~p:~p~n", [Class, Why]);
-                ok ->
-                    ok;
-                {ok, _Rtn} ->
-                    %?LOG(info,"~p:create success -> ~p~n", [Class, Rtn]),
-                    ok
-            end
-        end, Schemas).
+      fun(#{<<"className">> := Class} = Schema) ->
+              NewFields = maps:get(<<"fields">>, Schema, #{}),
+              Result =
+                  case maps:get(Class, OldSchemas, undefined) of
+                      undefined ->
+                          create_schemas(Name, Schema);
+                      #{<<"fields">> := OldFields} when Op == merge ->
+                          {Targets, Fields} = merge_table(Name, Class, maps:without(?DEFField, NewFields), maps:without(?DEFField, OldFields)),
+                          TargetTab = maps:keys(Targets),
+                          case length(TargetTab) > 0 of
+                              true ->
+                                  % @todo 需要提前创建这些表
+                                  ?LOG(info, "~p~n", [TargetTab]);
+                              false ->
+                                  ok
+                          end,
+                          UpdateSchema = Schema#{<<"fields">> => Fields},
+                          case maps:size(Fields) == 0 of
+                              true ->
+                                  update_schemas(Name, maps:without([<<"fields">>], UpdateSchema));
+                              false ->
+                                  update_schemas(Name, UpdateSchema)
+                          end;
+                      #{<<"fields">> := _OldFields} when Op == delete ->
+                          case del_schemas(Name, Class) of
+                              {ok, _} ->
+                                  create_schemas(Name, Schema);
+                              Err ->
+                                  Err
+                          end
+                  end,
+              case Result of
+                  {error, #{<<"message">> := Why}} ->
+                      ?LOG(error, "~p:~p~n", [Class, Why]);
+                  {error, #{<<"error">> := Why}} ->
+                      ?LOG(error, "~p:~p~n", [Class, Why]);
+                  ok ->
+                      ok;
+                  {ok, _Rtn} ->
+                      %?LOG(info,"~p:create success -> ~p~n", [Class, Rtn]),
+                      ok
+              end
+      end,
+      Schemas).
+
 
 merge_table(Name, Class, NewFields, OldFields) ->
     maps:fold(
-        fun
-            (Key, Type, {Targets, Acc}) ->
-                case maps:get(Key, NewFields, no) of
-                    no ->
-                        {Targets, Acc#{Key => #{<<"__op">> => <<"Delete">>}}};
-                    Type ->
-                        {Targets, maps:without([Key], Acc)};
-                    NewType ->
-                        update_schemas(Name, #{<<"className">> => Class, <<"fields">> => #{Key => #{<<"__op">> => <<"Delete">>}}}),
-                        case is_map(Type) andalso maps:get(<<"targetClass">>, NewType, false) of
-                            false ->
-                                {Targets, Acc};
-                            TargetClass ->
-                                {Targets#{TargetClass => true}, Acc}
-                        end
-                end
-        end, {#{}, NewFields}, OldFields).
+      fun(Key, Type, {Targets, Acc}) ->
+              case maps:get(Key, NewFields, no) of
+                  no ->
+                      {Targets, Acc#{Key => #{<<"__op">> => <<"Delete">>}}};
+                  Type ->
+                      {Targets, maps:without([Key], Acc)};
+                  NewType ->
+                      update_schemas(Name, #{<<"className">> => Class, <<"fields">> => #{Key => #{<<"__op">> => <<"Delete">>}}}),
+                      case is_map(Type) andalso maps:get(<<"targetClass">>, NewType, false) of
+                          false ->
+                              {Targets, Acc};
+                          TargetClass ->
+                              {Targets#{TargetClass => true}, Acc}
+                      end
+              end
+      end,
+      {#{}, NewFields},
+      OldFields).
 
 
 handle_response(Result) ->
     Fun =
         fun(Res, Body) ->
-            ?LOG(warning, "~p", [erlang:process_info(self(), total_heap_size)]),
-            erlang:garbage_collect(self()),
-            ?LOG(warning, "~p", [erlang:process_info(self(), total_heap_size)]),
-            case jsx:is_json(Body) of
-                true ->
-                    case catch jsx:decode(Body, [{labels, binary}, return_maps]) of
-                        {'EXIT', Reason} ->
-                            {error, Reason};
-                        #{<<"code">> := Code, <<"error">> := #{<<"routine">> := Reason}} ->
-                            {error, #{<<"code">> => Code, <<"error">> => Reason}};
-                        Map when map_size(Map) == 0 ->
-                            Res;
-                        Map ->
-                            {Res, Map}
-                    end;
-                false ->
-                    Res
-            end
+                % ?LOG(warning, "~p", [erlang:process_info(self(), total_heap_size)]),
+                erlang:garbage_collect(self()),
+                % ?LOG(warning, "~p", [erlang:process_info(self(), total_heap_size)]),
+                case jsx:is_json(Body) of
+                    true ->
+                        case catch jsx:decode(Body, [{labels, binary}, return_maps]) of
+                            {'EXIT', Reason} ->
+                                {error, Reason};
+                            #{<<"code">> := Code, <<"error">> := #{<<"routine">> := Reason}} ->
+                                {error, #{<<"code">> => Code, <<"error">> => Reason}};
+                            Map when map_size(Map) == 0 ->
+                                Res;
+                            Map ->
+                                {Res, Map}
+                        end;
+                    false ->
+                        Res
+                end
         end,
     case Result of
         {ok, HTTPCode, _Headers, Body} when HTTPCode == 200; HTTPCode == 201 ->

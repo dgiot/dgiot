@@ -1,0 +1,315 @@
+非常好！您已经有一个非常全面的开发规范。基于您提供的内容，我将进一步补充和完善，使其更加完整和实用。
+
+---
+
+description: "DG-IoT 项目 Erlang 开发规范 (VSCode + WSL)"
+globs: ["**/*.erl"]
+alwaysApply: true
+priority: 100
+
+---
+
+### 开发原则
+
+1.  **桩函数优先 (Stub-First)**: 先定义清晰的模块接口和函数规格 (`-spec`)，并实现返回合理占位值（如 `{ok, stub}`、`{error, not_implemented}`）的桩函数，再进行详细实现。
+2.  **SDK 与平台复用**: 优先使用 `dgiot` 平台及 `emqx` 提供的现有功能（如 `dgiot_data`、`dgiot_httpc`、`dgiot_mqtt`），避免重复造轮子。第三方依赖需经过评估。
+3.  **增量与迭代开发**: 小步快跑，单个函数或功能点实现后应立即进行编译和基础验证，避免大面积代码积累后才发现问题。
+4.  **类型与规格导向**: 关键函数必须使用 `-spec` 定义类型规格，优先使用 `-type` 定义复杂数据结构，这既是文档，也能被工具链利用进行静态分析。
+5.  **错误处理优先**: 所有可能失败的操作都必须有明确的错误处理路径，使用 `{ok, Result} | {error, Reason}` 模式返回结果。
+
+### 环境配置与工具
+
+1.  **VSCode 扩展推荐**:
+    - Erlang LS: Erlang语言服务器支持
+    - Remote - WSL: WSL集成支持
+    - Rewrap: 注释自动换行
+    - Todo Tree: 待办事项高亮显示
+
+2.  **WSL 环境配置**:
+    ```bash
+    # 在 ~/.bashrc 或 ~/.zshrc 中添加别名
+    alias emqx_ctl='_build/emqx/rel/emqx/bin/emqx_ctl'
+    alias emqx_eval='_build/emqx/rel/emqx/bin/emqx eval'
+    alias hotcompile='f() { rpc:call(emqx@127.0.0.1, dgiot_plugin, compile, [$1]). }; f'
+    alias hotreload='f() { rpc:call(emqx@127.0.0.1, dgiot_plugin, reload_plugin, [$1]). }; f'
+    ```
+
+3.  **VSCode 任务配置** (`tasks.json`):
+    ```json
+    {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "Hot Compile Plugin",
+                "type": "shell",
+                "command": "rpc:call('emqx@127.0.0.1', dgiot_plugin, compile, [dgiot_mcp]).",
+                "group": "build",
+                "presentation": {
+                    "echo": true,
+                    "reveal": "always",
+                    "focus": false,
+                    "panel": "shared"
+                }
+            },
+            {
+                "label": "Hot Reload Plugin",
+                "type": "shell",
+                "command": "rpc:call('emqx@127.0.0.1', dgiot_plugin, reload_plugin, [dgiot_mcp]).",
+                "group": "build",
+                "presentation": {
+                    "echo": true,
+                    "reveal": "always",
+                    "focus": false,
+                    "panel": "shared"
+                }
+            }
+        ]
+    }
+    ```
+
+### 编译与热更规范
+
+| 操作类型 | 命令/方法 | 适用场景 & 说明 |
+| :--- | :--- | :--- |
+| **全量编译** | `make run` | **初始搭建环境**、**首次添加新应用(APP)** 或 **修改项目结构(rebar.config, 头文件等)** 后。**非必要不使用**。 |
+| **热编译 (单模块)** | `c("apps/dgiot/src/dgiot_mcp.erl").` | 在 Erlang Shell 中快速编译单个模块，适用于微小改动和快速测试。 |
+| **热编译 (插件)** | `rpc:call('emqx@127.0.0.1', dgiot_plugin, compile, [dgiot_mcp]).` | **主要开发方式**。在 WSL 终端执行，编译指定插件的所有模块。 |
+| **热加载 (插件)** | `rpc:call('emqx@127.0.0.1', dgiot_plugin, reload_plugin, [dgiot_mcp]).` | 编译完成后，重新加载插件到运行的节点，使新代码生效。 |
+| **在线测试** | `rpc:call('emqx@127.0.0.1', dgiot_mcp, hello, []).` | 在 WSL 终端远程调用运行节点上的函数进行测试。 |
+| **依赖检查** | `rebar3 tree` | 查看项目依赖树，确认依赖关系正确。 |
+
+**VSCode 集成建议**:
+*   将常用的热编译/热加载命令保存为 VSCode `tasks.json` 中的任务，并通过快捷键触发。
+*   使用 **Erlang LS** 插件获取语法高亮、跳转定义、规格查看等支持。
+*   配置 `settings.json` 启用自动格式化：
+    ```json
+    {
+        "erlang.format.enable": true,
+        "editor.formatOnSave": true
+    }
+    ```
+
+### 禁止命令
+
+-   ❌ `make clean` (会彻底清除 `_build` 目录，破坏开发环境，需要漫长的全量编译恢复)
+-   ❌ `rm -rf _build` (同上，绝对禁止)
+-   ❌ 非必要不使用全量编译 (`make run`)，以节省时间。
+-   ❌ 直接修改 `_build` 目录下的文件（修改会被覆盖）
+-   ❌ 在生产环境中使用热更命令（应使用正式部署流程）
+
+### 工程结构与开发流程
+
+1.  **文件管理**:
+    - 在项目启动或添加新功能时，一次性创建好计划内的所有模块文件（即使是空的），再进行全量编译。
+    - 后续所有开发都基于**热编译/热加载**进行。
+    - 新模块创建后，需在其所属的 `.app.src` 文件的 `modules` 列表中注册。
+    - 使用有意义的文件名和模块名，遵循 `dgiot_<功能>_<子功能>.erl` 命名模式。
+
+2.  **开发流程**:
+
+    ```mermaid
+    graph TD
+        A[功能设计] --> B[定义接口与-spec];
+        B --> C[实现桩函数];
+        C --> D{编译与加载};
+        D -- 成功 --> E[小步迭代实现逻辑];
+        D -- 失败 --> F[快速修复语法/规格错误];
+        E --> G[单元/在线测试];
+        G --> H{功能是否符合预期?};
+        H -- 是 --> I[提交代码];
+        H -- 否 --> E;
+        
+        subgraph "代码审查"
+            I --> J[创建Pull Request];
+            J --> K[同行评审];
+            K -- 通过 --> L[合并到主分支];
+            K -- 需修改 --> E;
+        end
+    ```
+
+3.  **代码组织原则**:
+    - 模块按功能划分，单一职责原则
+    - 公共函数放在模块顶部，私有函数放在底部
+    - 使用 `-export_type` 导出自定义类型
+    - 复杂逻辑拆分为多个辅助函数
+
+4.  **命令行工具 (`dgiot_ctl`) 扩展指南**:
+    - **位置**: `apps/dgiot/src/utils/dgiot_ctl.erl`
+    - **添加新命令**:
+        1.  在 `dgiot_ctl` 模块的 `commands()` 函数中添加命令映射，例如：`{"plugins load dgiot_mcp", {dgiot_mcp_ctl, load}}`。
+        2.  创建 `dgiot_mcp_ctl.erl` 模块，实现 `load/1` 函数。
+        3.  函数应包含完整的参数解析和错误处理。
+    - **示例实现**:
+        ```erlang
+        %% dgiot_mcp_ctl.erl
+        -module(dgiot_mcp_ctl).
+        -export([load/1]).
+        
+        -spec load(list()) -> ok.
+        load([]) ->
+            case dgiot_plugin:compile(dgiot_mcp) of
+                ok ->
+                    io:format("Compile dgiot_mcp success!~n"),
+                    case dgiot_plugin:reload_plugin(dgiot_mcp) of
+                        ok -> 
+                            io:format("Reload dgiot_mcp success!~n"),
+                            ok;
+                        {error, Reason} -> 
+                            io:format("Reload failed: ~p~n", [Reason]),
+                            {error, Reason}
+                    end;
+                {error, Reason} ->
+                    io:format("Compile failed: ~p~n", [Reason]),
+                    {error, Reason}
+            end;
+        load(_Args) ->
+            io:format("Usage: plugins load dgiot_mcp~n"),
+            ok.
+        ```
+    - **调用**: 在 WSL 终端中，使用 `dgiot_ctl plugins load dgiot_mcp` 调用。
+
+### 文档与注释规范
+
+1.  **模块头注释** (必须包含):
+    ```erlang
+    %% @doc 模块功能描述
+    %%      更详细的描述，说明模块在系统中的角色和主要功能。
+    %% @author 姓名
+    %% @copyright DG-IoT
+    %% @since 2024-xx-xx
+    %% @version 1.0.0
+    ```
+
+2.  **函数注释** (必须包含):
+    ```erlang
+    %% @doc 函数功能描述
+    %%
+    %% 这里是更详细的描述，可以包括算法、流程或重要注意事项。
+    %% Example:
+    %%   ```erlang
+    %%   {ok, Result} = my_function(Arg1, Arg2).
+    %%   ```
+    %% @param Arg1 参数1说明 (e.g., binary())
+    %% @param Arg2 参数2说明 (e.g., map())
+    %% @returns `{ok, term()}' 成功时的返回值
+    %%          `{error, Reason}' 失败时的返回值
+    %% @throws 可能抛出的异常
+    ```
+
+3.  **类型与规格 (`-spec` 和 `-type`)** (强烈推荐):
+    ```erlang
+    -type device_state() :: online | offline | inactive.
+
+    -record(device, {
+        id :: binary(),
+        name :: binary(),
+        state :: device_state()
+    }).
+
+    -type device() :: #device{}.
+    -type device_list() :: list(device()).
+
+    %% @doc 根据产品ID获取设备列表
+    -spec(get_devices_by_product(ProductId :: binary()) ->
+        {ok, device_list()} | {error, Reason :: term()}).
+    get_devices_by_product(ProductId) ->
+        ...
+    ```
+
+4.  **TODO注释**:
+    ```erlang
+    %% TODO: 需要实现的功能描述 [负责人] [截止日期]
+    %% FIXME: 需要修复的问题描述
+    %% OPTIMIZE: 需要优化的代码部分
+    %% NOTE: 需要注意的特殊情况
+    ```
+
+### 测试与调试规范
+
+1.  **单元测试**:
+    - 为新模块和功能在 `apps/dgiot/test` 目录下创建对应的 EUnit 或 Common Test 用例。
+    - 测试覆盖率应达到关键路径的80%以上。
+    - 测试用例应包含正常情况和异常情况的测试。
+
+2.  **Shell 调试**:
+    - 在 VSCode 集成终端中启动 Erlang Shell，使用 `rpc:call/4` 远程调用节点上的函数进行实时调试。
+    - 使用 `dbg` 或 `recon` 模块进行运行时跟踪和调试。
+
+3.  **日志规范**:
+    - 使用 `dgiot_logger:debug/2`, `info/2`, `warning/2`, `error/2` 进行分级日志记录。
+    - 日志内容需清晰明了，包含关键上下文信息（如设备ID、任务ID等）。
+    ```erlang
+    ?LOG(info, "Device ~s successfully connected, IP: ~s", [DeviceId, IPAddress]).
+    ?LOG(error, "Failed to publish message to topic ~s, Reason: ~p", [Topic, Reason]).
+    ```
+
+4.  **性能分析**:
+    - 使用 `eprof` 或 `fprof` 进行性能分析。
+    - 使用 `recon` 库进行生产环境诊断。
+
+### 版本控制与协作
+
+1.  **分支策略**:
+    - `main`: 稳定版本，用于生产环境
+    - `develop`: 开发分支，集成最新功能
+    - `feature/*`: 功能开发分支
+    - `hotfix/*`: 紧急修复分支
+
+2.  **提交信息规范**:
+    ```
+    <类型>(<范围>): <简短描述>
+
+    <详细描述>
+
+    <脚注>
+    ```
+    - 类型: feat, fix, docs, style, refactor, test, chore
+    - 范围: 模块或功能名称
+
+3.  **代码审查**:
+    - 所有代码必须经过至少一名其他开发者的审查。
+    - 审查重点: 代码质量、规范符合度、测试覆盖、性能影响。
+
+### AI 辅助编程提示 (供团队内部使用)
+
+*   **Prompt 技巧**: 向 AI 提问时，应提供充足的上下文，如："在 DG-IoT 平台中，基于 Erlang/OTP 25，我需要实现一个......功能的 gen_server，请给出模块头、`-spec` 定义和桩函数。"
+*   **边界确认**: AI 生成的代码，特别是网络、文件IO等操作，必须人工审查其错误处理和边界条件。
+*   **平台适配**: AI 可能不熟悉 DG-IoT 的特有 API（如 `dgiot_data:get`），生成的代码需要根据现有项目模式进行适配和修改。
+*   **代码审查**: AI 生成的代码必须经过严格审查，确保符合项目规范和性能要求。
+
+### 应急处理
+
+1.  **热更失败处理**:
+    - 如果热更导致节点不稳定，立即重启节点: `emqx_ctl restart`
+    - 记录错误信息并报告给团队
+
+2.  **生产环境问题**:
+    - 禁止在生产环境使用热更
+    - 使用蓝绿部署或滚动更新策略
+
+---
+**总结**: 本规范的核心是 **"热更为主，类型驱动，小步迭代，即时验证"**。充分利用 Erlang 的热更新特性和 VSCode 的集成环境，可以极大地提升开发效率。所有开发者应严格遵守本规范，确保代码质量和项目稳定性。
+
+### 附录: 常用命令速查
+
+```bash
+# 启动EMQX
+make run
+
+# 热编译插件
+rpc:call('emqx@127.0.0.1', dgiot_plugin, compile, [dgiot_mcp]).
+
+# 热加载插件
+rpc:call('emqx@127.0.0.1', dgiot_plugin, reload_plugin, [dgiot_mcp]).
+
+# 测试函数
+rpc:call('emqx@127.0.0.1', dgiot_mcp, test_function, []).
+
+# 查看日志
+tail -f _build/emqx/rel/emqx/log/emqx.log.1
+
+# 查看节点状态
+_build/emqx/rel/emqx/bin/emqx_ctl status
+```
+
+此规范应定期评审和更新，以适应项目发展和新技术变化。所有团队成员有责任提出改进建议，共同维护和完善本规范。

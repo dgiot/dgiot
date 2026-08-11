@@ -46,7 +46,7 @@ init(#dclient{channel = ChannelId} = State) ->
     {ok, State#dclient{channel = dgiot_utils:to_binary(ChannelId)}}.
 
 handle_call(_Request, _From, State) ->
-    {reply, ok, State}.
+    {reply, ok, State}.  
 
 handle_cast(_Request, State) ->
     {noreply, State}.

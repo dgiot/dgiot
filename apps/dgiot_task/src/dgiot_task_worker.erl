@@ -98,7 +98,7 @@ handle_info(next_time, #dclient{channel = Channel, client = Client, userdata = U
             NewRound = Round + 1,
             DiQue = dgiot_task:get_instruct(ProductId, NewRound),
             PnQueLen = dgiot_task:get_pnque_len(Client),
-%%            io:format("~s ~p DiQue = ~p.~n", [?FILE, ?LINE, DiQue]),
+            % io:format("~s ~p DiQue = ~p.~n", [?FILE, ?LINE, DiQue]),
             erlang:send_after(100, self(), read), % 每轮任务开始时，做一下随机开始
             {noreply, Dclient#dclient{userdata = UserData#device_task{product = ProductId, devaddr = DevAddr, pnque_len = PnQueLen, dique = DiQue},
                 clock = Clock#dclock{nexttime = NewNextTime, count = Count - 1, round = NewRound}}}

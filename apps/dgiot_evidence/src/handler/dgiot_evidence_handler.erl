@@ -24,6 +24,7 @@
 -export([swagger_system/0]).
 -export([handle/4, post_report/2]).
 
+
 %% API描述
 %% 支持二种方式导入
 %% 示例:
@@ -32,19 +33,19 @@
 %% 2. 从模块的priv/swagger/下导入
 %%    dgiot_http_server:bind(<<"/swagger_system.json">>, ?MODULE, [], priv)
 swagger_system() ->
-    [
-        dgiot_http_server:bind(<<"/swagger_evidence.json">>, ?MODULE, [], priv)
-    ].
+    [dgiot_http_server:bind(<<"/swagger_evidence.json">>, ?MODULE, [], priv)].
+
 
 %%%===================================================================
 %%% 请求处理
 %%%  如果登录, Context 内有 <<"user">>, version
 %%%===================================================================
 
+
 -spec handle(OperationID :: atom(), Args :: map(), Context :: map(), Req :: dgiot_req:req()) ->
-    {Status :: dgiot_req:http_status(), Body :: map()} |
-    {Status :: dgiot_req:http_status(), Headers :: map(), Body :: map()} |
-    {Status :: dgiot_req:http_status(), Headers :: map(), Body :: map(), Req :: dgiot_req:req()}.
+          {Status :: dgiot_req:http_status(), Body :: map()} |
+          {Status :: dgiot_req:http_status(), Headers :: map(), Body :: map()} |
+          {Status :: dgiot_req:http_status(), Headers :: map(), Body :: map(), Req :: dgiot_req:req()}.
 
 handle(OperationID, Args, Context, Req) ->
     Headers = #{},
@@ -82,7 +83,6 @@ do_request(post_evidence, Args, #{<<"sessionToken">> := SessionToken} = _Context
 do_request(put_evidence, #{<<"status">> := _Status} = Args, #{<<"sessionToken">> := SessionToken} = _Context, Req) ->
     Host = dgiot_req:host(Req),
     dgiot_evidence:put(Args#{<<"ip">> => Host}, SessionToken);
-
 
 do_request(get_evidence, #{<<"reportId">> := _ReportId} = Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     case dgiot_evidence:get(Args, SessionToken) of
@@ -129,15 +129,19 @@ do_request(post_bed, _Body, #{<<"sessionToken">> := SessionToken} = _Context, _R
 %% DB 概要: 导入试卷报告
 %% OperationId:testpaper
 %% 请求:POST /iotapi/testpaper
-do_request(post_testpaper, #{<<"productid">> := Productid, <<"file">> := FileInfo},
-    #{<<"sessionToken">> := _SessionToken} = _Context, _Req) ->
+do_request(post_testpaper,
+           #{<<"productid">> := Productid, <<"file">> := FileInfo},
+           #{<<"sessionToken">> := _SessionToken} = _Context,
+           _Req) ->
     {ok, dgiot_paper:get_paper(Productid, FileInfo)};
 
 %% evidence 概要: 增加取证报告模版 描述:新增取证报告模版
 %% OperationId:put_reporttemp
 %% 请求:put /iotapi/reporttemp
-do_request(put_reporttemp, #{<<"nodeType">> := _NodeType, <<"devType">> := _DevType} = Body,
-    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+do_request(put_reporttemp,
+           #{<<"nodeType">> := _NodeType, <<"devType">> := _DevType} = Body,
+           #{<<"sessionToken">> := SessionToken} = _Context,
+           _Req) ->
     ?LOG(info, "Body ~p ", [Body]),
     R = dgiot_product:create_product(Body, SessionToken),
     ?LOG(info, "R ~p ", [R]),
@@ -146,17 +150,18 @@ do_request(put_reporttemp, #{<<"nodeType">> := _NodeType, <<"devType">> := _DevT
 %% DB 概要: 导入质检报告模版 描述:word/pdf质检报告
 %% OperationId:reporttemp
 %% 请求:POST /iotapi/reporttemp
-do_request(post_reporttemp, #{<<"name">> := Name, <<"devType">> := DevType, <<"config">> := Config, <<"file">> := FileInfo},
-    #{<<"sessionToken">> := SessionToken} = _Context, #{headers := #{<<"origin">> := Uri}} = _Req) ->
+do_request(post_reporttemp,
+           #{<<"name">> := Name, <<"devType">> := DevType, <<"config">> := Config, <<"file">> := FileInfo},
+           #{<<"sessionToken">> := SessionToken} = _Context,
+           #{headers := #{<<"origin">> := Uri}} = _Req) ->
     Neconfig = jsx:decode(Config, [{labels, binary}, return_maps]),
     DataResult =
         case maps:get(<<"contentType">>, FileInfo, <<"unknow">>) of
-            ContentType when
-                ContentType =:= <<"application/msword">> orelse
-                    ContentType =:= <<"application/vnd.openxmlformats-officedocument.wordprocessingml.document">> orelse
-                    ContentType =:= <<"application/pdf">> ->
+            ContentType when ContentType =:= <<"application/msword">> orelse
+                             ContentType =:= <<"application/vnd.openxmlformats-officedocument.wordprocessingml.document">> orelse
+                             ContentType =:= <<"application/pdf">> ->
                 FullPath = maps:get(<<"fullpath">>, FileInfo),
-%%                Uri = "http://" ++ dgiot_utils:to_list(dgiot_req:host(Req)) ++ ":" ++ dgiot_utils:to_list(dgiot_req:port(Req)),
+                %%                Uri = "http://" ++ dgiot_utils:to_list(dgiot_req:host(Req)) ++ ":" ++ dgiot_utils:to_list(dgiot_req:port(Req)),
                 {ok, #{<<"result">> => do_report(Neconfig, DevType, Name, SessionToken, FullPath, dgiot_utils:to_list(Uri))}};
             ContentType ->
                 {error, <<"contentType error, contentType:", ContentType/binary>>}
@@ -177,11 +182,16 @@ do_request(get_report, #{<<"id">> := Id} = Body, #{<<"sessionToken">> := Session
 %% evidence 概要: 增加取证报告 描述:新增取证报告
 %% OperationId:post_report
 %% 请求:POST /iotapi/report
-do_request(post_report, #{<<"name">> := _Name, <<"product">> := _ProductId,
-    <<"profile">> := _Profile} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-%%    ?LOG(info, "Body ~p ", [Body]),
+do_request(post_report,
+           #{
+             <<"name">> := _Name,
+             <<"product">> := _ProductId,
+             <<"profile">> := _Profile
+            } = Body,
+           #{<<"sessionToken">> := SessionToken} = _Context,
+           _Req) ->
+    %%    ?LOG(info, "Body ~p ", [Body]),
     post_report(Body, SessionToken);
-
 
 %% evidence 概要: 修改取证报告 描述:修改取证报告
 %% OperationId:put_report
@@ -192,10 +202,11 @@ do_request(put_report, #{<<"path">> := Path} = _Body, #{<<"sessionToken">> := Se
 %% Evidence 概要: 删除取证报告 描述:删除取证报告
 %% OperationId:DELETE_REPORT_REPORTID
 %% 请求:GET /iotapi/report
-do_request(delete_report_reportid, #{<<"reportId">> := ReportId} = _Args,
-    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+do_request(delete_report_reportid,
+           #{<<"reportId">> := ReportId} = _Args,
+           #{<<"sessionToken">> := SessionToken} = _Context,
+           _Req) ->
     delete_report(ReportId, SessionToken);
-
 
 %% evidence 概要: 查询采样点 描述:查询采样点
 %% OperationId:get_point
@@ -247,6 +258,7 @@ do_request(delete_file_info, #{<<"path">> := Path} = _Body, #{<<"sessionToken">>
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.
 
+
 do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
     CategoryId = maps:get(<<"category">>, Config, <<"d6ad425529">>),
     ProductId = dgiot_parse_id:get_productid(CategoryId, DevType, Name),
@@ -254,33 +266,39 @@ do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
     case dgiot_httpc:fileUpload(Uri ++ "/WordController/fileUpload", dgiot_utils:to_list(FullPath), ProductId) of
         {ok, #{<<"code">> := 0, <<"msg">> := <<"SUCCESS">>, <<"path">> := WordPath, <<"images">> := Images}} ->
             case dgiot_product:create_product(#{
-                <<"name">> => Name,
-                <<"devType">> => DevType,
-                <<"desc">> => <<"0">>,
-                <<"nodeType">> => 1,
-                <<"ACL">> => #{<<"role:admin">> => #{
-                    <<"read">> => true,
-                    <<"write">> => true},
-                    <<"*">> => #{<<"read">> => true}
-                },
-                <<"channel">> => #{<<"type">> => 1, <<"tdchannel">> => <<"24b9b4bc50">>, <<"taskchannel">> => <<"0edaeb918e">>, <<"otherchannel">> => [<<"11ed8ad9f2">>]},
-                <<"netType">> => <<"Evidence">>,
-                <<"category">> => #{<<"objectId">> => CategoryId, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
-                <<"producttemplet">> => #{<<"objectId">> => Producttempid, <<"__type">> => <<"Pointer">>, <<"className">> => <<"ProductTemplet">>},
-                <<"config">> => Config#{<<"reporttemp">> => WordPath},
-                <<"thing">> => #{},
-                <<"productSecret">> => dgiot_utils:random(),
-                <<"dynamicReg">> => true}, SessionToken) of
+                                                <<"name">> => Name,
+                                                <<"devType">> => DevType,
+                                                <<"desc">> => <<"0">>,
+                                                <<"nodeType">> => 1,
+                                                <<"ACL">> => #{
+                                                               <<"role:admin">> => #{
+                                                                                     <<"read">> => true,
+                                                                                     <<"write">> => true
+                                                                                    },
+                                                               <<"*">> => #{<<"read">> => true}
+                                                              },
+                                                <<"channel">> => #{<<"type">> => 1, <<"tdchannel">> => <<"24b9b4bc50">>, <<"taskchannel">> => <<"0edaeb918e">>, <<"otherchannel">> => [<<"11ed8ad9f2">>]},
+                                                <<"netType">> => <<"Evidence">>,
+                                                <<"category">> => #{<<"objectId">> => CategoryId, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
+                                                <<"producttemplet">> => #{<<"objectId">> => Producttempid, <<"__type">> => <<"Pointer">>, <<"className">> => <<"ProductTemplet">>},
+                                                <<"config">> => Config#{<<"reporttemp">> => WordPath},
+                                                <<"thing">> => #{},
+                                                <<"productSecret">> => dgiot_utils:random(),
+                                                <<"dynamicReg">> => true
+                                               },
+                                              SessionToken) of
                 {_, #{<<"objectId">> := ProductId}} ->
                     lists:foldl(fun(Image, Acc) ->
-                        #{<<"heigh">> := Heigh, <<"url">> := ImageUrl, <<"width">> := Width} = Image,
-                        case binary:split(filename:basename(ImageUrl), <<$.>>, [global, trim]) of
-                            [Index, _] ->
-                                Acc ++ [dgiot_evidence:create_report(ProductId, Config, Index, ImageUrl, Heigh, Width, WordPath, SessionToken)];
-                            _ ->
-                                Acc
-                        end
-                                end, [], Images);
+                                        #{<<"heigh">> := Heigh, <<"url">> := ImageUrl, <<"width">> := Width} = Image,
+                                        case binary:split(filename:basename(ImageUrl), <<$.>>, [global, trim]) of
+                                            [Index, _] ->
+                                                Acc ++ [dgiot_evidence:create_report(ProductId, Config, Index, ImageUrl, Heigh, Width, WordPath, SessionToken)];
+                                            _ ->
+                                                Acc
+                                        end
+                                end,
+                                [],
+                                Images);
                 _Oth1 ->
                     _Oth1
             end;
@@ -288,109 +306,146 @@ do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
             _Oth
     end.
 
+
 post_point(#{
-    <<"reportid">> := ReportId,
-    <<"index">> := Index,
-    <<"begin">> := Begin,
-    <<"end">> := End
-}, SessionToken) ->
-    Query = #{<<"keys">> => [<<"count(*)">>, <<"original">>, <<"timestamp">>],
-        <<"where">> => #{<<"$and">> => [#{
-            <<"reportId">> => ReportId,
-            <<"original.index">> => #{<<"$regex">> => Index}}]
-        }
-    },
+             <<"reportid">> := ReportId,
+             <<"index">> := Index,
+             <<"begin">> := Begin,
+             <<"end">> := End
+            },
+           SessionToken) ->
+    Query = #{
+              <<"keys">> => [<<"count(*)">>, <<"original">>, <<"timestamp">>],
+              <<"where">> => #{
+                               <<"$and">> => [#{
+                                                <<"reportId">> => ReportId,
+                                                <<"original.index">> => #{<<"$regex">> => Index}
+                                               }]
+                              }
+             },
     ?LOG(info, "Query ~p", [Query]),
-    case dgiot_parse:query_object(<<"Evidence">>, Query,
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:query_object(<<"Evidence">>,
+                                  Query,
+                                  [{"X-Parse-Session-Token", SessionToken}],
+                                  [{from, rest}]) of
         {ok, #{<<"count">> := Count, <<"results">> := Result}} when Count > 0 ->
             lists:map(fun(#{<<"objectId">> := ObjectId, <<"original">> := Original}) ->
-                dgiot_parse:update_object(<<"Evidence">>, ObjectId,
-                    #{<<"original">> => maps:without([<<"index">>], Original)},
-                    [{"X-Parse-Session-Token", SessionToken}], [{from, rest}])
-                      end, Result);
+                              dgiot_parse:update_object(<<"Evidence">>,
+                                                        ObjectId,
+                                                        #{<<"original">> => maps:without([<<"index">>], Original)},
+                                                        [{"X-Parse-Session-Token", SessionToken}],
+                                                        [{from, rest}])
+                      end,
+                      Result);
         _R ->
             pass
     end,
-    Query1 = #{<<"keys">> => [<<"count(*)">>, <<"original">>, <<"timestamp">>],
-        <<"where">> => #{<<"$and">> => [#{
-            <<"reportId">> => ReportId,
-            <<"timestamp">> => #{<<"$gte">> => Begin, <<"$lte">> => End}}]
-        }
-    },
-    case dgiot_parse:query_object(<<"Evidence">>, Query1,
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    Query1 = #{
+               <<"keys">> => [<<"count(*)">>, <<"original">>, <<"timestamp">>],
+               <<"where">> => #{
+                                <<"$and">> => [#{
+                                                 <<"reportId">> => ReportId,
+                                                 <<"timestamp">> => #{<<"$gte">> => Begin, <<"$lte">> => End}
+                                                }]
+                               }
+              },
+    case dgiot_parse:query_object(<<"Evidence">>,
+                                  Query1,
+                                  [{"X-Parse-Session-Token", SessionToken}],
+                                  [{from, rest}]) of
         {ok, #{<<"count">> := Count1, <<"results">> := Result1}} when Count1 > 0 ->
             ?LOG(info, "Result1 ~p", [Result1]),
             lists:map(fun(#{<<"objectId">> := ObjectId, <<"original">> := Original}) ->
-                dgiot_parse:update_object(<<"Evidence">>, ObjectId,
-                    #{<<"original">> => Original#{<<"index">> => Index}},
-                    [{"X-Parse-Session-Token", SessionToken}], [{from, rest}])
-                      end, Result1);
+                              dgiot_parse:update_object(<<"Evidence">>,
+                                                        ObjectId,
+                                                        #{<<"original">> => Original#{<<"index">> => Index}},
+                                                        [{"X-Parse-Session-Token", SessionToken}],
+                                                        [{from, rest}])
+                      end,
+                      Result1);
         _R2 ->
             #{}
     end.
 
+
 get_point(#{
-    <<"reportid">> := ReportId,
-    <<"index">> := 0,
-    <<"begin">> := Begin,
-    <<"end">> := End
-}, SessionToken) ->
-    Query = #{<<"keys">> => [<<"count(*)">>, <<"original">>, <<"timestamp">>],
-        <<"where">> => #{<<"$and">> => [#{
-            <<"original.datatype">> => #{<<"$regex">> => <<"performanceCurve">>},
-            <<"reportId">> => ReportId,
-            <<"timestamp">> => #{<<"$gte">> => Begin, <<"$lte">> => End}}]
-        }
-    },
-    case dgiot_parse:query_object(<<"Evidence">>, Query,
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+            <<"reportid">> := ReportId,
+            <<"index">> := 0,
+            <<"begin">> := Begin,
+            <<"end">> := End
+           },
+          SessionToken) ->
+    Query = #{
+              <<"keys">> => [<<"count(*)">>, <<"original">>, <<"timestamp">>],
+              <<"where">> => #{
+                               <<"$and">> => [#{
+                                                <<"original.datatype">> => #{<<"$regex">> => <<"performanceCurve">>},
+                                                <<"reportId">> => ReportId,
+                                                <<"timestamp">> => #{<<"$gte">> => Begin, <<"$lte">> => End}
+                                               }]
+                              }
+             },
+    case dgiot_parse:query_object(<<"Evidence">>,
+                                  Query,
+                                  [{"X-Parse-Session-Token", SessionToken}],
+                                  [{from, rest}]) of
         {ok, #{<<"count">> := Count, <<"results">> := Result}} when Count > 0 ->
             lists:foldl(fun(X, Acc) ->
-                case X of
-                    #{<<"original">> := #{<<"data">> := Data}, <<"timestamp">> := Time} ->
-                        case maps:find(0, Acc) of
-                            {ok, OldData} ->
-                                #{<<"startAt">> := StartAt, <<"endAt">> := EndAt} = OldData,
-                                NewData = lists:foldl(fun(Key, Acc1) ->
-                                    case Key of
-                                        <<"startAt">> -> Acc1;
-                                        <<"endAt">> -> Acc1;
-                                        _ ->
-                                            Value = (maps:get(Key, Data, 0) + maps:get(Key, OldData, 0)) / 2,
-                                            Acc1#{Key => Value}
-                                    end
-                                                      end, OldData, maps:keys(Data)),
-                                Acc#{0 => NewData#{
-                                    <<"startAt">> => min(StartAt, Time),
-                                    <<"endAt">> => max(EndAt, Time)}
-                                };
-                            _ ->
-                                NewData = Data#{<<"startAt">> => Time, <<"endAt">> => Time},
-                                Acc#{0 => NewData}
-                        end;
-                    _ -> Acc
-                end
-                        end, #{}, Result);
+                                case X of
+                                    #{<<"original">> := #{<<"data">> := Data}, <<"timestamp">> := Time} ->
+                                        case maps:find(0, Acc) of
+                                            {ok, OldData} ->
+                                                #{<<"startAt">> := StartAt, <<"endAt">> := EndAt} = OldData,
+                                                NewData = lists:foldl(fun(Key, Acc1) ->
+                                                                              case Key of
+                                                                                  <<"startAt">> -> Acc1;
+                                                                                  <<"endAt">> -> Acc1;
+                                                                                  _ ->
+                                                                                      Value = (maps:get(Key, Data, 0) + maps:get(Key, OldData, 0)) / 2,
+                                                                                      Acc1#{Key => Value}
+                                                                              end
+                                                                      end,
+                                                                      OldData,
+                                                                      maps:keys(Data)),
+                                                Acc#{
+                                                  0 => NewData#{
+                                                         <<"startAt">> => min(StartAt, Time),
+                                                         <<"endAt">> => max(EndAt, Time)
+                                                        }
+                                                 };
+                                            _ ->
+                                                NewData = Data#{<<"startAt">> => Time, <<"endAt">> => Time},
+                                                Acc#{0 => NewData}
+                                        end;
+                                    _ -> Acc
+                                end
+                        end,
+                        #{},
+                        Result);
         _R2 ->
             #{}
     end;
 
 get_point(#{
-    <<"reportid">> := ReportId,
-    <<"index">> := 65535
-}, SessionToken) ->
-    Query = #{<<"keys">> => [<<"count(*)">>, <<"original">>, <<"timestamp">>],
-        <<"where">> => #{<<"$and">> => [#{
-            <<"original.datatype">> => #{<<"$regex">> => <<"performanceCurve">>},
-            <<"reportId">> => ReportId,
-            <<"original.index">> => #{<<"$regex">> => <<".+">>}}]
-        }
-    },
+            <<"reportid">> := ReportId,
+            <<"index">> := 65535
+           },
+          SessionToken) ->
+    Query = #{
+              <<"keys">> => [<<"count(*)">>, <<"original">>, <<"timestamp">>],
+              <<"where">> => #{
+                               <<"$and">> => [#{
+                                                <<"original.datatype">> => #{<<"$regex">> => <<"performanceCurve">>},
+                                                <<"reportId">> => ReportId,
+                                                <<"original.index">> => #{<<"$regex">> => <<".+">>}
+                                               }]
+                              }
+             },
     ?LOG(info, "Query ~p", [Query]),
-    case dgiot_parse:query_object(<<"Evidence">>, Query,
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:query_object(<<"Evidence">>,
+                                  Query,
+                                  [{"X-Parse-Session-Token", SessionToken}],
+                                  [{from, rest}]) of
         {ok, #{<<"count">> := Count, <<"results">> := Result}} when Count > 0 ->
             get_point_average(Result);
         _R2 ->
@@ -398,64 +453,85 @@ get_point(#{
     end;
 
 get_point(#{
-    <<"reportid">> := ReportId,
-    <<"index">> := Index
-}, SessionToken) ->
-    Query = #{<<"keys">> => [<<"count(*)">>, <<"original">>, <<"timestamp">>],
-        <<"where">> => #{<<"$and">> => [#{
-            <<"datatype">> => <<"performanceCurve">>,
-            <<"reportId">> => ReportId,
-            <<"original.index">> => Index}]
-        }
-    },
+            <<"reportid">> := ReportId,
+            <<"index">> := Index
+           },
+          SessionToken) ->
+    Query = #{
+              <<"keys">> => [<<"count(*)">>, <<"original">>, <<"timestamp">>],
+              <<"where">> => #{
+                               <<"$and">> => [#{
+                                                <<"datatype">> => <<"performanceCurve">>,
+                                                <<"reportId">> => ReportId,
+                                                <<"original.index">> => Index
+                                               }]
+                              }
+             },
     ?LOG(info, "Query ~p", [Query]),
-    case dgiot_parse:query_object(<<"Evidence">>, Query,
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:query_object(<<"Evidence">>,
+                                  Query,
+                                  [{"X-Parse-Session-Token", SessionToken}],
+                                  [{from, rest}]) of
         {ok, #{<<"count">> := Count, <<"results">> := Result}} when Count > 0 ->
             get_point_average(Result);
         _R2 ->
             #{}
     end.
+
 
 get_point_average(Result) ->
     lists:foldl(fun(X, Acc) ->
-        case X of
-            #{<<"original">> := #{<<"index">> := Index, <<"data">> := Data}, <<"timestamp">> := Time} ->
-                case maps:find(Index, Acc) of
-                    {ok, OldData} ->
-                        #{<<"startAt">> := StartAt, <<"endAt">> := EndAt} = OldData,
-                        NewData = lists:foldl(fun(Key, Acc1) ->
-                            case Key of
-                                <<"startAt">> -> Acc1;
-                                <<"endAt">> -> Acc1;
-                                _ ->
-                                    Value = (maps:get(Key, Data, 0) + maps:get(Key, OldData, 0)) / 2,
-                                    Acc1#{Key => Value}
-                            end
-                                              end, OldData, maps:keys(Data)),
-                        Acc#{Index => NewData#{
-                            <<"startAt">> => min(StartAt, Time),
-                            <<"endAt">> => max(EndAt, Time)}
-                        };
-                    _ ->
-                        NewData = Data#{<<"startAt">> => Time, <<"endAt">> => Time},
-                        Acc#{Index => NewData}
-                end;
-            _ -> Acc
-        end
-                end, #{}, Result).
+                        case X of
+                            #{<<"original">> := #{<<"index">> := Index, <<"data">> := Data}, <<"timestamp">> := Time} ->
+                                case maps:find(Index, Acc) of
+                                    {ok, OldData} ->
+                                        #{<<"startAt">> := StartAt, <<"endAt">> := EndAt} = OldData,
+                                        NewData = lists:foldl(fun(Key, Acc1) ->
+                                                                      case Key of
+                                                                          <<"startAt">> -> Acc1;
+                                                                          <<"endAt">> -> Acc1;
+                                                                          _ ->
+                                                                              Value = (maps:get(Key, Data, 0) + maps:get(Key, OldData, 0)) / 2,
+                                                                              Acc1#{Key => Value}
+                                                                      end
+                                                              end,
+                                                              OldData,
+                                                              maps:keys(Data)),
+                                        Acc#{
+                                          Index => NewData#{
+                                                     <<"startAt">> => min(StartAt, Time),
+                                                     <<"endAt">> => max(EndAt, Time)
+                                                    }
+                                         };
+                                    _ ->
+                                        NewData = Data#{<<"startAt">> => Time, <<"endAt">> => Time},
+                                        Acc#{Index => NewData}
+                                end;
+                            _ -> Acc
+                        end
+                end,
+                #{},
+                Result).
+
 
 get_bed(Id, SessionToken) ->
-    case dgiot_parse:get_object(<<"Device">>, Id,
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:get_object(<<"Device">>,
+                                Id,
+                                [{"X-Parse-Session-Token", SessionToken}],
+                                [{from, rest}]) of
         {ok, #{<<"parentId">> := #{<<"objectId">> := ParnetId}}} ->
-            case dgiot_parse:get_object(<<"Device">>, ParnetId,
-                [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+            case dgiot_parse:get_object(<<"Device">>,
+                                        ParnetId,
+                                        [{"X-Parse-Session-Token", SessionToken}],
+                                        [{from, rest}]) of
                 {ok, #{<<"basedata">> := #{<<"bedaddr">> := DtuAddr}}} ->
-                    Query = #{<<"keys">> => [<<"name">>, <<"objectId">>],
-                        <<"where">> => #{<<"route.", DtuAddr/binary>> => #{<<"$regex">> => <<".+">>}},
-                        <<"order">> => <<"devaddr">>, <<"limit">> => 256,
-                        <<"include">> => <<"product">>},
+                    Query = #{
+                              <<"keys">> => [<<"name">>, <<"objectId">>],
+                              <<"where">> => #{<<"route.", DtuAddr/binary>> => #{<<"$regex">> => <<".+">>}},
+                              <<"order">> => <<"devaddr">>,
+                              <<"limit">> => 256,
+                              <<"include">> => <<"product">>
+                             },
                     ?LOG(info, "Query ~p ", [Query]),
                     dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
                 R1 ->
@@ -467,25 +543,39 @@ get_bed(Id, SessionToken) ->
 
 
 delete_report(ReportId, SessionToken) ->
-    case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"parentId">> => ReportId}},
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:query_object(<<"Device">>,
+                                  #{<<"where">> => #{<<"parentId">> => ReportId}},
+                                  [{"X-Parse-Session-Token", SessionToken}],
+                                  [{from, rest}]) of
         {ok, #{<<"results">> := Devices}} when length(Devices) > 0 ->
             lists:map(fun(#{<<"objectId">> := ObjectId}) ->
-                dgiot_parse:del_object(<<"Device">>, ObjectId,
-                    [{"X-Parse-Session-Token", SessionToken}], [{from, rest}])
-                      end, Devices),
-            dgiot_parse:del_object(<<"Device">>, ReportId,
-                [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
+                              dgiot_parse:del_object(<<"Device">>,
+                                                     ObjectId,
+                                                     [{"X-Parse-Session-Token", SessionToken}],
+                                                     [{from, rest}])
+                      end,
+                      Devices),
+            dgiot_parse:del_object(<<"Device">>,
+                                   ReportId,
+                                   [{"X-Parse-Session-Token", SessionToken}],
+                                   [{from, rest}]);
         _ ->
-            dgiot_parse:del_object(<<"Device">>, ReportId,
-                [{"X-Parse-Session-Token", SessionToken}], [{from, rest}])
+            dgiot_parse:del_object(<<"Device">>,
+                                   ReportId,
+                                   [{"X-Parse-Session-Token", SessionToken}],
+                                   [{from, rest}])
     end.
 
 
 put_report(Path, SessionToken) ->
     [_, _, FileApp, FileName] = re:split(Path, <<"/">>),
-    case dgiot_parse:query_object(<<"_Role">>, #{<<"where">> => #{<<"name">> => FileApp},
-        <<"limit">> => 1}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:query_object(<<"_Role">>,
+                                  #{
+                                    <<"where">> => #{<<"name">> => FileApp},
+                                    <<"limit">> => 1
+                                   },
+                                  [{"X-Parse-Session-Token", SessionToken}],
+                                  [{from, rest}]) of
         {ok, #{<<"results">> := [#{<<"name">> := AppName, <<"config">> := Config} | _]}} ->
             Dir = maps:get(<<"home">>, Config),
             case filelib:is_dir(Dir) of
@@ -503,28 +593,28 @@ put_report(Path, SessionToken) ->
                                     {_, R2} = dgiot_evidence:post_data(<<"Device">>, Root ++ "/Device.json"),
                                     {_, R3} = dgiot_evidence:post_data(<<"Evidence">>, Root ++ "/Evidence.json"),
                                     {ok, #{
-                                        <<"Product">> => #{<<"result">> => R1},
-                                        <<"Device">> => #{<<"result">> => R2},
-                                        <<"Evidence">> => #{<<"result">> => R3},
-                                        <<"root">> => unicode:characters_to_binary(Root ++ "/" ++ NewPath),
-                                        <<"file">> => unicode:characters_to_binary(Root ++ "/" ++ NewPath),
-                                        <<"url">> => unicode:characters_to_binary(NewPath)
-                                    }};
+                                           <<"Product">> => #{<<"result">> => R1},
+                                           <<"Device">> => #{<<"result">> => R2},
+                                           <<"Evidence">> => #{<<"result">> => R3},
+                                           <<"root">> => unicode:characters_to_binary(Root ++ "/" ++ NewPath),
+                                           <<"file">> => unicode:characters_to_binary(Root ++ "/" ++ NewPath),
+                                           <<"url">> => unicode:characters_to_binary(NewPath)
+                                          }};
                                 Error -> Error
                             end;
-                        false -> {error, #{
-                            <<"dir">> => unicode:characters_to_binary(unicode:characters_to_list(Dir)),
-                            <<"appname">> => unicode:characters_to_binary(unicode:characters_to_list(AppName)),
-                            <<"filename">> => unicode:characters_to_binary(unicode:characters_to_list(FileApp))
-                        }
-                        }
+                        false ->
+                            {error, #{
+                                      <<"dir">> => unicode:characters_to_binary(unicode:characters_to_list(Dir)),
+                                      <<"appname">> => unicode:characters_to_binary(unicode:characters_to_list(AppName)),
+                                      <<"filename">> => unicode:characters_to_binary(unicode:characters_to_list(FileApp))
+                                     }}
                     end;
                 _ ->
                     {error, #{
-                        <<"dir">> => unicode:characters_to_binary(unicode:characters_to_list(Dir)),
-                        <<"appname">> => unicode:characters_to_binary(unicode:characters_to_list(AppName)),
-                        <<"filename">> => unicode:characters_to_binary(unicode:characters_to_list(FileApp))
-                    }}
+                              <<"dir">> => unicode:characters_to_binary(unicode:characters_to_list(Dir)),
+                              <<"appname">> => unicode:characters_to_binary(unicode:characters_to_list(AppName)),
+                              <<"filename">> => unicode:characters_to_binary(unicode:characters_to_list(FileApp))
+                             }}
             end;
         _ -> {error, <<"not find">>}
     end.
@@ -532,63 +622,73 @@ put_report(Path, SessionToken) ->
 
 get_report(Id, SessionToken) ->
     ?LOG(info, "Id ~p SessionToken ~p", [Id, SessionToken]),
-    case dgiot_parse:query_object(<<"Device">>, #{
-        <<"where">> => #{<<"$or">> => [#{<<"objectId">> => Id}, #{<<"parentId">> => Id}]}}) of
+    case dgiot_parse:query_object(<<"Device">>,
+                                  #{
+                                    <<"where">> => #{<<"$or">> => [#{<<"objectId">> => Id}, #{<<"parentId">> => Id}]}
+                                   }) of
         {ok, #{<<"results">> := Devices}} ->
             {DAcc0, PAcc0, FAcc4} =
                 lists:foldl(fun(Device, {DAcc, PAcc, FAcc}) ->
-                    #{<<"objectId">> := ProductId} = maps:get(<<"product">>, Device),
-                    {ok, Product} = dgiot_parse:get_object(<<"Product">>, ProductId),
-                    FAcc1 =
-                        case maps:get(<<"icon">>, Product, <<"">>) of
-                            <<"">> -> FAcc;
-                            Ico -> FAcc ++ [Ico]
-                        end,
-                    FAcc2 =
-                        case maps:get(<<"config">>, Product, <<"">>) of
-                            <<"">> -> FAcc1;
-                            #{<<"layer">> := Layer} ->
-                                case maps:get(<<"backgroundImage">>, Layer, <<"">>) of
-                                    <<"">> -> FAcc1;
-                                    ProductImage -> FAcc1 ++ [ProductImage]
-                                end;
-                            _ -> FAcc1
-                        end,
-                    FAcc3 =
-                        case maps:get(<<"basedata">>, Device, <<"">>) of
-                            <<"">> -> FAcc2;
-                            #{<<"layer">> := Layer1} ->
-                                case maps:get(<<"backgroundImage">>, Layer1, <<"">>) of
-                                    <<"">> -> FAcc2;
-                                    DeviceImage -> FAcc2 ++ [DeviceImage]
-                                end;
-                            _ -> FAcc1
-                        end,
-                    {DAcc ++ [maps:without([<<"createdAt">>, <<"updatedAt">>], Device)],
-                            PAcc ++ [maps:without([<<"createdAt">>, <<"updatedAt">>], Product)], FAcc3}
-                            end, {[], [], []}, Devices),
-            case dgiot_parse:query_object(<<"Evidence">>, #{
-                <<"where">> => #{<<"reportId">> => Id}}) of
+                                    #{<<"objectId">> := ProductId} = maps:get(<<"product">>, Device),
+                                    {ok, Product} = dgiot_parse:get_object(<<"Product">>, ProductId),
+                                    FAcc1 =
+                                        case maps:get(<<"icon">>, Product, <<"">>) of
+                                            <<"">> -> FAcc;
+                                            Ico -> FAcc ++ [Ico]
+                                        end,
+                                    FAcc2 =
+                                        case maps:get(<<"config">>, Product, <<"">>) of
+                                            <<"">> -> FAcc1;
+                                            #{<<"layer">> := Layer} ->
+                                                case maps:get(<<"backgroundImage">>, Layer, <<"">>) of
+                                                    <<"">> -> FAcc1;
+                                                    ProductImage -> FAcc1 ++ [ProductImage]
+                                                end;
+                                            _ -> FAcc1
+                                        end,
+                                    FAcc3 =
+                                        case maps:get(<<"basedata">>, Device, <<"">>) of
+                                            <<"">> -> FAcc2;
+                                            #{<<"layer">> := Layer1} ->
+                                                case maps:get(<<"backgroundImage">>, Layer1, <<"">>) of
+                                                    <<"">> -> FAcc2;
+                                                    DeviceImage -> FAcc2 ++ [DeviceImage]
+                                                end;
+                                            _ -> FAcc1
+                                        end,
+                                    {DAcc ++ [maps:without([<<"createdAt">>, <<"updatedAt">>], Device)],
+                                     PAcc ++ [maps:without([<<"createdAt">>, <<"updatedAt">>], Product)],
+                                     FAcc3}
+                            end,
+                            {[], [], []},
+                            Devices),
+            case dgiot_parse:query_object(<<"Evidence">>,
+                                          #{
+                                            <<"where">> => #{<<"reportId">> => Id}
+                                           }) of
                 {ok, #{<<"results">> := Evidences}} ->
                     {EAcc0, FAcc0} =
                         lists:foldl(fun(Evidence, {EAcc, FAcc5}) ->
-                            FAcc6 =
-                                case maps:get(<<"original">>, Evidence, <<"">>) of
-                                    <<"">> -> FAcc5;
-                                    #{<<"data">> := Data, <<"datatype">> := DataType}
-                                        when <<"liveMonitor">> =/= DataType ->
-                                        case maps:get(<<"src">>, Data, <<"">>) of
-                                            <<"">> -> FAcc5;
-                                            Src -> FAcc5 ++ [Src]
-                                        end
-                                end,
-                            {EAcc ++ [maps:without([<<"createdAt">>, <<"updatedAt">>], Evidence)], FAcc6}
-                                    end, {[], FAcc4}, Evidences),
+                                            FAcc6 =
+                                                case maps:get(<<"original">>, Evidence, <<"">>) of
+                                                    <<"">> -> FAcc5;
+                                                    #{<<"data">> := Data, <<"datatype">> := DataType}
+                                                      when <<"liveMonitor">> =/= DataType ->
+                                                        case maps:get(<<"src">>, Data, <<"">>) of
+                                                            <<"">> -> FAcc5;
+                                                            Src -> FAcc5 ++ [Src]
+                                                        end
+                                                end,
+                                            {EAcc ++ [maps:without([<<"createdAt">>, <<"updatedAt">>], Evidence)], FAcc6}
+                                    end,
+                                    {[], FAcc4},
+                                    Evidences),
                     dgiot_evidence:get_report_package(Id, DAcc0, PAcc0, EAcc0, FAcc0, SessionToken);
                 Error1 -> Error1
             end;
         Error -> Error
     end.
+
 
 post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"parentId">> := ParentId, <<"profile">> := Profile} = Args, SessionToken) ->
     WordPath =
@@ -600,33 +700,36 @@ post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"parentId">> := 
         end,
     <<DtuAddr:12/binary, _/binary>> = dgiot_utils:random(),
     DevAddr = maps:get(<<"devaddr">>, Args, DtuAddr),
-    case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"name">> => Name, <<"devaddr">> => DevAddr, <<"product">> => ProductId}},
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:query_object(<<"Device">>,
+                                  #{<<"where">> => #{<<"name">> => Name, <<"devaddr">> => DevAddr, <<"product">> => ProductId}},
+                                  [{"X-Parse-Session-Token", SessionToken}],
+                                  [{from, rest}]) of
         {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
             #{<<"roles">> := Roles} = dgiot_auth:get_session(SessionToken),
             [#{<<"name">> := Role} | _] = maps:values(Roles),
             Basedata = maps:get(<<"basedata">>, Args, #{}),
             dgiot_device:create_device(#{
-                <<"devaddr">> => DevAddr,
-                <<"name">> => Name,
-                <<"product">> => ProductId,
-                <<"ACL">> => #{<<"role:", Role/binary>> => #{
-                    <<"read">> => true,
-                    <<"write">> => true}
-                },
-                <<"status">> => <<"ONLINE">>,
-                <<"brand">> => <<"数蛙桌面采集网关"/utf8>>,
-                <<"devModel">> => <<"SW_WIN_CAPTURE">>,
-                <<"basedata">> => Basedata,
-                <<"profile">> => Profile#{<<"reporttemp">> => WordPath},
-                <<"parentId">> => #{
-                    <<"__type">> => <<"Pointer">>,
-                    <<"className">> => <<"Device">>,
-                    <<"objectId">> => ParentId
-                }
-            }),
+                                         <<"devaddr">> => DevAddr,
+                                         <<"name">> => Name,
+                                         <<"product">> => ProductId,
+                                         <<"ACL">> => #{
+                                                        <<"role:", Role/binary>> => #{
+                                                                                      <<"read">> => true,
+                                                                                      <<"write">> => true
+                                                                                     }
+                                                       },
+                                         <<"status">> => <<"ONLINE">>,
+                                         <<"brand">> => <<"数蛙桌面采集网关"/utf8>>,
+                                         <<"devModel">> => <<"SW_WIN_CAPTURE">>,
+                                         <<"basedata">> => Basedata,
+                                         <<"profile">> => Profile#{<<"reporttemp">> => WordPath},
+                                         <<"parentId">> => #{
+                                                             <<"__type">> => <<"Pointer">>,
+                                                             <<"className">> => <<"Device">>,
+                                                             <<"objectId">> => ParentId
+                                                            }
+                                        }),
             {ok, #{<<"result">> => <<"success">>}};
         _R2 ->
             {error, <<"report exist">>}
     end.
-
