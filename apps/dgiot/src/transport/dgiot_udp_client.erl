@@ -14,247 +14,171 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
+%% @doc 精简UDP客户端模块
+%% 应用层入口，专注于客户端启动和消息发送
 -module(dgiot_udp_client).
 -author("johnliu").
--include("dgiot_socket.hrl").
--include_lib("dgiot/include/logger.hrl").
--include_lib("dgiot/include/dgiot_client.hrl").
+-include("../../include/logger.hrl").
 
--behaviour(gen_server).
-%% API
--export([start_link/1, send/2, send/3, do_connect/2]).
--export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
--record(connect_state, {host, port, mod, socket = undefined, transport, freq = 30, count = 1000, child, reconnect_times = 3, reconnect_sleep = 30}).
-
--define(TIMEOUT, 10000).
--define(UDP_OPTIONS, [binary, {active, once}, {packet, raw}, {reuseaddr, true}, {send_timeout, ?TIMEOUT}]).
-%%-define(UDP_OPTIONS, [binary, {reuseaddr, true}]).
-
-start_link(Args) ->
-    dgiot_client:start_link(?MODULE, Args).
-
-%%%===================================================================
-%%% gen_server callbacks
-%%%===================================================================
-
-init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"ip">> := Host, <<"port">> := Port, <<"mod">> := Mod} = Args]) ->
-    Transport = gen_udp,
-    Ip = dgiot_utils:to_list(Host),
-    Port1 = dgiot_utils:to_int(Port),
-    UserData = #connect_state{mod = Mod, host = Ip, port = Port1, freq = 30, count = 300, transport = Transport},
-    ChildState = maps:get(<<"child">>, Args, #{}),
-    StartTime = dgiot_client:get_time(maps:get(<<"starttime">>, Args, dgiot_datetime:now_secs())),
-    EndTime = dgiot_client:get_time(maps:get(<<"endtime">>, Args, dgiot_datetime:now_secs() + 1000000000)),
-    Freq = maps:get(<<"freq">>, Args, 30),
-    NextTime = dgiot_client:get_nexttime(StartTime, Freq),
-    Count = dgiot_client:get_count(StartTime, EndTime, Freq),
-    Rand =
-        case maps:get(<<"rand">>, Args, true) of
-            true -> 0;
-            _ -> dgiot_client:get_rand(Freq)
-        end,
-    Clock = #dclock{freq = Freq, nexttime = NextTime + Rand, count = Count, round = 0},
-    Dclient = #dclient{channel = ChannelId, client = ClientId, status = ?DCLIENT_INTIALIZED, clock = Clock, userdata = UserData, child = ChildState},
-    dgiot_client:add(ChannelId, ClientId),
-    case Mod:init(Dclient) of
-        {ok, NewDclient} ->
-            do_connect(false, NewDclient),
-            {ok, NewDclient, hibernate};
-        {stop, Reason} ->
-            {stop, Reason}
-    end.
-
-handle_call({connection_ready, Socket}, _From, #dclient{channel = ChannelId, client = ClientId, userdata = #connect_state{mod = Mod} = UserData} = Dclient) ->
-    NewUserData = UserData#connect_state{socket = Socket},
-    case Mod:handle_info(connection_ready, Dclient#dclient{userdata = NewUserData}) of
-        {noreply, NewDclient} ->
-            {reply, ok, NewDclient, hibernate};
-        {stop, _Reason, NewDclient} ->
-            dgiot_client:stop(ChannelId, ClientId),
-            {reply, _Reason, NewDclient}
-    end;
-
-handle_call(Request, From, #dclient{channel = ChannelId, client = ClientId,
-    userdata = #connect_state{mod = Mod}} = Dclient) ->
-    case Mod:handle_call(Request, From, Dclient) of
-        {reply, Reply, NewDclient} ->
-            {reply, Reply, NewDclient, hibernate};
-        {stop, Reason, NewDclient} ->
-            dgiot_client:stop(ChannelId, ClientId),
-            {reply, Reason, NewDclient}
-    end.
-
-handle_cast(Msg, #dclient{channel = ChannelId, client = ClientId,
-    userdata = #connect_state{mod = Mod}} = Dclient) ->
-    case Mod:handle_cast(Msg, Dclient) of
-        {noreply, NewDclient} ->
-            {noreply, NewDclient, hibernate};
-        {stop, Reason, NewDclient} ->
-            dgiot_client:stop(ChannelId, ClientId),
-            {reply, Reason, NewDclient}
-    end.
-
-%% 连接次数为0了
-handle_info(do_connect, Dclient) ->
-%%    ?LOG(info, "do_connect ~s:~p", [State#connect_state.host, State#connect_state.port]),
-    {stop, normal, Dclient};
-
-%% 连接次数为0了
-handle_info(connect_stop, Dclient) ->
-%%    ?LOG(info, "CONNECT CLOSE ~s:~p", [State#connect_state.host, State#connect_state.port]),
-    {noreply, Dclient, hibernate};
-
-handle_info({connection_ready, Socket}, #dclient{userdata = #connect_state{mod = Mod} = UserData} = Dclient) ->
-%%    io:format("~s ~p connection_ready ~p ~n", [?FILE, ?LINE, Dclient]),
-    NewUserData = UserData#connect_state{socket = Socket},
-    case Mod:handle_info(connection_ready, Dclient#dclient{userdata = NewUserData}) of
-        {noreply, NewDclient} ->
-            inet:setopts(Socket, [{active, once}]),
-            {noreply, NewDclient, hibernate};
-        {stop, Reason, NewDclient} ->
-            {stop, Reason, NewDclient}
-    end;
-
-%% 往udp server 发送报文
-handle_info({send, _PayLoad}, #dclient{userdata = #connect_state{socket = undefined}} = Dclient) ->
-    {noreply, Dclient, hibernate};
-handle_info({send, PayLoad}, #dclient{userdata = #connect_state{host = _Ip, port = _Port, transport = Transport, socket = Socket}} = Dclient) ->
-%%    io:format("~s ~p ~p send to from ~p:~p : ~p ~n", [?FILE, ?LINE, self(), _Ip, _Port, dgiot_utils:to_hex(PayLoad)]),
-    Transport:send(Socket, PayLoad),
-    {noreply, Dclient, hibernate};
-
-handle_info({ssl, _RawSock, Data}, Dclient) ->
-    handle_info({ssl, _RawSock, Data}, Dclient);
-
-handle_info({udp, Socket, _Ip, _Port, Binary} = _A, #dclient{userdata = #connect_state{socket = Socket, mod = Mod}} = Dclient) ->
-    NewBin =
-        case binary:referenced_byte_size(Binary) of
-            Large when Large > 2 * byte_size(Binary) ->
-                binary:copy(Binary);
-            _ ->
-                Binary
-        end,
-    case Mod:handle_info({udp, NewBin}, Dclient) of
-        {noreply, NewDclient} ->
-            inet:setopts(Socket, [{active, once}]),
-            {noreply, NewDclient, hibernate};
-        {stop, Reason, NewDclient} ->
-            {noreply, Reason, NewDclient, hibernate}
-    end;
-
-handle_info({udp_error, _Socket, _Reason}, Dclient) ->
-    {noreply, Dclient, hibernate};
-
-handle_info({udp_closed, _Sock}, #dclient{channel = ChannelId, client = ClientId,
-    userdata = #connect_state{transport = Transport, socket = Socket, mod = Mod}} = Dclient) ->
-    Transport:close(Socket),
-    case Mod:handle_info(udp_closed, Dclient) of
-        {noreply, #dclient{userdata = Userdata} = NewDclient} ->
-            NewDclient1 = NewDclient#dclient{userdata = Userdata#connect_state{socket = undefined}},
-            case is_integer(Userdata#connect_state.reconnect_sleep) of
-                false ->
-                    dgiot_client:stop(ChannelId, ClientId),
-                    {noreply, NewDclient, hibernate};
-                true ->
-                    Now = erlang:system_time(second),
-                    Sleep =
-                        case get(last_closed) of
-                            Time when is_integer(Time) andalso Now - Time < Userdata#connect_state.reconnect_sleep ->
-                                true;
-                            _ ->
-                                false
-                        end,
-                    put(last_closed, Now),
-                    {noreply, do_connect(Sleep, NewDclient1), hibernate}
-            end;
-        {stop, _Reason, NewDclient} ->
-            dgiot_client:stop(ChannelId, ClientId),
-            {noreply, NewDclient, hibernate}
-    end;
-
-handle_info(Info, #dclient{channel = ChannelId, client = ClientId, userdata = #connect_state{mod = Mod, transport = Transport, socket = Socket}} = Dclient) ->
-%%    io:format("~s ~p Info ~p ~n", [?FILE, ?LINE, Info]),
-%%    io:format("~s ~p Dclient ~p ~n", [?FILE, ?LINE, Dclient]),
-    case Mod:handle_info(Info, Dclient) of
-        {noreply, NewDclient} ->
-            {noreply, NewDclient, hibernate};
-        {stop, _Reason, NewDclient} ->
-            Transport:close(Socket),
-            timer:sleep(10),
-            dgiot_client:stop(ChannelId, ClientId),
-            {noreply, NewDclient, hibernate}
-    end.
-
-terminate(Reason, #connect_state{mod = Mod, child = ChildState}) ->
-    Mod:terminate(Reason, ChildState).
-
-code_change(OldVsn, #connect_state{mod = Mod, child = ChildState} = State, Extra) ->
-    {ok, NewChildState} = Mod:code_change(OldVsn, ChildState, Extra),
-    {ok, State#connect_state{child = NewChildState}}.
-
+%% API导出
+-export([
+    start_link/1, 
+    send/2, send/4,
+    close/1,
+    get_status/1,
+    join_multicast_group/2,
+    leave_multicast_group/2,
+    send_multicast/4,
+    get_available_multicast_groups/0,
+    start_multicast_client/1, start_multicast_client/2,
+    get_multicast_status/1,
+    listen_multicast/2,
+    test_multicast_send/3,
+    multicast_test_loop/4
+]).
 
 %%%===================================================================
-%%% Internal functions
+%%% API函数
 %%%===================================================================
-send(#udp{transport = Transport, socket = Socket, log = _Log}, Payload) ->
-    case Socket == undefined of
-        true ->
-            {error, disconnected};
-        false ->
-            timer:sleep(1),
-            Transport:send(Socket, Payload)
-    end.
 
-send(ChannelId, ClientId, Payload) ->
-    case dgiot_client:get(ChannelId, ClientId) of
+%% @doc 启动UDP客户端
+start_link(Args) when is_map(Args) ->
+    % 将map转换为列表形式
+    ArgsList = maps:to_list(Args),
+    dgiot_udp_session:start_link([{mode, client} | ArgsList]);
+start_link(Args) when is_list(Args) ->
+    dgiot_udp_session:start_link([{mode, client} | Args]).
+
+%% @doc 发送数据（使用已连接的套接字）
+send(ClientPid, Data) ->
+    gen_server:call(ClientPid, {send, Data}).
+
+%% @doc 发送数据到指定地址和端口
+send(ClientPid, Addr, Port, Data) ->
+    gen_server:call(ClientPid, {send, Addr, Port, Data}).
+
+
+%% @doc 关闭客户端
+close(ClientPid) ->
+    gen_server:call(ClientPid, close).
+
+%% @doc 获取客户端状态
+get_status(ClientPid) ->
+    gen_server:call(ClientPid, get_status).
+
+%% @doc 加入多播组
+join_multicast_group(ClientPid, MulticastGroup) ->
+    gen_server:call(ClientPid, {join_multicast_group, MulticastGroup}).
+
+%% @doc 离开多播组
+leave_multicast_group(ClientPid, MulticastGroup) ->
+    gen_server:call(ClientPid, {leave_multicast_group, MulticastGroup}).
+
+%% @doc 发送多播消息
+send_multicast(ClientPid, MulticastGroup, Port, Message) ->
+    gen_server:call(ClientPid, {send_multicast, MulticastGroup, Port, Message}).
+
+%% @doc 获取可用的多播组列表
+get_available_multicast_groups() ->
+    dgiot_udp_multicast:get_available_multicast_groups().
+
+%% @doc 启动多播客户端
+start_multicast_client(Port, MulticastGroups) when is_list(MulticastGroups) ->
+    io:format("~s ~p Event = Starting multicast client on port ~p with groups: ~p~n", 
+              [?FILE, ?LINE, Port, MulticastGroups]),
+    
+    Args = [
+        {port, Port},
+        {multicast_groups, MulticastGroups}
+    ],
+    
+    case start_link(Args) of
         {ok, Pid} ->
-            Pid ! {send, Payload};
-        _ ->
-            pass
+            % 加入指定的多播组
+            lists:foreach(fun(Group) ->
+                case join_multicast_group(Pid, Group) of
+                    ok ->
+                        io:format("~s ~p Event = SUCCESS: Joined multicast group ~p~n", 
+                                 [?FILE, ?LINE, Group]);
+                    Error ->
+                        io:format("~s ~p Event = WARNING: Failed to join multicast group ~p: ~p~n", 
+                                 [?FILE, ?LINE, Group, Error])
+                end
+            end, MulticastGroups),
+            {ok, Pid};
+        Error ->
+            io:format("~s ~p Event = ERROR: Failed to start multicast client: ~p~n", 
+                     [?FILE, ?LINE, Error]),
+            Error
     end.
 
-do_connect(Sleep, #dclient{userdata = Connect_state} = State) ->
-    Client = self(),
-    spawn(
-        fun() ->
-            Sleep andalso timer:sleep(Connect_state#connect_state.reconnect_sleep * 1000),
-            connect(Client, State)
-        end),
-    State.
 
-connect(Client, #dclient{userdata = #connect_state{host = Host, port = Port, reconnect_times = Times, reconnect_sleep = Sleep} = Connect_state} = State) ->
-%%    io:format("~s ~p Client ~s:~p ~p", [?FILE, ?LINE, Host, Port, Client]),
-    case is_process_alive(Client) of
+%% @doc 启动多播客户端（简化版本）
+start_multicast_client(Port) ->
+    MulticastGroups = get_available_multicast_groups(),
+    start_multicast_client(Port, MulticastGroups).
+
+%% @doc 获取客户端多播状态
+get_multicast_status(ClientPid) ->
+    case get_status(ClientPid) of
+        {ok, Status} ->
+            MulticastGroups = proplists:get_value(multicast_groups, Status, []),
+            {ok, [
+                {client_pid, ClientPid},
+                {multicast_groups_joined, MulticastGroups},
+                {total_groups, length(MulticastGroups)},
+                {status, running}
+            ]};
+        Error ->
+            Error
+    end.
+
+%% @doc 监听多播消息
+listen_multicast(_ClientPid, Timeout) ->
+    io:format("~s ~p Event = Listening for multicast messages for ~p ms...~n", 
+              [?FILE, ?LINE, Timeout]),
+    
+    receive
+        {udp, _Socket, _Address, _Port, Data} ->
+            io:format("~s ~p Event = RECEIVED multicast message: ~p~n", 
+                     [?FILE, ?LINE, Data]),
+            {ok, Data}
+    after Timeout ->
+        io:format("~s ~p Event = No multicast messages received within timeout.~n", 
+                 [?FILE, ?LINE]),
+        {error, timeout}
+    end.
+
+%% @doc 发送测试多播消息
+test_multicast_send(ClientPid, Port, Message) ->
+    io:format("~s ~p Event = Testing multicast send to port ~p: ~p~n", 
+              [?FILE, ?LINE, Port, Message]),
+    
+    MulticastGroups = get_available_multicast_groups(),
+    Results = lists:map(fun(Group) ->
+        case send_multicast(ClientPid, Group, Port, Message) of
+            ok -> {Group, success};
+            Error -> {Group, Error}
+        end
+    end, MulticastGroups),
+    {ok, Results}.
+
+%% @doc 多播客户端测试循环
+multicast_test_loop(ClientPid, Port, Count, Interval) ->
+    if
+        Count =< 0 ->
+            ok;
         true ->
-%%            ?LOG(info, "CONNECT ~s:~p ~p", [Host, Port, Times]),
-%%            io:format("~s ~p CONNECT ~s:~p ~p", [?FILE, ?LINE, Host, Port, Times]),
-            case gen_udp:open(0, [binary, {reuseaddr, true}]) of
-                {ok, Socket} ->
-                    %% Trigger the udp_passive event
-                    case gen_udp:connect(Socket, dgiot_utils:to_list(Host), Port) of
-                        ok ->
-                            case catch gen_server:call(Client, {connection_ready, Socket}, 5000) of
-                                ok ->
-                                    inet:setopts(Socket, [{active, once}]),
-                                    gen_udp:controlling_process(Socket, Client);
-                                _ ->
-                                    ok
-                            end;
-                        {error, Reason} ->
-                            case is_integer(Times) of
-                                true when Times - 1 > 0 ->
-                                    Client ! {connection_error, Reason},
-                                    timer:sleep(Sleep * 1000),
-                                    connect(Client, State#dclient{userdata = Connect_state#connect_state{reconnect_times = Times - 1}});
-                                false when is_atom(Times) ->
-                                    Client ! {connection_error, Reason},
-                                    timer:sleep(Sleep * 1000),
-                                    connect(Client, State);
-                                _ ->
-                                    Client ! connect_stop
-                            end
-                    end;
-                _ ->
-                    pass
+            Message = list_to_binary("Multicast test message #" ++ integer_to_list(Count)),
+            case test_multicast_send(ClientPid, Port, Message) of
+                {ok, Results} ->
+                    io:format("~s ~p Event = Sent multicast message ~p/~p: ~p~n", 
+                             [?FILE, ?LINE, Count, Count, Results]),
+                    timer:sleep(Interval),
+                    multicast_test_loop(ClientPid, Port, Count - 1, Interval);
+                Error ->
+                    io:format("~s ~p Event = Failed to send multicast message: ~p~n", 
+                             [?FILE, ?LINE, Error]),
+                    Error
             end
     end.

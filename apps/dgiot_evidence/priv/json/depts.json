@@ -1,0 +1,32 @@
+{
+    "60ffd3d2b3": {
+        "manager": "7262893c33",
+        "mname": "7262893c33",
+        "depname": "运维部门"
+    },
+    "fe31eedd14": {
+        "depname": "随钻",
+        "manager": "0a2c61ca37",
+        "mname": "贾立鹏"
+    },
+    "fe31eedd14": {
+        "depname": "定向",
+        "manager": "d57be73348",
+        "mname": "吴迪"
+    },
+    "2109f57568": {
+        "depname": "裸眼",
+        "manager": "583163dda0",
+        "mname": "岳志亮"
+    },
+    "2109f57568": {
+        "depname": "套管",
+        "manager": "e0bc13c7b5",
+        "mname": "郭阳"
+    },
+    "67bb4fca80": {
+        "depname": "装备",
+        "manager": "2d8d5e7a2d",
+        "mname": "张强"
+    }
+}

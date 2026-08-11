@@ -1,0 +1,288 @@
+#!/bin/bash
+#
+# SkillActivation Hook - 技能自动激活与联动
+# 
+# 在特定场景下自动检测并激活相关技能
+# 实现技能与Hook系统的高级联动
+# 
+# 输入: { taskId, userMessage: string, context: object, clineVersion, timestamp, ... }
+# 输出: { activateSkills: array, contextModification?: string, skillRecommendations?: array }
+# 
+# 使用场景:
+# - 根据用户消息自动推荐相关技能
+# - 在特定开发阶段自动激活技能
+# - 实现技能间的联动和协同工作
+# - 管理技能生命周期和依赖关系
+
+# 读取JSON输入
+INPUT=$(cat)
+
+# 解析输入
+if command -v jq &> /dev/null; then
+  USER_MESSAGE=$(echo "$INPUT" | jq -r '.userMessage // ""')
+  TASK_ID=$(echo "$INPUT" | jq -r '.taskId')
+  CONTEXT=$(echo "$INPUT" | jq -c '.context // {}')
+  TIMESTAMP=$(echo "$INPUT" | jq -r '.timestamp')
+else
+  USER_MESSAGE=""
+  TASK_ID="unknown"
+  CONTEXT="{}"
+  TIMESTAMP=$(date +%s%3N)
+fi
+
+# 技能分类和映射
+declare -A SKILL_CATEGORIES=(
+  ["erlang"]="erlang_chinese_utf8 erlang_include_system erlang_logging_solution"
+  ["dgiot_core"]="dgiot_core_concepts dgiot_data_api_auth_system dgiot_data_storage"
+  ["dgiot_development"]="dgiot_compile_debug dgiot_channel_architecture dgiot_code_reuse_solution"
+  ["protocol"]="uav_protocol_analyzer uva_protocol"
+  ["workflow"]="development_workflow_cycle continuous_iteration_cycle"
+  ["storage"]="tdengine_timeseries_storage"
+  ["ui"]="drone_test_web_interface"
+  ["management"]="skill_manager hook_manager main_objective_tracker"
+)
+
+# 关键词到技能的映射
+declare -A KEYWORD_TO_SKILL=(
+  # Erlang相关
+  ["中文打印"]="erlang_chinese_utf8"
+  ["utf8"]="erlang_chinese_utf8"
+  ["include"]="erlang_include_system"
+  ["include_lib"]="erlang_include_system"
+  ["日志"]="erlang_logging_solution"
+  ["logger"]="erlang_logging_solution"
+  
+  # DGIOT核心概念
+  ["产品"]="dgiot_core_concepts"
+  ["设备"]="dgiot_core_concepts"
+  ["通道"]="dgiot_core_concepts"
+  ["用户"]="dgiot_core_concepts"
+  ["视图"]="dgiot_core_concepts"
+  ["菜单"]="dgiot_core_concepts"
+  ["api"]="dgiot_data_api_auth_system"
+  ["权限"]="dgiot_data_api_auth_system"
+  ["存储"]="dgiot_data_storage"
+  ["tdengine"]="dgiot_data_storage"
+  
+  # 开发工作流
+  ["编译"]="dgiot_compile_debug"
+  ["调试"]="dgiot_compile_debug"
+  ["热编译"]="dgiot_compile_debug"
+  ["通道架构"]="dgiot_channel_architecture"
+  ["代码复用"]="dgiot_code_reuse_solution"
+  
+  # 协议分析
+  ["无人机"]="uav_protocol_analyzer"
+  ["uav"]="uav_protocol_analyzer"
+  ["协议"]="uav_protocol_analyzer"
+  ["eb90"]="uav_protocol_analyzer"
+  
+  # 工作流
+  ["工作流"]="development_workflow_cycle"
+  ["迭代"]="continuous_iteration_cycle"
+  ["开发流程"]="development_workflow_cycle"
+  
+  # 存储
+  ["时序数据"]="tdengine_timeseries_storage"
+  ["tdengine"]="tdengine_timeseries_storage"
+  
+  # UI
+  ["界面"]="drone_test_web_interface"
+  ["网页"]="drone_test_web_interface"
+  ["amis"]="drone_test_web_interface"
+  
+  # 管理
+  ["技能"]="skill_manager"
+  ["hook"]="hook_manager"
+  ["主目标"]="main_objective_tracker"
+  ["偏离"]="main_objective_tracker"
+)
+
+# 检测相关技能
+detect_related_skills() {
+  local message="$1"
+  local context="$2"
+  local detected_skills=()
+  
+  # 转换为小写以便匹配
+  local message_lower=$(echo "$message" | tr '[:upper:]' '[:lower:]')
+  
+  # 根据关键词检测技能
+  for keyword in "${!KEYWORD_TO_SKILL[@]}"; do
+    local keyword_lower=$(echo "$keyword" | tr '[:upper:]' '[:lower:]')
+    if [[ "$message_lower" == *"$keyword_lower"* ]]; then
+      local skill="${KEYWORD_TO_SKILL[$keyword]}"
+      if [[ ! " ${detected_skills[@]} " =~ " $skill " ]]; then
+        detected_skills+=("$skill")
+      fi
+    fi
+  done
+  
+  # 根据上下文检测技能
+  if command -v jq &> /dev/null; then
+    # 检查当前活动文件
+    local active_file=$(echo "$context" | jq -r '.activeFile // ""')
+    if [[ -n "$active_file" ]]; then
+      case "$active_file" in
+        *.erl)
+          detected_skills+=("erlang_chinese_utf8")
+          detected_skills+=("erlang_logging_solution")
+          ;;
+        *dgiot_uav*)
+          detected_skills+=("uav_protocol_analyzer")
+          detected_skills+=("dgiot_channel_architecture")
+          ;;
+        *tdengine*)
+          detected_skills+=("tdengine_timeseries_storage")
+          ;;
+        *channel*)
+          detected_skills+=("dgiot_channel_architecture")
+          ;;
+      esac
+    fi
+    
+    # 检查当前任务类型
+    local task_type=$(echo "$context" | jq -r '.taskType // ""')
+    case "$task_type" in
+      "development"|"coding")
+        detected_skills+=("development_workflow_cycle")
+        detected_skills+=("dgiot_compile_debug")
+        ;;
+      "debugging"|"testing")
+        detected_skills+=("dgiot_compile_debug")
+        detected_skills+=("continuous_iteration_cycle")
+        ;;
+      "architecture"|"design")
+        detected_skills+=("dgiot_architecture_learning")
+        detected_skills+=("dgiot_code_reuse_solution")
+        ;;
+    esac
+  fi
+  
+  # 去重
+  local unique_skills=()
+  for skill in "${detected_skills[@]}"; do
+    if [[ ! " ${unique_skills[@]} " =~ " $skill " ]]; then
+      unique_skills+=("$skill")
+    fi
+  done
+  
+  echo "${unique_skills[@]}"
+}
+
+# 生成技能推荐说明
+generate_skill_recommendations() {
+  local skills=("$@")
+  local recommendations=()
+  
+  for skill in "${skills[@]}"; do
+    case "$skill" in
+      "erlang_chinese_utf8")
+        recommendations+=("erlang_chinese_utf8: Erlang代码中文字符串UTF8后缀检查与修复")
+        ;;
+      "erlang_include_system")
+        recommendations+=("erlang_include_system: Erlang include和include_lib系统专家")
+        ;;
+      "erlang_logging_solution")
+        recommendations+=("erlang_logging_solution: Erlang日志打印解决方案")
+        ;;
+      "dgiot_core_concepts")
+        recommendations+=("dgiot_core_concepts: DGIOT核心概念专家")
+        ;;
+      "dgiot_data_api_auth_system")
+        recommendations+=("dgiot_data_api_auth_system: DGIOT数据存储、API设计与权限系统专家")
+        ;;
+      "dgiot_data_storage")
+        recommendations+=("dgiot_data_storage: DGIOT数据存储专家")
+        ;;
+      "dgiot_compile_debug")
+        recommendations+=("dgiot_compile_debug: DGIOT编译调试技能")
+        ;;
+      "dgiot_channel_architecture")
+        recommendations+=("dgiot_channel_architecture: DGIOT通道架构与进程管理技能")
+        ;;
+      "dgiot_code_reuse_solution")
+        recommendations+=("dgiot_code_reuse_solution: DGIOT代码解决方案与复用最佳实践")
+        ;;
+      "uav_protocol_analyzer")
+        recommendations+=("uav_protocol_analyzer: 无人机协议报文分析与解析专家")
+        ;;
+      "development_workflow_cycle")
+        recommendations+=("development_workflow_cycle: 开发工作流循环技能")
+        ;;
+      "continuous_iteration_cycle")
+        recommendations+=("continuous_iteration_cycle: 持续迭代循环技能")
+        ;;
+      "tdengine_timeseries_storage")
+        recommendations+=("tdengine_timeseries_storage: TDengine时序数据存储最佳实践")
+        ;;
+      "drone_test_web_interface")
+        recommendations+=("drone_test_web_interface: 无人机调测网页界面专家")
+        ;;
+      "skill_manager")
+        recommendations+=("skill_manager: 技能管理专家")
+        ;;
+      "hook_manager")
+        recommendations+=("hook_manager: Hook管理技能")
+        ;;
+      "main_objective_tracker")
+        recommendations+=("main_objective_tracker: 主目标跟踪与偏离检测技能")
+        ;;
+      *)
+        recommendations+=("$skill: 相关技能")
+        ;;
+    esac
+  done
+  
+  echo "${recommendations[@]}"
+}
+
+# 检测相关技能
+DETECTED_SKILLS=($(detect_related_skills "$USER_MESSAGE" "$CONTEXT"))
+
+# 生成技能推荐
+SKILL_RECOMMENDATIONS=($(generate_skill_recommendations "${DETECTED_SKILLS[@]}"))
+
+# 构建输出
+if [[ ${#DETECTED_SKILLS[@]} -gt 0 ]]; then
+  echo "[SkillActivation] 检测到相关技能: ${DETECTED_SKILLS[*]}" >&2
+  echo "[SkillActivation] 任务ID: $TASK_ID" >&2
+  
+  # 构建技能数组JSON
+  SKILLS_JSON="["
+  for skill in "${DETECTED_SKILLS[@]}"; do
+    if [[ "$SKILLS_JSON" != "[" ]]; then
+      SKILLS_JSON="$SKILLS_JSON,"
+    fi
+    SKILLS_JSON="$SKILLS_JSON\"$skill\""
+  done
+  SKILLS_JSON="$SKILLS_JSON]"
+  
+  # 构建推荐数组JSON
+  RECOMMENDATIONS_JSON="["
+  for rec in "${SKILL_RECOMMENDATIONS[@]}"; do
+    if [[ "$RECOMMENDATIONS_JSON" != "[" ]]; then
+      RECOMMENDATIONS_JSON="$RECOMMENDATIONS_JSON,"
+    fi
+    RECOMMENDATIONS_JSON="$RECOMMENDATIONS_JSON\"$rec\""
+  done
+  RECOMMENDATIONS_JSON="$RECOMMENDATIONS_JSON]"
+  
+  # 上下文修改
+  CONTEXT_MOD="检测到相关技能，建议激活: ${DETECTED_SKILLS[*]}。使用use_skill工具激活特定技能。"
+  
+  echo "{\"activateSkills\":$SKILLS_JSON,\"contextModification\":\"$CONTEXT_MOD\",\"skillRecommendations\":$RECOMMENDATIONS_JSON}"
+else
+  echo "[SkillActivation] 未检测到需要激活的特定技能" >&2
+  echo "[SkillActivation] 任务ID: $TASK_ID" >&2
+  
+  # 默认上下文
+  CONTEXT_MOD="未检测到特定技能需求。如需使用技能，请使用use_skill工具手动激活。"
+  
+  echo "{\"activateSkills\":[],\"contextModification\":\"$CONTEXT_MOD\",\"skillRecommendations\":[]}"
+fi
+
+# 记录技能激活历史
+LOG_FILE="/tmp/cline_skill_activation_${TASK_ID}.log"
+TIMESTAMP_ISO=$(date -u -d @"$((TIMESTAMP/1000))" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u +"%Y-%m-%dT%H:%M:%SZ")
+echo "$TIMESTAMP_ISO | $TASK_ID | ${DETECTED_SKILLS[*]} | $USER_MESSAGE" >> "$LOG_FILE" 2>/dev/null || true

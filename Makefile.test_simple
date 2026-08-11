@@ -1,0 +1,26 @@
+## 插件测试框架 - 简单版本
+test-plugin:
+@if [ -z "$(PLUGIN)" ] || [ -z "$(TESTCASE)" ]; then \
+echo "用法: make test-plugin PLUGIN=<插件名> TESTCASE=<测试用例名>"; \
+echo "示例: make test-plugin PLUGIN=dgiot_modbus TESTCASE=simple"; \
+echo ""; \
+echo "使用 ./test_framework.sh --list-plugins 查看可用插件"; \
+echo "使用 ./test_framework.sh --list <插件名> 查看插件的测试用例"; \
+exit 1; \
+fi
+@./test_framework.sh --run $(PLUGIN) $(TESTCASE)
+
+test-modbus:
+@./test_framework.sh modbus
+
+test-modbus-simple:
+@./test_framework.sh modbus simple
+
+test-modbus-register:
+@./test_framework.sh modbus register
+
+test-modbus-simulator:
+@./test_framework.sh modbus simulator
+
+test-help:
+@./test_framework.sh --help

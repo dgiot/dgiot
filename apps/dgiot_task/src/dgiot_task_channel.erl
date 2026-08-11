@@ -138,7 +138,7 @@ handle_event(_EventId, Event, State) ->
     {ok, State}.
 
 handle_message(start_client, #state{id = ChannelId, products = Products} = State) ->
-%%    io:format("~s ~p ChannelId = ~p.~n", [?FILE, ?LINE, ChannelId]),
+    % io:format("~s ~p ChannelId = ~p.~n", [?FILE, ?LINE, ChannelId]),
     case dgiot_data:get({start_client, binary_to_atom(ChannelId)}) of
         not_find ->
             dgiot_task:start(ChannelId, Products),
@@ -150,13 +150,14 @@ handle_message(start_client, #state{id = ChannelId, products = Products} = State
     {ok, State};
 
 handle_message(stop_client, #state{id = ChannelId} = State) ->
-%%    io:format("~s ~p ChannelId = ~p.~n", [?FILE, ?LINE, ChannelId]),
+    % io:format("~s ~p ChannelId = ~p.~n", [?FILE, ?LINE, ChannelId]),
     dgiot_client:stop(ChannelId),
     dgiot_data:insert({stop_client, ChannelId}, ChannelId),
     {ok, State};
 
 handle_message(check_newdevice, #state{id = ChannelId, products = Products} = State) ->
-%%    io:format("~s ~p time ~p ChannelId = ~p.~n", [?FILE, ?LINE, dgiot_datetime:format(dgiot_datetime:now_secs(), <<"YY-MM-DD HH:NN:SS">>), ChannelId]),
+    % io:format("~s ~p time ~p ChannelId = ~p.~n", [?FILE, ?LINE, dgiot_datetime:format(dgiot_datetime:now_secs(), <<"YY-MM-DD HH:NN:SS">>), ChannelId]),
+    % io:format("~s ~p Products = ~p.~n", [?FILE, ?LINE, Products]),
     case dgiot_data:get({stop_client, binary_to_atom(ChannelId)}) of
         not_find ->
             dgiot_task:start(ChannelId, Products),

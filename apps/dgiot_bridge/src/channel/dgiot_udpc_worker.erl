@@ -56,13 +56,13 @@ handle_info(login, #udp{state = #state{productid = _ProductId, hb = Hb, login = 
 %%    Topic = <<"mock/", ProductId/binary, "/", DevAddr/binary>>,
 %%    dgiot_mqtt:subscribe(Topic),
     erlang:send_after(Hb * 1000, self(), heartbeat),
-    dgiot_udp_client:send(UDPState, Login),
+    self() ! {send, Login},
     {noreply, UDPState};
 
 handle_info(heartbeat, #udp{state = #state{hb = Hb, login = Login} = _State} = UDPState) ->
     erlang:send_after(Hb * 1000, self(), heartbeat),
 %%    io:format("~s ~p herart ~p ~n", [?FILE, ?LINE, Login]),
-    dgiot_udp_client:send(UDPState, Login),
+    self() ! {send, Login},
     {noreply, UDPState};
 
 handle_info({udp, Buff}, #udp{state = #state{productid = ProductId, module = Module} = State} = UDPState) ->

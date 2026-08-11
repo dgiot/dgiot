@@ -30,7 +30,7 @@ get_material_record(DeviceId, _Depart) ->
     end.
 
 post_material(DeviceId, #{<<"material_type">> := Type} = Map) when is_map(Map) ->
-    case dgiot_device_cache:lookup(DeviceId) of
+    case dgiot_device:lookup(DeviceId) of
         {ok, #{<<"productid">> := ProductId}} ->
             func(ProductId, DeviceId, Type, Map);
         _ ->

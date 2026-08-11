@@ -1,14 +1,30 @@
 {application, dgiot_device,
-    [{description, "DGIOT DEVICE"},
-        {vsn, "4.3.0"},
-        {modules, []},
-        {registered, []},
-        {applications, [kernel, stdlib, dgiot]},
-        {mod, {dgiot_device_app, []}},
-        {licenses, ["Apache-2.0"]},
-        {maintainers, ["DGIOT Team"]},
-        {links, [{"Homepage", "https://www.dgiotcloud.cn/"},
-            {"Github", "https://github.com/dgiot/dgiot"}
-        ]}
-    ]
-}.
+ [{description, "DGIOT Device Management Application"},
+  {vsn, "4.3.0"},
+  {registered, []},
+  {mod, {dgiot_device_app, []}},
+  {applications,
+   [kernel,
+    stdlib,
+    dgiot,
+    dgiot_parse
+   ]},
+  {env,[]},
+  {modules,
+   [dgiot_device,
+    dgiot_device_api,
+    dgiot_device_manager,
+    dgiot_device_state,
+    dgiot_device_logger,
+    dgiot_device_subdevice,
+    dgiot_device_permission,
+    dgiot_device_cache,
+    dgiot_device_utils,
+    dgiot_device_static,
+    dgiot_device_post,
+    dgiot_device_put,
+    dgiot_device_sync
+   ]},
+  {licenses, ["Apache 2.0"]},
+  {links, []}
+ ]}.

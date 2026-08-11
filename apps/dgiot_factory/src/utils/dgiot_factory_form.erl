@@ -31,7 +31,7 @@ run_factory_hook(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, Per
     end.
 
 record_device_log(TaskProductId, TaskDeviceId, AllContent) ->
-    ACL = case dgiot_device_cache:lookup(TaskDeviceId) of
+    ACL = case dgiot_device:lookup(TaskDeviceId) of
               {ok, #{<<"acl">> := AclList}} ->
                   lists:foldl(
                       fun(Role, Acc) ->

@@ -88,13 +88,15 @@ handle_call({read, Name, Config}, _From, #state{swagger = List} = State) ->
             case load_schema(?MODULE, ?SWAGGER(Name, Version), [{labels, binary}, return_maps]) of
                 {ok, Schema} ->
                     NewSchema = maps:merge(Schema, Map),
+                    %% 过滤掉未启动插件的 API
+                    FilteredSchema = filter_by_running_apps(NewSchema),
                     FinSchema =
                         case maps:get(<<"tags">>, Config, no) of
                             no ->
-                                NewSchema;
+                                FilteredSchema;
                             TagsB ->
                                 Tags = re:split(TagsB, <<",">>),
-                                get_swagger_by_tags(NewSchema, Tags)
+                                get_swagger_by_tags(FilteredSchema, Tags)
                         end,
                     {reply, {ok, FinSchema}, State};
                 {error, Reason} ->
@@ -122,6 +124,62 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% 内部函数
 %%%===================================================================
+
+%% @doc 过滤掉未启动插件的 API
+filter_by_running_apps(Schema) ->
+    RunningApps = get_running_dgiot_apps(),
+    Paths = maps:get(<<"paths">>, Schema, #{}),
+    FilteredPaths = maps:fold(
+        fun(Path, Methods, Acc) ->
+            FilteredMethods = maps:fold(
+                fun(Method, Info, Acc1) ->
+                    Tags = maps:get(<<"tags">>, Info, []),
+                    case has_running_tag(Tags, RunningApps) of
+                        true -> Acc1#{Method => Info};
+                        false -> Acc1
+                    end
+                end, #{}, Methods),
+            case maps:size(FilteredMethods) of
+                0 -> Acc;
+                _ -> Acc#{Path => FilteredMethods}
+            end
+        end, #{}, Paths),
+    Schema#{<<"paths">> => FilteredPaths}.
+
+%% @doc 获取所有运行中的 DGIOT 应用
+get_running_dgiot_apps() ->
+    RunningApps = application:which_applications(),
+    %% 提取所有 dgiot_ 开头的应用
+    [App || {App, _Desc, _Vsn} <- RunningApps, is_dgiot_app(App)].
+
+%% @doc 判断是否为 DGIOT 应用
+is_dgiot_app(App) when is_atom(App) ->
+    AppStr = atom_to_list(App),
+    case string:prefix(AppStr, "dgiot_") of
+        nomatch -> false;
+        _ -> true
+    end;
+is_dgiot_app(_) -> false.
+
+%% @doc 检查 API 是否有运行中的插件对应的 tag
+has_running_tag([], _RunningApps) -> true;
+has_running_tag([Tag | Rest], RunningApps) ->
+    App = tag_to_app(Tag),
+    case lists:member(App, RunningApps) of
+        true -> true;
+        false -> has_running_tag(Rest, RunningApps)
+    end.
+
+%% @doc 将 tag 转换为应用名
+tag_to_app(Tag) when is_binary(Tag) ->
+    TagStr = binary_to_list(Tag),
+    %% 将首字母大写的 Tag 转换为 dgiot_ 前缀的应用名
+    %% 如 "Parse" -> "dgiot_parse", "System" -> "dgiot_system"
+    AppStr = "dgiot_" ++ string:to_lower(TagStr),
+    list_to_existing_atom(AppStr);
+tag_to_app(Tag) when is_list(Tag) ->
+    tag_to_app(list_to_binary(Tag));
+tag_to_app(_) -> undefined.
 
 %% 产生swagger
 generate(Name, Path, Hand) ->

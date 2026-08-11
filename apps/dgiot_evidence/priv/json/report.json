@@ -1,0 +1,50 @@
+[
+    {
+        "path": "/dgiot_file/product/2c461b75eb/pc.docx",
+        "type": "pc",
+        "images": [
+            {
+                "width": 1080,
+                "height": 1920,
+                "url": "1.jpg"
+            },
+            {
+                "width": 1080,
+                "height": 1920,
+                "url": "2.jpg"
+            }
+        ]
+    },
+    {
+        "path": "/dgiot_file/product/2c461b75eb/pad.docx",
+        "type": "pad",
+        "images": [
+            {
+                "width": 1080,
+                "height": 1920,
+                "url": "1.jpg"
+            },
+            {
+                "width": 1080,
+                "height": 1920,
+                "url": "2.jpg"
+            }
+        ]
+    },
+    {
+        "path": "/dgiot_file/product/2c461b75eb/mobile.docx",
+        "type": "mobile",
+        "images": [
+            {
+                "width": 1080,
+                "height": 1920,
+                "url": "1.jpg"
+            },
+            {
+                "width": 1080,
+                "height": 1920,
+                "url": "2.jpg"
+            }
+        ]
+    }
+]

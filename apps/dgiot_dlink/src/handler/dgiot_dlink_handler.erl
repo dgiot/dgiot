@@ -132,10 +132,10 @@ do_request(get_protocol, Body, _Context, _Req) ->
             Amis = lists:foldl(
                 fun
                     (#{cType := Type, mod := Mod} = _X, _Acc) when Type1 == Type ->
-                        io:format("Type ~p Mod ~p ~n", [Type, Mod]),
+                        % io:format("Type ~p Mod ~p ~n", [Type, Mod]),
                         dgiot_utils:get_JsonFile(Mod, <<Type/binary, ".json">>);
-                    (#{cType := Type} = _X, Acc) ->
-                        io:format("Type ~p ~n", [Type]),
+                    (#{cType := _Type} = _X, Acc) ->
+                        % io:format("Type ~p ~n", [_Type]),
                         Acc
                 end, <<"{}">>, Protocols),
             {200, Amis};
@@ -223,7 +223,7 @@ do_request(post_third_party_push, #{<<"imei">> := Imei} = Args, _Context, _Req) 
 
     os:cmd(<<"wget -qoP /data/dgiot/go_fastdfs/files/dgiot_file/device/", Imei/binary, " ", Image/binary>>),
     os:cmd(<<"wget -qoP /data/dgiot/go_fastdfs/files/dgiot_file/device/", Imei/binary, " ", Result_image/binary>>),
-    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
+    % io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
     {ok, #{<<"status">> => 0, <<"msg">> => <<"success">>}};
 
 do_request(_OperationId, _Args, _Context, _Req) ->

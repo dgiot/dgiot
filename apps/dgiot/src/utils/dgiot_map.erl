@@ -119,10 +119,11 @@ test_map() ->
     end.
 
 test_get() ->
-    Keys = [<<"content.i_out">>, <<"content.i_in">>, <<"name.[0].b.[0].c">>],
+    Keys = [<<"content.i_out">>, <<"content.i_in">>, <<"name.[0].b.[0].c">>, <<"name.[0].b.[2].c">>],
     Data = #{<<"content">> => #{<<"i_out">> => 1, <<"i_in">> => 9},
         <<"name">> => [
-            #{<<"b">> => [#{<<"c">> => 9}]}
+            #{<<"b">> => [#{<<"c">> => 19}]},    
+            #{<<"b">> => [#{<<"c">> => 10}]}
         ]
     },
     with(Keys, Data).

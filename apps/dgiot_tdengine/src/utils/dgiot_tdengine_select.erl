@@ -143,10 +143,10 @@ format_where([{Field, Value} | Other], Acc) ->
     V = dgiot_utils:to_binary(Value),
     format_where(Other, [<<Field/binary, " = '", V/binary, "'">> | Acc]).
 format_where(#{<<"where">> := Where0}) when Where0 =/= undefined, Where0 =/= <<>> ->
-    Where =
+Where =
         case jsx:is_json(Where0) of
             true -> dgiot_json:decode(Where0, [return_maps]);
-            fasle -> Where0
+            false -> Where0
         end,
     Where1 =
         case is_list(Where) of

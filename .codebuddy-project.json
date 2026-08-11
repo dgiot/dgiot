@@ -1,0 +1,160 @@
+{
+  "name": "DG-IoT UAV Plugin Project",
+  "version": "1.0.0",
+  "description": "超近距无人机自动化测试产线项目配置",
+  "type": "erlang-otp",
+  
+  "projectStructure": {
+    "sourceDirectories": [
+      "apps/dgiot_uav/src",
+      "apps/dgiot_uav/include",
+      "apps/dgiot_uav/test"
+    ],
+    "configurationFiles": [
+      "apps/dgiot_uav/priv/json/*.json",
+      "apps/dgiot_uav/etc/*.conf"
+    ],
+    "documentationFiles": [
+      "apps/dgiot_uav/docs/*.md",
+      "apps/dgiot_uav/priv/docs/*.md"
+    ]
+  },
+  
+  "workflowPatterns": {
+    "development": {
+      "compile": {
+        "command": "make run",
+        "description": "全量编译并启动在线调试环境",
+        "preferred": true
+      },
+      "hotCompile": {
+        "command": "_build/emqx/rel/emqx/bin/emqx eval 'dgiot_plugin:compile(dgiot_uav).'",
+        "description": "热编译无人机插件",
+        "preferred": true
+      },
+      "hotReload": {
+        "command": "_build/emqx/rel/emqx/bin/emqx eval 'dgiot_plugin:reload_plugin(dgiot_uav).'",
+        "description": "热加载无人机插件"
+      }
+    },
+    "testing": {
+      "unitTest": {
+        "command": "cd apps/dgiot_uav && rebar3 eunit",
+        "description": "运行单元测试"
+      },
+      "integrationTest": {
+        "command": "make test",
+        "description": "运行集成测试"
+      },
+      "onlineTest": {
+        "command": "_build/emqx/rel/emqx/bin/emqx eval 'dgiot_uav_auto_tester:test_magnetic_auto().'",
+        "description": "在线执行磁航向自动化测试"
+      }
+    },
+    "debugging": {
+      "plcStatus": {
+        "command": "_build/emqx/rel/emqx/bin/emqx eval 'io:format(\"Checking plc 1100: ~p~n\", [global:whereis_name({plc, 1100})]).'",
+        "description": "检查PLC客户端注册状态"
+      },
+      "deviceStatus": {
+        "command": "_build/emqx/rel/emqx/bin/emqx eval 'dgiot_parse:query_object(<<\"Device\">>, #{<<\"where\">> => #{<<\"content.station\">> => <<\"1100\">>}}).'",
+        "description": "检查工位设备状态"
+      },
+      "protocolDebug": {
+        "command": "_build/emqx/rel/emqx/bin/emqx eval 'dgiot_uav_protocol:test_parse().'",
+        "description": "测试协议解析功能"
+      }
+    }
+  },
+  
+  "conventions": {
+    "codingStandards": {
+      "moduleStructure": "标准模板包含必要的-export和-include，函数有@doc注释",
+      "functionNaming": "动词+名词格式，使用@doc/@spec/@param/@returns注释",
+      "architecture": "三层架构: API Gateway(handler) → Function Gateway(dgiot_*.erl) → Implementation(service/dao)",
+      "errorHandling": "返回{ok, Result}/{error, Reason}，使用try-catch处理异常",
+      "logging": "格式: io:format(\"~s ~p Event = ~p.~n\", [?FILE, ?LINE, Event])",
+      "unicode": "非ASCII字符串必须使用<<\"内容\"/utf8>>格式"
+    },
+    "gitRules": {
+      "excludePatterns": [
+        ".codebuddy/",
+        ".cline/",
+        "apps/dgiot_uav/priv/sensitive/",
+        "apps/dgiot_uav/.codebuddy/",
+        "apps/dgiot_uav/.codeartsdoer/"
+      ],
+      "commitMessages": "遵循Conventional Commits格式: feat: 新功能, fix: 修复, docs: 文档, test: 测试"
+    },
+    "security": {
+      "sensitiveInfo": "禁止硬编码绝对路径，使用相对路径或环境变量",
+      "configuration": "敏感配置使用{{VARIABLE_NAME}}格式，通过环境变量注入",
+      "secrets": "API密钥、密码等存储在环境变量或专用配置文件中"
+    }
+  },
+  
+  "agents": {
+    "uav_test_engineer": {
+      "description": "无人机测试工程师智能体",
+      "triggers": ["无人机测试", "自动化测试", "测试结果分析", "工位绑定"],
+      "capabilities": ["测试项配置", "设备监控", "PLC通信", "结果分析"]
+    },
+    "uav_protocol_engineer": {
+      "description": "无人机协议工程师智能体",
+      "triggers": ["协议解析", "EB90调试", "报文分析", "CRC校验"],
+      "capabilities": ["协议解析", "数据编码", "CRC计算", "兼容性测试"]
+    }
+  },
+  
+  "skills": {
+    "uav_test_management": {
+      "description": "无人机测试管理技能",
+      "triggers": ["配置测试项", "管理工位", "执行测试", "分析结果"],
+      "tools": ["Read", "Write", "Execute", "RAG_search"]
+    },
+    "uav_protocol_analysis": {
+      "description": "无人机协议分析技能",
+      "triggers": ["解析协议", "分析报文", "调试通信", "验证CRC"],
+      "tools": ["Read", "Write", "Execute", "RAG_search"]
+    }
+  },
+  
+  "integration": {
+    "codebuddy": {
+      "agentDetection": "基于关键词自动检测并推荐相关智能体",
+      "skillActivation": "通过use_skill工具调用专用技能",
+      "workflowGuidance": "根据项目约定指导开发流程"
+    },
+    "mcp": {
+      "functionQuery": "使用MCP Server查询DG-IoT函数库",
+      "apiDocumentation": "访问API文档和测试用例",
+      "dependencyAnalysis": "分析模块依赖关系"
+    }
+  },
+  
+  "hooks": {
+    "preCompile": {
+      "actions": ["检查中文UTF-8编码", "验证函数命名规范", "检查三层架构遵守情况"]
+    },
+    "postCompile": {
+      "actions": ["检查编译警告", "验证零警告原则", "生成API文档"]
+    },
+    "preCommit": {
+      "actions": ["运行单元测试", "检查安全规则", "验证.gitignore排除"]
+    }
+  },
+  
+  "documentation": {
+    "architecture": "docs/UAV协议分层解耦架构设计.md",
+    "api": "apps/dgiot_uav/priv/swagger/swagger_uav.json",
+    "protocol": "apps/dgiot_uav/priv/json/uav_protocol.json",
+    "testing": "apps/dgiot_uav/priv/docs/测试系统设计.md"
+  },
+  
+  "environment": {
+    "runtime": "Erlang/OTP 24+",
+    "dependencies": ["emqx", "dgiot_core", "tdengine"],
+    "tools": ["rebar3", "make", "git", "iconv"],
+    "recommendedExtensions": ["erlang-ls", "vscode-erlang"]
+  }
+}

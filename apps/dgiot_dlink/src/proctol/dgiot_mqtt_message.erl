@@ -21,70 +21,98 @@
 -include_lib("dgiot/include/dgiot_mqtt.hrl").
 -define(DGIOT_DLINK_REQUEST_ID, dgiot_dlink_request_id).
 %% ACL Callbacks
--export([
-    on_message_publish/2,
-    init_ets/0,
-    redirect_topic/1
-]).
+-export([on_message_publish/2,
+         init_ets/0,
+         redirect_topic/1]).
 
 -define(EMPTY_USERNAME, <<"">>).
+
 
 init_ets() ->
     dgiot_data:init(?DGIOT_DLINK_REQUEST_ID).
 
+
 %%
 on_message_publish(Message = #message{topic = <<"$dg/user/dashboard/", SessionToken:34/binary, _Rest/binary>>, payload = Payload, from = ClientId}, _State) ->
+    % io:format("~s ~p Payload: ~p~n", [?FILE, ?LINE, Payload]),
     dgiot_mqtt:publish(dgiot_utils:to_md5(ClientId), <<"dashboard_ack/", SessionToken/binary>>, Payload),
     {ok, Message};
 
+on_message_publish(Message = #message{topic = <<"$dg/user/", DeviceId:10/binary, "/properties/report">>, payload = Payload}, _State) ->
+    % io:format("~s ~p DeviceId: ~p Payload: ~p~n", [?FILE, ?LINE,DeviceId, Payload]),
+    case dgiot_device:lookup(DeviceId) of
+        {ok, #{<<"devaddr">> := DevAddr, <<"productid">> := ProductId}} ->
+            Topic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/properties/report">>,
+            dgiot_mqtt:publish(DeviceId, Topic, Payload),
+            % io:format("~s ~p Payload: ~p~n", [?FILE, ?LINE, Payload]),
+            {ok, Message};
+        _ ->
+            {ok, Message}
+    end;
+
 on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, payload = Payload, from = _ClientId, headers = _Headers}, _State) ->
+    % io:format("~s ~p Topic: ~p Payload: ~p~n", [?FILE, ?LINE, Topic, Payload]),
     case re:split(Topic, <<"/">>) of
         [ProductId, DevAddr, <<"init">>, <<"request">>] ->
-%%      初始化请求      $dg/thing/{productId}/{deviceAddr}/init/request
+            %%      初始化请求      $dg/thing/{productId}/{deviceAddr}/init/request
             dgiot_dlink_proctol:firmware_report(ProductId, DevAddr, get_payload(Payload));
+        [ProductId, DevAddr, <<"properties">>, <<"report1">>] ->
+            NewTopic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/properties/report">>,
+            NewPayload = transform_keys(get_payload(Payload)),
+            dgiot_mqtt:publish(DevAddr, NewTopic, jiffy:encode(NewPayload));
         [ProductId, DevAddr, <<"properties">>, <<"report">>] ->
-%%       属性获取	$dg/thing/{productId}/{deviceAddr}/properties/report	设备 => 平台
+            %%       属性获取	$dg/thing/{productId}/{deviceAddr}/properties/report	设备 => 平台
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             Ts = dgiot_datetime:now_secs(),
+            % io:format("~s ~p DeviceId: ~p Ts: ~p~n", [?FILE, ?LINE, DeviceId, Ts]),
             case dgiot_data:get(?DGIOT_DLINK_REQUEST_ID, DeviceId) of
                 {OldTs, Request_id} when (Ts - OldTs) < 5 ->
-%%                    $dg/user/realtimecard/{DeviceId}/report
+                    %%                    $dg/user/realtimecard/{DeviceId}/report
                     RequestTopic = <<"$dg/user/", Request_id/binary, "/", DeviceId/binary, "/report">>,
                     dgiot_mqtt:send(ProductId, DevAddr, DeviceId, RequestTopic, Payload);
                 _ ->
                     pass
             end,
+            % io:format("~s ~p DeviceId: ~p Ts: ~p~n", [?FILE, ?LINE, DeviceId, dgiot_datetime:now_secs()]),
             dgiot_mqttc_channel:send(ProductId, DevAddr, <<"$dg/thing/", Topic/binary>>, Payload),
+            % io:format("~s ~p DeviceId: ~p Ts: ~p~n", [?FILE, ?LINE, DeviceId, dgiot_datetime:now_secs()]),
             dgiot_dlink_proctol:properties_report(ProductId, DevAddr, get_payload(Payload));
         [ProductId, DevAddr, <<"report">>] ->
-%%       属性获取	$dg/thing/{productId}/{deviceAddr}/properties/report	设备 => 平台
+            %%       属性获取	$dg/thing/{productId}/{deviceAddr}/properties/report	设备 => 平台
             dgiot_dlink_proctol:properties_report(ProductId, DevAddr, get_payload(Payload));
         [ProductId, DevAddr, <<"firmware">>, <<"report">>] ->
             dgiot_dlink_proctol:firmware_report(ProductId, DevAddr, get_payload(Payload));
         [DeviceId, <<"properties">>, <<"get">>, <<"request_id=", Request_id/binary>>] ->
-%%       属性获取	$dg/thing/{deviceId}/properties/get/request_id={request_id}	用户 =>	平台
+            %%       属性获取	$dg/thing/{deviceId}/properties/get/request_id={request_id}	用户 =>	平台
             case dgiot_device:lookup(DeviceId) of
                 {ok, #{<<"devaddr">> := DevAddr, <<"productid">> := ProductId}} ->
-%%                  属性获取	$dg/device/{productId}/{deviceAddr}/properties 	平台 =>	设备
+                    %%                  属性获取	$dg/device/{productId}/{deviceAddr}/properties 	平台 =>	设备
                     RequestTopic = <<"$dg/device/", ProductId/binary, "/", DevAddr/binary, "/properties">>,
                     dgiot_data:insert(?DGIOT_DLINK_REQUEST_ID, DeviceId, {dgiot_datetime:now_secs(), Request_id}),
-                    dgiot_mqtt:send(ProductId, DevAddr, DeviceId, RequestTopic, Payload);
+                    dgiot_mqtt:send(ProductId, DevAddr, DeviceId, RequestTopic, get_payload(Payload));
                 _ ->
                     pass
             end;
         _ ->
+            % io:format("~s ~p Topic: ~p Payload: ~p~n", [?FILE, ?LINE, Topic, Payload]),
             pass
     end,
+    % io:format("~s ~p ~n", [?FILE, ?LINE]),
     {ok, Message};
 
 on_message_publish(Message = #message{from = DeviceAddr, headers = #{username := ProductId}, topic = Topic}, State) ->
+    % io:format("~s ~p Topic: ~p Payload: ~p~n", [?FILE, ?LINE, Topic, Message]),
     Topic1 = re:replace(Topic, DeviceAddr, <<"${deviceAddr}">>, [global, {return, binary}]),
     NewTopic = re:replace(Topic1, ProductId, <<"${productId}">>, [global, {return, binary}]),
+    % io:format("~s ~p Topic1: ~p NewTopic: ~p~n", [?FILE, ?LINE, Topic1, NewTopic]),
     dgiot_hook:run_hook({ProductId, NewTopic}, {NewTopic, Message, State}),
+    % io:format("~s ~p Topic1: ~p NewTopic: ~p~n", [?FILE, ?LINE, Topic1, NewTopic]),
     {ok, Message};
 
 on_message_publish(Message = #message{topic = _Topic, payload = _Payload}, _State) ->
+    % io:format("~s ~p _Topic: ~p Payload: ~p~n", [?FILE, ?LINE, _Topic, _Payload]),
     {ok, Message}.
+
 
 %% topic 重定向
 redirect_topic({HookTopic, Message = #message{from = DeviceAddr, headers = #{username := ProductId}}, State}) ->
@@ -97,17 +125,46 @@ redirect_topic({HookTopic, Message = #message{from = DeviceAddr, headers = #{use
 
     end.
 
+
 get_topic(<<"device_property_report">>, ProductId, DeviceAddr) ->
     <<"$dg/thing/", ProductId/binary, "/", DeviceAddr/binary, "/properties/report">>;
 
 get_topic(_, ProductId, DeviceAddr) ->
     <<"$dg/thing/", ProductId/binary, "/", DeviceAddr/binary, "/properties/report">>.
 
+
 get_payload(Payload) ->
-%%    io:format("~s ~p Payload: ~p~n", [?FILE, ?LINE, Payload]),
+    %%    io:format("~s ~p Payload: ~p~n", [?FILE, ?LINE, Payload]),
     case jsx:is_json(Payload) of
         true ->
             jiffy:decode(Payload, [return_maps]);
         false ->
             Payload
     end.
+
+
+transform_keys(Payload) when is_map(Payload) ->
+    maps:fold(fun(Key, Value, Acc) ->
+                      NewKey = transform_key(Key),
+                      Acc#{NewKey => Value}
+              end,
+              #{},
+              Payload);
+transform_keys(Payload) ->
+    Payload.
+
+
+transform_key(Key) when is_binary(Key) ->
+    % 只有当key以数字开头时才进行处理
+    case re:run(Key, "^[0-9]", [unicode]) of
+        {match, _} ->
+            % 移除键中的 # 字符，并在前面添加 A 前缀
+            CleanKey = re:replace(Key, <<"#">>, <<"_">>, [global, {return, binary}]),
+            <<"A", CleanKey/binary>>;
+        nomatch ->
+            Key
+    end;
+transform_key(Key) when is_list(Key) ->
+    transform_key(list_to_binary(Key));
+transform_key(Key) ->
+    Key.

@@ -65,14 +65,34 @@ init_plugins() ->
 
 check_dgiot_app() ->
     lists:foldl(fun({Module, _, _} = App, Acc) ->
-        case dgiot_utils:to_binary(Module) of
-            <<"dgiot_", _/binary>> ->
-                Acc ++ [App];
-            <<"dgaiot_", _/binary>> ->
-                Acc ++ [App];
-            <<"dgiot">> ->
-                Acc ++ [App];
-            _ ->
+        try
+            % 确保Module是原子，而不是列表
+            ModuleAtom = 
+                case is_list(Module) of
+                    true when length(Module) =:= 1 ->
+                        % 如果是单元素列表，提取其中的原子
+                        [Atom] = Module,
+                        Atom;
+                    true ->
+                        % 如果是其他列表，转换为原子
+                        list_to_atom(lists:concat(Module));
+                    false ->
+                        % 如果不是列表，直接使用
+                        Module
+                end,
+            case dgiot_utils:to_binary(ModuleAtom) of
+                <<"dgiot_", _/binary>> ->
+                    Acc ++ [App];
+                <<"dgaiot_", _/binary>> ->
+                    Acc ++ [App];
+                <<"dgiot">> ->
+                    Acc ++ [App];
+                _ ->
+                    Acc
+            end
+        catch
+            _:Reason ->
+                io:format("~s ~p Failed to process module ~p: ~p~n", [?FILE, ?LINE, Module, Reason]),
                 Acc
         end
                 end, [], application:loaded_applications()).
@@ -91,8 +111,15 @@ child_spec(M, worker, Args) ->
     };
 
 child_spec(M, supervisor, Args) ->
+    % 对于监督者，使用ChannelId作为id，避免重复
+    % Args通常是[ChannelId]，其中ChannelId是监督者名称
+    Id = case Args of
+        [ChannelId | _] when is_atom(ChannelId) -> ChannelId;
+        [ChannelId | _] when is_binary(ChannelId) -> binary_to_atom(ChannelId);
+        _ -> M
+    end,
     #{
-        id => M,
+        id => Id,
         start => {M, start_link, Args},
         restart => permanent,
         shutdown => infinity,

@@ -1,0 +1,24 @@
+{
+    "version": "1.0",
+    "rules": {
+        "project_rules": {
+            "path": "${workspaceFolder}/.clinerules",
+            "description": "项目通用规则"
+        },
+        "plugin_rules": {
+            "path": "${workspaceFolder}/apps/*/.clinerules",
+            "description": "插件特定规则",
+            "pattern": "**/.clinerules/README.md"
+        }
+    },
+    "refresh": {
+        "auto_refresh": true,
+        "on_file_change": true,
+        "interval": 5000
+    },
+    "ui": {
+        "show_plugin_rules": true,
+        "group_by_plugin": true,
+        "show_paths": true
+    }
+}

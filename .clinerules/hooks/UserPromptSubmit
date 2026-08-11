@@ -1,0 +1,94 @@
+#!/bin/bash
+# UserPromptSubmit Hook - 用户提示提交Hook，检测文档转换需求
+
+set -e
+
+# 读取JSON输入
+INPUT_JSON=$(cat)
+USER_PROMPT=$(echo "$INPUT_JSON" | jq -r '.userPromptSubmit.prompt // ""')
+TASK_ID=$(echo "$INPUT_JSON" | jq -r '.taskId // ""')
+TIMESTAMP=$(echo "$INPUT_JSON" | jq -r '.timestamp // 0')
+
+# 初始化输出
+CANCEL=false
+CONTEXT_MOD=""
+ERROR_MSG=""
+
+# 文档转换技能触发短语
+DOCUMENT_CONVERSION_TRIGGERS=(
+    "文档转换" "pandoc转换" "markdown转html" "文档格式转换"
+    "安装pandoc" "批量文档转换" "markdown转pdf" "文档自动化处理"
+    "office文档" "word转pdf" "excel转html" "ppt转markdown"
+    "文件提取" "内容提取" "文本提取" "格式转换"
+    "大的office文档" "常见文档提取" "文档处理" "批量处理"
+    "pdf转word" "word转markdown" "excel转csv" "ppt转图片"
+)
+
+# 检查是否包含文档转换需求
+check_document_conversion_request() {
+    local prompt="$1"
+    
+    # 转换为小写进行匹配
+    local prompt_lower=$(echo "$prompt" | tr '[:upper:]' '[:lower:]')
+    
+    for trigger in "${DOCUMENT_CONVERSION_TRIGGERS[@]}"; do
+        local trigger_lower=$(echo "$trigger" | tr '[:upper:]' '[:lower:]')
+        if [[ "$prompt_lower" == *"$trigger_lower"* ]]; then
+            return 0  # 匹配到触发短语
+        fi
+    done
+    
+    # 检查文件扩展名
+    if [[ "$prompt_lower" == *".doc"* ]] || [[ "$prompt_lower" == *".docx"* ]] ||
+       [[ "$prompt_lower" == *".pdf"* ]] || [[ "$prompt_lower" == *".xls"* ]] ||
+       [[ "$prompt_lower" == *".xlsx"* ]] || [[ "$prompt_lower" == *".ppt"* ]] ||
+       [[ "$prompt_lower" == *".pptx"* ]] || [[ "$prompt_lower" == *".md"* ]] ||
+       [[ "$prompt_lower" == *".html"* ]] || [[ "$prompt_lower" == *".htm"* ]]; then
+        return 0  # 包含文档文件扩展名
+    fi
+    
+    return 1  # 不匹配
+}
+
+# 主逻辑
+if [ -n "$USER_PROMPT" ]; then
+    echo "[UserPromptSubmit Hook] 用户提示: ${USER_PROMPT:0:100}..." >&2
+    
+    # 检查是否包含文档转换需求
+    if check_document_conversion_request "$USER_PROMPT"; then
+        echo "[UserPromptSubmit Hook] 检测到文档转换需求" >&2
+        
+        # 构建技能调用建议
+        CONTEXT_MOD="检测到文档转换需求，建议使用pandoc_document_converter技能。"
+        CONTEXT_MOD="$CONTEXT_MOD 该技能支持："
+        CONTEXT_MOD="$CONTEXT_MOD 1. Office文档转换 (Word, Excel, PowerPoint)"
+        CONTEXT_MOD="$CONTEXT_MOD 2. PDF与HTML互转"
+        CONTEXT_MOD="$CONTEXT_MOD 3. Markdown格式转换"
+        CONTEXT_MOD="$CONTEXT_MOD 4. 批量文档处理"
+        CONTEXT_MOD="$CONTEXT_MOD 5. 自动部署和安装pandoc"
+        
+        CONTEXT_MOD="$CONTEXT_MOD 触发短语：文档转换、pandoc转换、markdown转html、安装pandoc"
+        CONTEXT_MOD="$CONTEXT_MOD 使用方法：python3 pandoc_converter.py 输入文件 -o 输出文件"
+        
+        # 如果是大的Office文档或常见文档提取
+        if [[ "$USER_PROMPT" == *"大的office文档"* ]] || [[ "$USER_PROMPT" == *"常见文档提取"* ]]; then
+            CONTEXT_MOD="$CONTEXT_MOD 提示：对于大的Office文档，建议先转换为中间格式（如Markdown）再处理。"
+            CONTEXT_MOD="$CONTEXT_MOD 常见文档提取流程：Office文档 → Markdown → 目标格式"
+        fi
+        
+        # 记录到日志
+        LOG_FILE="/tmp/cline_document_conversion_${TASK_ID}.log"
+        echo "$(date -d @$((TIMESTAMP/1000)) '+%Y-%m-%dT%H:%M:%S')|文档转换需求|$USER_PROMPT" >> "$LOG_FILE"
+    fi
+fi
+
+# 输出JSON结果
+jq -n \
+    --arg cancel "$CANCEL" \
+    --arg contextMod "$CONTEXT_MOD" \
+    --arg errorMsg "$ERROR_MSG" \
+    '{
+        cancel: ($cancel == "true"),
+        contextModification: $contextMod,
+        errorMessage: $errorMsg
+    }'

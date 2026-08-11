@@ -88,6 +88,7 @@ init(Req0, Map) ->
 
 %% parse js的调用处理
 handle(OperationID, Args, #{from := js} = Context, Req) ->
+    % io:format("~s ~p ~p~n", [?FILE, ?LINE, OperationID]),
     OldHeaders = dgiot_req:headers(Req, [{return, map}]),
     ReqHeader = maps:without([<<"authorization">>, <<"sessionToken">>], OldHeaders),
     {ok, Body, Req1} = dgiot_req:read_body(Req),
@@ -100,6 +101,7 @@ handle(OperationID, Args, #{from := js} = Context, Req) ->
     do_request_before(list_to_binary(atom_to_list(OperationID)), Args, NewBody, ReqHeader, Context, Req1);
 
 handle(OperationID, Args, Context, Req) ->
+    % io:format("~s ~p ~p~n", [?FILE, ?LINE, OperationID]),
     OldHeaders = dgiot_req:headers(Req, [{return, map}]),
     ReqHeader = maps:without([<<"authorization">>, <<"sessionToken">>], OldHeaders),
     {ok, Body, Req1} = dgiot_req:read_body(Req),
@@ -268,6 +270,7 @@ do_request_before(<<"put_trigger_", _/binary>>, #{<<"triggerName">> := TriggerNa
 
 
 do_request_before(OperationID, Args, ReqBody, Headers, Context, Req) ->
+    % io:format("~s ~p ~p~n", [?FILE, ?LINE, OperationID]),
     request_parse(OperationID, Args, ReqBody, Headers, Context, Req).
 
 
@@ -292,6 +295,7 @@ do_request_after(<<"get_login">>, 200, ResHeaders, ResBody, Context, Req) ->
     end;
 
 do_request_after(OperationID, StatusCode, ResHeaders, ResBody, _Context, Req) ->
+    % io:format("~s ~p ~p ~p~n", [?FILE, ?LINE, OperationID, StatusCode]),
     Map = jsx:decode(ResBody, [{labels, binary}, return_maps]),
     Body = dgiot_parse_hook:api_hook({'after', OperationID, Map, ResBody}),
     {StatusCode, ResHeaders, Body, Req}.
@@ -300,6 +304,7 @@ do_request_after(OperationID, StatusCode, ResHeaders, ResBody, _Context, Req) ->
 %%  parse 请求
 %% ==========================io:format
 request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath, <<"sessionToken">> := Token} = Context, Req) ->
+    % io:format("~s ~p ~p~n", [?FILE, ?LINE, OperationID]),
     QS =
         lists:foldl(
             fun
@@ -324,6 +329,7 @@ request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath, <<"sess
     request_parse(OperationID, Url, Method, NewArgs, NewBody, Headers, Context, Req).
 
 request_parse(OperationID, Url, Method, Args, Body, Headers, #{from := From} = Context, Req) ->
+    % io:format("~s ~p ~p~n", [?FILE, ?LINE, OperationID]),
     {_Type, NewOperationID} = get_OperationID(OperationID),
     case dgiot_parse:request(Method, maps:to_list(Headers), Url, dgiot_parse_id:get_objectid(NewOperationID, Body), [{from, From}, {args, Args}]) of
         {ok, StatusCode, ResHeaders, ResBody} ->

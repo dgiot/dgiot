@@ -453,7 +453,7 @@ get_schemas_json() ->
 
 %%   dgiot_parse:update_schemas(Fields).
 update_schemas_json() ->
-%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, <<"update_schemas_json start">>]),
+    % io:format("~s ~p ~p~n", [?FILE, ?LINE, <<"update_schemas_json start">>]),
     %%    API更新
     dgiot_install:generate_rule([{<<"webname">>, #{name => dgiot_apihub}}]).
     %%    物模型更新

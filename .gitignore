@@ -41,6 +41,7 @@ Mnesia.*/
 _checkouts
 ./rebar.config
 ./rebar.config.erl
+./data/
 rebar.config.rendered
 /rebar3
 rebar.lock
@@ -103,15 +104,20 @@ apps/dgiot_rtsp2ws/
 apps/dgiot_sophon/
 apps/dgiot_open62541/
 apps/dgiot_tdenginex/
-apps/dgiot_zeta/
+apps/dgiot_zeta/ 
 apps/dgiot_onvif/
+apps/dgiot_drone/
+apps/dgiot_wpms
+apps/dgiot_cnooc
+apps/dgiot_hikvision
+apps/dgiot_uav/
 node_modules/
 package-lock.json
 erlang_ls.config
 .els_cache/
-lib-ce/emqx_dashboard/
-lib-ce/emqx_modules/
-lib-ce/emqx_telemetry/
+#lib-ce/emqx_dashboard/
+#lib-ce/emqx_modules/
+#lib-ce/emqx_telemetry/
 # VSCode files
 .vs/
 .vscode/
@@ -125,3 +131,17 @@ lib-ce/emqx_telemetry/
 mix.lock
 .gitconfig.tmp
 *.log
+
+# CodeBuddy敏感文件 - 禁止提交到开源库
+.codebuddy/
+.cline/
+
+# 开发环境敏感配置
+*.secret
+*.key
+.env
+.env.local
+apps/*/etc/*.conf
+
+# 无人机项目敏感文件 - 已在上方精确排除
+apps/dgiot_uav/.codebuddy/

@@ -17,6 +17,7 @@
 -define(DGIOT_PRODUCT, dgiot_product).
 -define(DGIOT_PRODUCT_IDENTIFIE, dgiot_product_identifie).
 -define(DGIOT_PRODUCT_STAB, dgiot_product_stab).
+-define(DGIOT_DEVICE, dgiot_device).
 -define(DEVICE_PROFILE, dgiot_device_profile).
 -define(DEVICE_DEVICE_COLOR, dgiot_device_color).
 -define(DGIOT_CHANNEL_SESSION, dgiot_channel_session).
@@ -25,3 +26,14 @@
 -define(VCON, 0).
 -define(DEV, 1).
 -define(DGIOT_LOCATION_ADDRESS, dgiot_location_address).
+
+%% 通知类型
+-define(NOTIFY_TYPE_STATE, <<"state">>).
+-define(NOTIFY_TYPE_ALARM, <<"alarm">>).
+-define(NOTIFY_TYPE_DATA, <<"data">>).
+
+%% 告警级别
+-define(ALARM_LEVEL_INFO, <<"info">>).
+-define(ALARM_LEVEL_WARNING, <<"warning">>).
+-define(ALARM_LEVEL_ERROR, <<"error">>).
+-define(ALARM_LEVEL_CRITICAL, <<"critical">>).

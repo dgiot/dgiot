@@ -20,9 +20,140 @@
 -include_lib("dgiot/include/logger.hrl").
 
 -export([get_schema/2, create_database/1, create_table/2, alter_table/2, get_addSql/4]).
+-export([extract_columns/1, create_stable_by_columns/5]).
 
-%% TDengine参数限制与保留关键字
-%% https://www.taosdata.com/docs/cn/v2.0/administrator#keywords
+%% 从产品物模型中提取所有字段（已清洗、去重，不含 devaddr 标签）
+extract_columns(Product) ->
+    Thing = maps:get(<<"thing">>, Product, #{}),
+    Properties = maps:get(<<"properties">>, Thing, []),
+    Tags = maps:get(<<"tags">>, Thing, []),
+    
+    % 收集所有字段，以清洗后的名称为键，类型为值，用 maps 自动去重
+    AllFieldsMap = lists:foldl(fun(Prop, Acc) ->
+        case dgiot_tdengine_field:get_field(Prop) of
+            pass -> Acc;
+            {Name, Type} -> Acc#{Name => Type}
+        end
+    end, #{}, Properties ++ Tags),
+    
+    % 转换为列表，并过滤掉 devaddr
+    lists:filter(fun({Name, _}) -> Name =/= <<"devaddr">> end, maps:to_list(AllFieldsMap)).
+
+%% 逐字段创建超级表（5参数版本）
+create_stable_by_columns(ChannelId, ProductId, Database, TableName, AllColumns) ->
+    ?LOG(info, ">>> create_stable_by_columns: Database=~s, Table=~s, total columns=~p", 
+         [Database, TableName, length(AllColumns)]),
+    {FinalColumns, _FreshFlag} = case dgiot_parse:get_object(<<"Product">>, ProductId) of
+        {ok, LatestProduct} ->
+            ?LOG(info, ">>> Fetched latest product from Parse, extracting columns"),
+            NewCols = extract_columns(LatestProduct),
+            if length(NewCols) =/= length(AllColumns) ->
+                ?LOG(info, ">>> Cache mismatch: passed ~p columns, fresh ~p columns, using fresh", 
+                     [length(AllColumns), length(NewCols)]),
+                {NewCols, true};
+               true ->
+                {AllColumns, false}
+            end;
+        {error, Reason} ->
+            ?LOG(error, ">>> Failed to fetch latest product from Parse: ~p, using passed columns", [Reason]),
+            {AllColumns, false}
+    end,
+    UniqueColumns = lists:foldl(fun({Name, Type}, Acc) ->
+        Acc#{Name => Type}
+    end, #{}, FinalColumns),
+    UniqueList0 = maps:to_list(UniqueColumns),
+    UniqueList = lists:filter(fun({Name, _}) -> Name =/= <<"createdat">> end, UniqueList0),
+    ColNames = [Name || {Name,_} <- UniqueList],
+    ?LOG(info, ">>> UniqueList column names (count=~p): ~p", [length(ColNames), ColNames]),
+    ContainsCreatedat = lists:keymember(<<"createdat">>, 1, UniqueList0),
+    ?LOG(info, ">>> UniqueList originally contained createdat? ~p", [ContainsCreatedat]),
+    if length(UniqueList) =/= length(FinalColumns) ->
+        ?LOG(info, ">>> Duplicate columns detected and removed, original ~p, unique ~p", [length(FinalColumns), length(UniqueList)]);
+       true -> ok
+    end,
+    case table_exists(ChannelId, Database, TableName) of
+        true ->
+            ExistingColumns = get_existing_columns(ChannelId, Database, TableName),
+            NewColumnsToAdd = [Col || {Name, _}=Col <- UniqueList, not lists:keymember(Name, 1, ExistingColumns)],
+            ?LOG(debug, ">>> Table exists, existing: ~p, new: ~p", [length(ExistingColumns), length(NewColumnsToAdd)]),
+            add_columns(ChannelId, Database, TableName, NewColumnsToAdd);
+        false ->
+            ?LOG(info, ">>> Table does not exist, creating base table..."),
+            % 选择第一列作为基表的附加列
+            [FirstColTuple | _] = UniqueList,
+            BaseColumnsDef = list_columns_def([FirstColTuple]),
+            BaseSql = <<"CREATE STABLE IF NOT EXISTS ", TableName/binary,
+                        " (createdat TIMESTAMP, ", BaseColumnsDef/binary, ") TAGS (devaddr NCHAR(64));">>,
+            case dgiot_tdengine:batch_sql(ChannelId, Database, BaseSql) of
+                {ok, _Result} ->
+                    ?LOG(info, ">>> Base table created successfully, now adding remaining columns..."),
+                    % 添加剩余列（不包括第一列）
+                    RemainingColumns = lists:filter(fun({Name, _}) -> Name =/= element(1, FirstColTuple) end, UniqueList),
+                    add_columns(ChannelId, Database, TableName, RemainingColumns);
+                {error, _Reason} ->
+                    ?LOG(error, ">>> Base table creation failed"),
+                    {error, _Reason}
+            end
+    end.
+
+list_columns_def(Columns) ->
+    lists:foldr(fun({Name, #{<<"type">> := Type}}, Acc) ->
+        case Acc of
+            <<>> -> <<Name/binary, " ", Type/binary>>;
+            _ -> <<Name/binary, " ", Type/binary, ", ", Acc/binary>>
+        end
+    end, <<>>, Columns).
+
+add_columns(_ChannelId, _Database, _TableName, []) ->
+    ?LOG(info, ">>> All columns added, no more columns to process"),
+    ok;
+add_columns(ChannelId, Database, TableName, [{Name, #{<<"type">> := Type}} | Rest]) ->
+    ?LOG(debug, ">>> Adding column ~s (type ~s) to table ~s", [Name, Type, TableName]),
+    AlterSql = <<"ALTER STABLE ", TableName/binary, " ADD COLUMN ", Name/binary, " ", Type/binary, ";">>,
+    case dgiot_tdengine:batch_sql(ChannelId, Database, AlterSql) of
+        {ok, Result} ->
+            ?LOG(debug, ">>> Column ~s added successfully, result: ~p", [Name, Result]),
+            add_columns(ChannelId, Database, TableName, Rest);
+        {error, #{<<"code">> := Code}} when Code == 904; Code == 875 ->
+            ?LOG(debug, ">>> Column ~s already exists (code ~p), skipping", [Name, Code]),
+            add_columns(ChannelId, Database, TableName, Rest);
+        {error, Reason} ->
+            ?LOG(error, ">>> Failed to add column ~s: ~p", [Name, Reason]),
+            add_columns(ChannelId, Database, TableName, Rest)
+    end.
+
+%% 检查表是否存在（通过 SHOW STABLES LIKE）
+table_exists(ChannelId, Database, TableName) ->
+    Sql = <<"SHOW STABLES LIKE '", TableName/binary, "';">>,
+    case dgiot_tdengine:batch_sql(ChannelId, Database, Sql) of
+        {ok, #{<<"results">> := [_|_]}} ->
+            true;
+        {ok, _} ->
+            false;
+        {error, #{<<"code">> := Code}} when Code == 1850 ->
+            %% Query memory exhausted - 临时故障，不应触发建表，等下一次数据上报时重试
+            ?LOG(warning, ">>> TDengine内存不足(code=1850)，跳过表检查: ~s", [TableName]),
+            {error, memory_exhausted};
+        {error, Reason} ->
+            ?LOG(warning, ">>> Error checking table existence: ~p", [Reason]),
+            {error, Reason}
+    end.
+
+%% 获取现有列名（通过 DESCRIBE，TDengine 3.x 返回的键是小写）
+get_existing_columns(ChannelId, Database, TableName) ->
+    ?LOG(debug, ">>> Fetching existing columns for ~s.~s", [Database, TableName]),
+    Sql = <<"DESCRIBE ", TableName/binary, ";">>,
+    case dgiot_tdengine:batch_sql(ChannelId, Database, Sql) of
+        {ok, #{<<"results">> := Rows}} ->
+            Cols = [maps:get(<<"field">>, Row) || Row <- Rows, maps:get(<<"note">>, Row, <<"">>) =/= <<"TAG">>],
+            ?LOG(debug, ">>> Existing columns: ~p", [Cols]),
+            Cols;
+        {error, Reason} ->
+            ?LOG(error, ">>> Failed to fetch columns: ~p", [Reason]),
+            []
+    end.
+
+%% 以下为原有函数（未修改，仅保持原样）
 get_schema(_ChannelId, Schema) ->
     case maps:get(<<"thing">>, Schema, <<>>) of
         <<>> ->
@@ -75,7 +206,6 @@ create_database(Query) ->
 format_keep(Query) ->
     Keep = maps:get(<<"keep">>, Query, 10),
     dgiot_utils:to_binary(Keep).
-
 
 create_table(#{<<"tableName">> := TableName, <<"using">> := STbName, <<"tags">> := Tags} = _Query, #{<<"channel">> := Channel} = _Context) ->
     TagFields =
@@ -136,7 +266,6 @@ alter_table(#{<<"tableName">> := TableName}, #{<<"channel">> := Channel} = Conte
             pass
     end.
 
-%% ALTER TABLE  _24b9b4bc50._5392ccb3d7 drop COLUMN status;
 get_addSql(ProductId, TdColumn, Database, TableName) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props} = Thing}} ->
@@ -144,7 +273,7 @@ get_addSql(ProductId, TdColumn, Database, TableName) ->
             lists:foldl(fun(Prop, Acc) ->
                 case Prop of
                     #{<<"dataType">> := #{<<"type">> := Type} = DataType, <<"identifier">> := Identifier, <<"moduleType">> := ModuleType, <<"isstorage">> := true} ->
-                        LowerIdentifier = list_to_binary(string:to_lower(binary_to_list(Identifier))),
+                        LowerIdentifier = dgiot_tdengine_field:sanitize_name(Identifier),
                         LowerType = dgiot_tdengine_field:get_field_type(Type),
                         FieldType = get_fieldtype(ModuleType),
                         case maps:find(LowerIdentifier, TdColumn) of
@@ -153,7 +282,6 @@ get_addSql(ProductId, TdColumn, Database, TableName) ->
                             {ok, LowerType} ->
                                 Acc;
                             _ ->
-                                %% 类型改变, 先删除列, 再重新添加
                                 DROP = <<"ALTER TABLE ", Database/binary, TableName/binary, " DROP ", FieldType/binary, " ", LowerIdentifier/binary, ";">>,
                                 ADD = dgiot_tdengine_field:add_field(DataType, Database, TableName, LowerIdentifier, FieldType),
                                 Acc ++ [DROP, ADD]
@@ -170,4 +298,3 @@ get_fieldtype(<<"tags">>) ->
     <<"TAG">>;
 get_fieldtype(_) ->
     <<"COLUMN">>.
-

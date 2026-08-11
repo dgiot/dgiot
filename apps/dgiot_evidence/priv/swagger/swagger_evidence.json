@@ -1,7 +1,6 @@
 {
   "tags": [],
-  "definitions": {
-  },
+  "definitions": {},
   "paths": {
     "/capture": {
       "get": {
@@ -59,8 +58,7 @@
     "/cert": {
       "get": {
         "description": "扫描U盾",
-        "parameters": [
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Returns operation status"
@@ -808,8 +806,7 @@
             "in": "body",
             "name": "cfg",
             "schema": {
-              "properties": {
-              }
+              "properties": {}
             }
           }
         ],

@@ -17,46 +17,47 @@
 -module(dgiot_evidence).
 -author("johnliu").
 -include_lib("dgiot/include/logger.hrl").
--export([init/1, description/0
-]).
+-export([init/1,
+         description/0]).
 
--export([
-    post/1,
-    put/2,
-    get/2,
-    get_ukey/0,
-    signData/1,
-    verifySignData/3,
-    readCert/0,
-    update_view/5
-]).
+-export([post/1,
+         put/2,
+         get/2,
+         get_ukey/0,
+         signData/1,
+         verifySignData/3,
+         readCert/0,
+         update_view/5]).
 
--export([
-    upload/3,
-    upload/2,
-    delete_file/2,
-    file_reload/2,
-    file_stat/0,
-    list_dir/1,
-    file_info/1,
-    create_report/8,
-    get_capture/1,
-    get_report_package/6,
-    post_data/2,
-    get_filehome/1,
-    test/0,
-    get_tabledata/2
-]).
+-export([upload/3, upload/2,
+         delete_file/2,
+         file_reload/2,
+         file_stat/0,
+         list_dir/1,
+         file_info/1,
+         create_report/8,
+         get_capture/1,
+         get_report_package/6,
+         post_data/2,
+         get_filehome/1,
+         test/0,
+         get_tabledata/2]).
+
+-export([get_areas/0, get_levels/0, get_report_data/0, get_depts/0, get_workareas/0, get_indexs/0, save_indexs/1]).
 
 %%--------------------------------------------------------------------
 %% Auth Module Callbacks
 %%--------------------------------------------------------------------
 -define(PRE, <<"_">>).
 -define(Table(Name), <<?PRE/binary, Name/binary>>).
+
+
 init({}) ->
     {ok, #{}}.
 
+
 description() -> "dgiot evidence".
+
 
 get_ukey() ->
     Bin = unicode:characters_to_binary(os:cmd("chcp 65001 && dgiot_ukey.exe readUkey default")),
@@ -72,20 +73,23 @@ get_ukey() ->
         false -> <<"">>
     end.
 
+
 signData(Data) ->
     DataList = "dgiotdsdfsfsdf" ++ dgiot_utils:to_list(Data) ++ "2020s88jsdfsddmmgg",
     Bin = unicode:characters_to_binary(os:cmd("chcp 65001 && dgiot_ukey.exe signData default " ++ DataList)),
     <<"Active code page: 65001\r\n", Json/binary>> = Bin,
     jsx:decode(Json, [{labels, binary}, return_maps]).
 
+
 verifySignData(Ukey, Data, SignData) ->
     UkeyList = dgiot_utils:to_list(Ukey),
     DataList = "dgiotdsdfsfsdf" ++ dgiot_utils:to_list(Data) ++ "2020s88jsdfsddmmgg",
     SignDataList = dgiot_utils:to_list(SignData),
     Bin = unicode:characters_to_binary(os:cmd("chcp 65001 && dgiot_ukey.exe verifySignData " ++
-        UkeyList ++ " " ++ DataList ++ " " ++ SignDataList)),
+                                              UkeyList ++ " " ++ DataList ++ " " ++ SignDataList)),
     <<"Active code page: 65001\r\n", Json/binary>> = Bin,
     jsx:decode(Json, [{labels, binary}, return_maps]).
+
 
 readCert() ->
     {file, _Here} = code:is_loaded(?MODULE),
@@ -98,13 +102,22 @@ readCert() ->
         false -> {error, Json}
     end.
 
+
 put(#{<<"objectId">> := ObjectId, <<"status">> := Status}, SessionToken) ->
-    case dgiot_parse:get_object(<<"Evidence">>, ObjectId,
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:get_object(<<"Evidence">>,
+                                ObjectId,
+                                [{"X-Parse-Session-Token", SessionToken}],
+                                [{from, rest}]) of
         {ok, #{<<"original">> := Original}} ->
-            dgiot_parse:update_object(<<"Evidence">>, ObjectId, #{<<"original">> => Original#{
-                <<"status">> => Status}},
-                [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
+            dgiot_parse:update_object(<<"Evidence">>,
+                                      ObjectId,
+                                      #{
+                                        <<"original">> => Original#{
+                                                            <<"status">> => Status
+                                                           }
+                                       },
+                                      [{"X-Parse-Session-Token", SessionToken}],
+                                      [{from, rest}]);
         Error -> Error
     end;
 
@@ -114,29 +127,39 @@ put(#{<<"reportId">> := ReportId, <<"type">> := Type, <<"status">> := Status}, S
             <<"single">> ->
                 [ReportId];
             _ ->
-                case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"parentId">> => ReportId}
-                }, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+                case dgiot_parse:query_object(<<"Device">>,
+                                              #{
+                                                <<"where">> => #{<<"parentId">> => ReportId}
+                                               },
+                                              [{"X-Parse-Session-Token", SessionToken}],
+                                              [{from, rest}]) of
                     {ok, #{<<"results">> := Results}} ->
                         lists:foldl(fun(#{<<"objectId">> := ObjectId}, Acc) ->
-                            Acc ++ [ObjectId]
-                                    end, [ReportId], Results);
+                                            Acc ++ [ObjectId]
+                                    end,
+                                    [ReportId],
+                                    Results);
                     _ -> []
                 end
         end,
-    case dgiot_parse:query_object(<<"Evidence">>, #{<<"where">> => #{<<"reportId">> => #{<<"$in">> => ReportIds}}},
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:query_object(<<"Evidence">>,
+                                  #{<<"where">> => #{<<"reportId">> => #{<<"$in">> => ReportIds}}},
+                                  [{"X-Parse-Session-Token", SessionToken}],
+                                  [{from, rest}]) of
         {ok, #{<<"results">> := Results1}} ->
             Batch = lists:foldl(fun(#{<<"objectId">> := ObjectId, <<"original">> := Original}, Acc) ->
-                Acc ++ [
-                    #{
-                        <<"method">> => <<"PUT">>,
-                        <<"path">> => <<"/classes/Evidence/", ObjectId/binary>>,
-                        <<"body">> => #{<<"original">> => Original#{<<"status">> => Status}}}
-                ]
-                                end, [], Results1),
+                                        Acc ++ [#{
+                                                  <<"method">> => <<"PUT">>,
+                                                  <<"path">> => <<"/classes/Evidence/", ObjectId/binary>>,
+                                                  <<"body">> => #{<<"original">> => Original#{<<"status">> => Status}}
+                                                 }]
+                                end,
+                                [],
+                                Results1),
             dgiot_parse:batch(Batch, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
         Error -> Error
     end.
+
 
 get(#{<<"reportId">> := ReportId}, SessionToken) ->
     ReportIds =
@@ -147,34 +170,46 @@ get(#{<<"reportId">> := ReportId}, SessionToken) ->
                 case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"parentId">> => ReportId}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
                     {ok, #{<<"results">> := Results}} ->
                         lists:foldl(fun(#{<<"objectId">> := ObjectId}, Acc) ->
-                            Acc ++ [ObjectId]
-                                    end, [ReportId], Results);
+                                            Acc ++ [ObjectId]
+                                    end,
+                                    [ReportId],
+                                    Results);
                     _ -> []
                 end
         end,
-%%    ?LOG(info,"ReportIds ~p", [ReportIds]),
+    %%    ?LOG(info,"ReportIds ~p", [ReportIds]),
     Filter = #{<<"where">> => #{<<"reportId">> => #{<<"$in">> => ReportIds}}, <<"keys">> => [<<"reportId">>, <<"original">>]},
-%%    ?LOG(info,"Filter ~p", [Filter]),
+    %%    ?LOG(info,"Filter ~p", [Filter]),
     case dgiot_parse:query_object(<<"Evidence">>, Filter, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := Results1}} ->
-%%            ?LOG(info,"Results1 ~p", [Results1]),
+            %%            ?LOG(info,"Results1 ~p", [Results1]),
             R = lists:foldl(fun(#{<<"reportId">> := ReportId1, <<"original">> := Original}, Acc) ->
-                Status = maps:get(<<"status">>, Original, <<"未审核"/utf8>>),
-                Statistics = maps:get(ReportId1, Acc, #{}),
-                AllStatistics = maps:get(<<"total">>, Acc, #{}),
-                Num = maps:get(Status, Statistics, 0) + 1,
-                AllNum = maps:get(Status, AllStatistics, 0) + 1,
-                Acc#{
-                    ReportId1 => Statistics#{Status => Num},
-                    <<"total">> => AllStatistics#{Status => AllNum}
-                }
-                            end, #{}, Results1),
+                                    Status = maps:get(<<"status">>, Original, <<"未审核"/utf8>>),
+                                    Statistics = maps:get(ReportId1, Acc, #{}),
+                                    AllStatistics = maps:get(<<"total">>, Acc, #{}),
+                                    Num = maps:get(Status, Statistics, 0) + 1,
+                                    AllNum = maps:get(Status, AllStatistics, 0) + 1,
+                                    Acc#{
+                                      ReportId1 => Statistics#{Status => Num},
+                                      <<"total">> => AllStatistics#{Status => AllNum}
+                                     }
+                            end,
+                            #{},
+                            Results1),
             {ok, #{<<"results">> => R}};
         Error -> Error
     end.
 
-post(#{<<"id">> := ReportId, <<"objectId">> := ObjectId, <<"ukey">> := UKey, <<"timestamp">> := Timestamp, <<"md5">> := Md5, <<"original">> := Original,
-    <<"sessionToken">> := SessionToken}) ->
+
+post(#{
+       <<"id">> := ReportId,
+       <<"objectId">> := ObjectId,
+       <<"ukey">> := UKey,
+       <<"timestamp">> := Timestamp,
+       <<"md5">> := Md5,
+       <<"original">> := Original,
+       <<"sessionToken">> := SessionToken
+      }) ->
     Payload = dgiot_json:encode(#{<<"md5">> => Md5}),
     UkeyProductId = <<"3f95880e09">>,
     Topic = <<"/", UkeyProductId/binary, "/", UKey/binary, "/properties/read">>,
@@ -187,18 +222,20 @@ post(#{<<"id">> := ReportId, <<"objectId">> := ObjectId, <<"ukey">> := UKey, <<"
                 #{<<"roles">> := Roles} = _User ->
                     [#{<<"name">> := Role} | _] = maps:values(Roles),
                     Evidence = #{
-                        <<"objectId">> => ObjectId,
-                        <<"ACL">> => #{<<"role:", Role/binary>> => #{
-                            <<"read">> => true,
-                            <<"write">> => true}
-                        },
-                        <<"reportId">> => ReportId,
-                        <<"scene">> => Role,
-                        <<"original">> => Original#{<<"status">> => <<"未审核"/utf8>>},
-                        <<"md5">> => Md5,
-                        <<"timestamp">> => Timestamp,
-                        <<"ukey">> => UKey
-                    },
+                                 <<"objectId">> => ObjectId,
+                                 <<"ACL">> => #{
+                                                <<"role:", Role/binary>> => #{
+                                                                              <<"read">> => true,
+                                                                              <<"write">> => true
+                                                                             }
+                                               },
+                                 <<"reportId">> => ReportId,
+                                 <<"scene">> => Role,
+                                 <<"original">> => Original#{<<"status">> => <<"未审核"/utf8>>},
+                                 <<"md5">> => Md5,
+                                 <<"timestamp">> => Timestamp,
+                                 <<"ukey">> => UKey
+                                },
                     dgiot_parse:create_object(<<"Evidence">>, Evidence);
                 _ -> {error, #{<<"code">> => 500, <<"msg">> => <<"SignData Fail">>}}
             end
@@ -207,6 +244,7 @@ post(#{<<"id">> := ReportId, <<"objectId">> := ObjectId, <<"ukey">> := UKey, <<"
 post(R) ->
     io:format("R ~p~n", [R]),
     {error, #{<<"code">> => 406, <<"msg">> => <<"Requested format not available">>}}.
+
 
 post_data(Class, FilePath) ->
     ?LOG(info, "Class ~p, FilePath ~p", [Class, FilePath]),
@@ -218,12 +256,14 @@ post_data(Class, FilePath) ->
                     {error, Reason};
                 Data ->
                     Datas = lists:foldl(fun(X, Acc) ->
-                        Acc ++ [maps:without([<<"tag">>, <<"updatedAt">>, <<"createdAt">>, <<"children">>], X)]
-                                        end, [], Data),
+                                                Acc ++ [maps:without([<<"tag">>, <<"updatedAt">>, <<"createdAt">>, <<"children">>], X)]
+                                        end,
+                                        [],
+                                        Data),
                     Fun =
                         fun(Res, Acc) ->
-                            ?LOG(info, "Res ~p", [Res]),
-                            lists:concat([Acc, Res])
+                                ?LOG(info, "Res ~p", [Res]),
+                                lists:concat([Acc, Res])
                         end,
                     case dgiot_parse:import(Class, Datas, 5000, Fun, []) of
                         {error, Reason1} ->
@@ -238,13 +278,19 @@ post_data(Class, FilePath) ->
             {error, Reason2}
     end.
 
+
 get_report_package(ReportId, Devices, Products, Evidence, Files, SessionToken) ->
-    case dgiot_parse:query_object(<<"_Role">>, #{
-        <<"keys">> => [<<"name">>, <<"tag">>],
-        <<"limit">> => 1}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:query_object(<<"_Role">>,
+                                  #{
+                                    <<"keys">> => [<<"name">>, <<"tag">>],
+                                    <<"limit">> => 1
+                                   },
+                                  [{"X-Parse-Session-Token", SessionToken}],
+                                  [{from, rest}]) of
         {ok, #{<<"results">> := [#{<<"name">> := AppName, <<"tag">> := #{<<"appconfig">> := Config}} | _]}} ->
             Root = get_filehome(unicode:characters_to_list(maps:get(<<"home">>, Config, <<"D:/dgiot/dgiot_data_center/datacenter/file/files">>))),
-            FileServer = unicode:characters_to_list(maps:get(<<"file">>, Config, <<"http://127.0.0.1:1250/shapes/upload">>)),
+            FileServerUrl = list_to_binary(file_server_url()),
+            FileServer = unicode:characters_to_list(maps:get(<<"file">>, Config, <<FileServerUrl/binary, <<"/shapes/upload">>/binary>>)),
             Url = string:sub_string(FileServer, 1, string:rchr(FileServer, $/)),
             Now = dgiot_datetime:nowstamp(),
             ListNow = binary_to_list(dgiot_utils:to_binary(Now)),
@@ -257,18 +303,21 @@ get_report_package(ReportId, Devices, Products, Evidence, Files, SessionToken) -
             file:write_file(ZipRoot ++ "/Product.json", dgiot_json:encode(Products)),
             file:write_file(ZipRoot ++ "/Evidence.json", dgiot_json:encode(Evidence)),
             FileList = lists:foldl(fun(X, Acc) ->
-                [_, _Group, FileApp, FileName] = re:split(X, <<"/">>),
-                Acc ++ [{FileApp, FileName}]
-                                   end, [], Files),
+                                           [_, _Group, FileApp, FileName] = re:split(X, <<"/">>),
+                                           Acc ++ [{FileApp, FileName}]
+                                   end,
+                                   [],
+                                   Files),
             lists:map(fun({FileApp, FileName1}) ->
-                FileAppList = unicode:characters_to_list(FileApp),
-                FileNameList = unicode:characters_to_list(FileName1),
-                ZipApp = ZipRoot ++ "/" ++ FileAppList,
-                file:make_dir(ZipApp),
-                SrcFile = Root ++ "/" ++ FileAppList ++ "/" ++ FileNameList,
-                DestFile = ZipRoot ++ "/" ++ FileAppList ++ "/" ++ FileNameList,
-                file:copy(SrcFile, DestFile)
-                      end, FileList),
+                              FileAppList = unicode:characters_to_list(FileApp),
+                              FileNameList = unicode:characters_to_list(FileName1),
+                              ZipApp = ZipRoot ++ "/" ++ FileAppList,
+                              file:make_dir(ZipApp),
+                              SrcFile = Root ++ "/" ++ FileAppList ++ "/" ++ FileNameList,
+                              DestFile = ZipRoot ++ "/" ++ FileAppList ++ "/" ++ FileNameList,
+                              file:copy(SrcFile, DestFile)
+                      end,
+                      FileList),
             DestPath = Root ++ "/" ++ AppList ++ "/" ++ Zipfile,
             Cmd = case os:type() of
                       {win32, _} -> "chcp 65001 && dgiot_zip zippath " ++ DestPath ++ " " ++ ZipRoot;
@@ -279,10 +328,11 @@ get_report_package(ReportId, Devices, Products, Evidence, Files, SessionToken) -
             NewUrl = unicode:characters_to_binary(Url ++ AppList ++ "/" ++ Zipfile),
             ?LOG(info, "NewUrl ~p", [NewUrl]),
             {ok, #{
-                <<"url">> => NewUrl
-            }};
+                   <<"url">> => NewUrl
+                  }};
         _ -> {error, <<"not find">>}
     end.
+
 
 get_filehome(HomePath) ->
     Path = dgiot_utils:to_binary(lists:reverse(dgiot_utils:to_list(HomePath))),
@@ -294,8 +344,9 @@ get_filehome(HomePath) ->
               end,
     lists:reverse(dgiot_utils:to_list(NewPath)).
 
+
 test() ->
-%%    <<"Active code page: 65001\r\nCapacity    \r\r\n8589934592    \r\r\899999999">>.
+    %%    <<"Active code page: 65001\r\nCapacity    \r\r\n8589934592    \r\r\899999999">>.
     trim_string("8589934592   ").
 
 
@@ -304,8 +355,10 @@ trim_string(Str) when is_binary(Str) ->
 trim_string(Str) when is_list(Str) ->
     trim_string(Str, list).
 
+
 trim_string(Str, Ret) ->
     re:replace(Str, "^[\s\x{3000}]+|[\s\x{3000}]+$", "", [global, {return, Ret}, unicode]).
+
 
 %% "{\"url\":\"http://192.168.2.7:1250/shapes/pump/a0_bd_1d_ce_8d_a7_1591271470.mp4\",
 %% \"md5\":\"4c4122756b4bbdf867a17e5bac043da2\",
@@ -380,9 +433,12 @@ trim_string(Str, Ret) ->
 %%-------------------------acebdf135724681--
 
 -define(CRLF, "\r\n").
+
+
 upload(Path, SessionToken) ->
     AppName = get_app(SessionToken),
     upload(Path, AppName, SessionToken).
+
 
 upload(Path, AppName, SessionToken) ->
     inets:start(),
@@ -412,7 +468,7 @@ upload(Path, AppName, SessionToken) ->
             Tail = <<"--", Boundary/binary, "--", ?CRLF, ?CRLF>>,
 
             FileBody = <<Header/binary, "file\"; filename=\"", FileName/binary, "\"", ?CRLF,
-                "Content-Type: application/octet-stream", ?CRLF, ?CRLF, Stream/binary, ?CRLF, Tail/binary>>,
+                         "Content-Type: application/octet-stream", ?CRLF, ?CRLF, Stream/binary, ?CRLF, Tail/binary>>,
 
             ParamBody = <<ParamBody1/binary, ParamBody2/binary, ParamBody3/binary, ParamBody4/binary, ParamBody5/binary>>,
 
@@ -433,30 +489,56 @@ upload(Path, AppName, SessionToken) ->
             {error, Reason}
     end.
 
+
 delete_file(Path, SessionToken) ->
-    Url = "http://127.0.0.1:1250/delete?auth_token=" ++ dgiot_utils:to_list(SessionToken) ++ "&path=" ++ dgiot_utils:to_list(Path),
+    % NewPath =  <<"rm -rf /data/dgiot/go_fastdfs/",Path/binary>>,
+    % io:format("~ts", [unicode:characters_to_list(NewPath)]),
+    % os:cmd(unicode:characters_to_list(NewPath)),
+    io:format("~s ~p ~ts ~n", [?FILE, ?LINE, unicode:characters_to_list(Path)]),
+    FileServerUrl = file_server_url(),
+
+    _Map = #{
+             % fragment => "section1",
+             host => "192.168.1.5",
+             path => "/delete",
+             port => 1250,
+             query => "auth_token=" ++ dgiot_utils:to_list(SessionToken) ++ "&path=" ++ Path,
+             scheme => "http"
+            },
+
+    Url = FileServerUrl ++ "/delete?auth_token=" ++ dgiot_utils:to_list(SessionToken) ++ "&path=" ++ unicode:characters_to_list(Path),
+    % Url = uri_string:recompose(_Map),
+
+    io:format("~s ~p ~ts ~n", [?FILE, ?LINE, unicode:characters_to_list(Url)]),
+
     case httpc:request(get, {[Url], []}, [], []) of
         {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
-            case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
-                #{<<"status">> := <<"ok">>} = Data ->
-                    {ok, Data};
-                Error1 ->
-                    {ok, Error1}
-            end;
-        Error ->
-            {error, Error}
+            % case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
+            % #{<<"status">> := <<"ok">>} = Data ->
+            {ok, #{
+                   <<"status">> => ok,
+                   <<"message">> => <<"remove success">>,
+                   <<"data">> => Json
+                  }};
+        Error1 ->
+            {ok, Error1}
     end.
+% Error ->
+% {error, Error}
+% end.
+
 
 file_reload(Action, Body) ->
+    FileServerUrl = file_server_url(),
     Url =
         case Action of
             <<"set">> ->
                 Cfg = maps:get(<<"cfg">>, Body, #{}),
-                "http://127.0.0.1:1250/reload?action=set&cfg=" ++ dgiot_json:encode(Cfg);
+                FileServerUrl ++ "/reload?action=set&cfg=" ++ dgiot_json:encode(Cfg);
             <<"reload">> ->
-                "http://127.0.0.1:1250/reload?action=reload";
+                FileServerUrl ++ "/reload?action=reload";
             _ ->
-                "http://127.0.0.1:1250/reload?action=get"
+                FileServerUrl ++ "/reload?action=get"
         end,
     case httpc:request(get, {[Url], []}, [], []) of
         {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
@@ -470,7 +552,8 @@ file_reload(Action, Body) ->
 
 
 file_stat() ->
-    case httpc:request(get, {["http://127.0.0.1:1250/stat"], []}, [], []) of
+    FileServerUrl = file_server_url(),
+    case httpc:request(get, {[FileServerUrl ++ "/stat"], []}, [], []) of
         {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
             case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
                 #{<<"status">> := <<"ok">>} = Data ->
@@ -479,9 +562,29 @@ file_stat() ->
             end;
         Error -> {error, Error}
     end.
+
 
 list_dir(Path) ->
-    case httpc:request(get, {["http://127.0.0.1:1250/list_dir?dir=" ++ dgiot_utils:to_list(Path)], []}, [], []) of
+    io:format("~s ~p ~ts ~n", [?FILE, ?LINE, unicode:characters_to_list(Path)]),
+    FileServerUrl = file_server_url(),
+    Url = FileServerUrl ++ "/list_dir?dir=" ++ dgiot_utils:to_list(Path),
+    io:format("~s ~p ~ts ~n", [?FILE, ?LINE, unicode:characters_to_list(Url)]),
+    case httpc:request(get, {[Url], []}, [], []) of
+        {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
+            case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
+                #{<<"status">> := <<"ok">>} = Data ->
+                    {ok, Data};
+                Error1 -> {ok, Error1}
+            end;
+        Error ->
+            io:format("~s ~p ~ts ~n", [?FILE, ?LINE, unicode:characters_to_list(Error)]),
+            {error, Error}
+    end.
+
+
+file_info(Path) ->
+    FileServerUrl = file_server_url(),
+    case httpc:request(get, {[FileServerUrl ++ "/get_file_info?path=" ++ dgiot_utils:to_list(Path)], []}, [], []) of
         {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
             case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
                 #{<<"status">> := <<"ok">>} = Data ->
@@ -491,16 +594,6 @@ list_dir(Path) ->
         Error -> {error, Error}
     end.
 
-file_info(Path) ->
-    case httpc:request(get, {["http://127.0.0.1:1250/get_file_info?path=" ++ dgiot_utils:to_list(Path)], []}, [], []) of
-        {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
-            case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
-                #{<<"status">> := <<"ok">>} = Data ->
-                    {ok, Data};
-                Error1 -> {ok, Error1}
-            end;
-        Error -> {error, Error}
-    end.
 
 get_url(AppName) ->
     Roleid = dgiot_parse_id:get_roleid(AppName),
@@ -510,45 +603,64 @@ get_url(AppName) ->
         _ -> <<"">>
     end.
 
+
 get_app(SessionToken) ->
-    case dgiot_parse:query_object(<<"_Role">>, #{
-        <<"keys">> => [<<"name">>],
-        <<"limit">> => 1}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:query_object(<<"_Role">>,
+                                  #{
+                                    <<"keys">> => [<<"name">>],
+                                    <<"limit">> => 1
+                                   },
+                                  [{"X-Parse-Session-Token", SessionToken}],
+                                  [{from, rest}]) of
         {ok, #{<<"results">> := Apps}} ->
             [#{<<"name">> := AppName} | _] = Apps,
             AppName;
         _ -> <<"">>
     end.
 
+
 create_report(ProductParentId, Config, Num, Imagurl, Heigh, Width, WordUrl, SessionToken) ->
-    NewConfig = maps:merge(Config, #{
-        <<"icon">> => Imagurl,
-        <<"konva">> => #{
-            <<"Stage">> => #{
-                <<"attrs">> => #{
-                    <<"width">> => Width,
-                    <<"height">> => Heigh},
-                <<"className">> => <<"Stage">>,
-                <<"children">> => [#{
-                    <<"attrs">> => #{
-                        <<"id">> => <<"Layer_Thing">>},
-                    <<"className">> => <<"Layer">>,
-                    <<"children">> => [#{
-                        <<"attrs">> => #{
-                            <<"id">> => <<"bg">>,
-                            <<"type">> => <<"bg-image">>,
-                            <<"width">> => Width,
-                            <<"height">> => Heigh,
-                            <<"src">> => Imagurl},
-                        <<"className">> => <<"Image">>}]}]}}}),
-    dgiot_parse:create_object(<<"View">>, #{
-        <<"title">> => Num,
-        <<"key">> => ProductParentId,
-        <<"type">> => <<"topo">>,
-        <<"class">> => <<"Product">>,
-        <<"data">> => NewConfig#{
-            <<"reporttemp">> => dgiot_utils:to_binary(WordUrl)}
-    }, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]).
+    NewConfig = maps:merge(Config,
+                           #{
+                             <<"icon">> => Imagurl,
+                             <<"konva">> => #{
+                                              <<"Stage">> => #{
+                                                               <<"attrs">> => #{
+                                                                                <<"width">> => Width,
+                                                                                <<"height">> => Heigh
+                                                                               },
+                                                               <<"className">> => <<"Stage">>,
+                                                               <<"children">> => [#{
+                                                                                    <<"attrs">> => #{
+                                                                                                     <<"id">> => <<"Layer_Thing">>
+                                                                                                    },
+                                                                                    <<"className">> => <<"Layer">>,
+                                                                                    <<"children">> => [#{
+                                                                                                         <<"attrs">> => #{
+                                                                                                                          <<"id">> => <<"bg">>,
+                                                                                                                          <<"type">> => <<"bg-image">>,
+                                                                                                                          <<"width">> => Width,
+                                                                                                                          <<"height">> => Heigh,
+                                                                                                                          <<"src">> => Imagurl
+                                                                                                                         },
+                                                                                                         <<"className">> => <<"Image">>
+                                                                                                        }]
+                                                                                   }]
+                                                              }
+                                             }
+                            }),
+    dgiot_parse:create_object(<<"View">>,
+                              #{
+                                <<"title">> => Num,
+                                <<"key">> => ProductParentId,
+                                <<"type">> => <<"topo">>,
+                                <<"class">> => <<"Product">>,
+                                <<"data">> => NewConfig#{
+                                                <<"reporttemp">> => dgiot_utils:to_binary(WordUrl)
+                                               }
+                               },
+                              [{"X-Parse-Session-Token", SessionToken}],
+                              [{from, rest}]).
 
 
 get_capture(#{<<"productid">> := ProductId, <<"topoid">> := TopoId, <<"thingid">> := ThingId} = Payload) ->
@@ -556,65 +668,85 @@ get_capture(#{<<"productid">> := ProductId, <<"topoid">> := TopoId, <<"thingid">
         {ok, #{<<"config">> := Config, <<"thing">> := Thing}} ->
             ControlList =
                 lists:foldl(fun(X, Acc) ->
-                    case maps:with([<<"identifier">>, <<"style">>], X) of
-                        #{<<"identifier">> := TopoId, <<"style">> := Style} ->
-                            R0 = lists:foldl(fun(Y, Acc1) ->
-                                case Y of
-                                    #{<<"identifier">> := ThingId, <<"dataType">> := #{<<"specs">> := Specs}} ->
-                                        Acc1 ++ [X#{
-                                            <<"productId">> => ProductId,
-                                            <<"deviceId">> => maps:get(<<"subdevid">>, Payload, <<"">>),
-                                            <<"wumoxing">> => Specs#{
-                                                <<"identifier">> => ThingId,
-                                                <<"value">> => ""
-                                            },
-                                            <<"style">> => Style#{
-                                                <<"backColor">> => <<"rgba(46,176,80,1)">>}}];
-                                    _ -> Acc1
-                                end
-                                             end, [], maps:get(<<"properties">>, Thing)),
-                            case R0 of
-                                [] -> Acc ++ [X];
-                                L0 -> Acc ++ L0
-                            end;
-                        _ -> Acc ++ [X]
-                    end
-                            end, [], maps:get(<<"components">>, Config)),
+                                    case maps:with([<<"identifier">>, <<"style">>], X) of
+                                        #{<<"identifier">> := TopoId, <<"style">> := Style} ->
+                                            R0 = lists:foldl(fun(Y, Acc1) ->
+                                                                     case Y of
+                                                                         #{<<"identifier">> := ThingId, <<"dataType">> := #{<<"specs">> := Specs}} ->
+                                                                             Acc1 ++ [X#{
+                                                                                        <<"productId">> => ProductId,
+                                                                                        <<"deviceId">> => maps:get(<<"subdevid">>, Payload, <<"">>),
+                                                                                        <<"wumoxing">> => Specs#{
+                                                                                                            <<"identifier">> => ThingId,
+                                                                                                            <<"value">> => ""
+                                                                                                           },
+                                                                                        <<"style">> => Style#{
+                                                                                                         <<"backColor">> => <<"rgba(46,176,80,1)">>
+                                                                                                        }
+                                                                                       }];
+                                                                         _ -> Acc1
+                                                                     end
+                                                             end,
+                                                             [],
+                                                             maps:get(<<"properties">>, Thing)),
+                                            case R0 of
+                                                [] -> Acc ++ [X];
+                                                L0 -> Acc ++ L0
+                                            end;
+                                        _ -> Acc ++ [X]
+                                    end
+                            end,
+                            [],
+                            maps:get(<<"components">>, Config)),
             Properties =
                 lists:foldl(fun(X, Acc) ->
-                    case maps:with([<<"identifier">>], X) of
-                        #{<<"identifier">> := ThingId} ->
-                            R = lists:foldl(fun(Y, Acc1) ->
-                                case Y of
-                                    #{<<"identifier">> := TopoId,
-                                        <<"address">> := Address} ->
-                                        ?LOG(info, "Address ~p", [Address]),
-                                        Acc1 ++ [X#{<<"dataForm">> => #{
-                                            <<"address">> => Address,
-                                            <<"quantity">> => TopoId}}];
-                                    _ ->
-                                        Acc1
-                                end
-                                            end, [], maps:get(<<"components">>, Config)),
-                            case R of
-                                [] -> Acc ++ [X];
-                                L -> Acc ++ L
-                            end;
-                        _ -> Acc ++ [X]
-                    end
-                            end, [], maps:get(<<"properties">>, Thing)),
-            case dgiot_parse:update_object(<<"Product">>, ProductId, #{
-                <<"config">> => Config#{<<"components">> => ControlList},
-                <<"thing">> => Thing#{<<"properties">> => Properties}}) of
-                {ok, _} -> {ok, #{
-                    <<"config">> => Config#{<<"components">> => ControlList},
-                    <<"thing">> => Thing#{<<"properties">> => Properties}}
-                };
+                                    case maps:with([<<"identifier">>], X) of
+                                        #{<<"identifier">> := ThingId} ->
+                                            R = lists:foldl(fun(Y, Acc1) ->
+                                                                    case Y of
+                                                                        #{
+                                                                          <<"identifier">> := TopoId,
+                                                                          <<"address">> := Address
+                                                                         } ->
+                                                                            ?LOG(info, "Address ~p", [Address]),
+                                                                            Acc1 ++ [X#{
+                                                                                       <<"dataForm">> => #{
+                                                                                                           <<"address">> => Address,
+                                                                                                           <<"quantity">> => TopoId
+                                                                                                          }
+                                                                                      }];
+                                                                        _ ->
+                                                                            Acc1
+                                                                    end
+                                                            end,
+                                                            [],
+                                                            maps:get(<<"components">>, Config)),
+                                            case R of
+                                                [] -> Acc ++ [X];
+                                                L -> Acc ++ L
+                                            end;
+                                        _ -> Acc ++ [X]
+                                    end
+                            end,
+                            [],
+                            maps:get(<<"properties">>, Thing)),
+            case dgiot_parse:update_object(<<"Product">>,
+                                           ProductId,
+                                           #{
+                                             <<"config">> => Config#{<<"components">> => ControlList},
+                                             <<"thing">> => Thing#{<<"properties">> => Properties}
+                                            }) of
+                {ok, _} ->
+                    {ok, #{
+                           <<"config">> => Config#{<<"components">> => ControlList},
+                           <<"thing">> => Thing#{<<"properties">> => Properties}
+                          }};
                 Error -> Error
             end;
         Return ->
             Return
     end.
+
 
 update_view(Index, ImageUrl, Heigh, Width, TaskId) ->
     Viewid = dgiot_parse_id:get_viewid(TaskId, <<"topo">>, <<"Device">>, Index),
@@ -622,65 +754,81 @@ update_view(Index, ImageUrl, Heigh, Width, TaskId) ->
         {ok, #{<<"data">> := #{<<"konva">> := Konva} = Data}} ->
             NewKonva = update_bgimage(Konva, ImageUrl, Heigh, Width),
             #{
-                <<"method">> => <<"PUT">>,
-                <<"path">> => <<"/classes/View/", Viewid/binary>>,
-                <<"body">> => #{
-                    <<"objectId">> => Viewid,
-                    <<"data">> => Data#{
-                        <<"icon">> => ImageUrl,
-                        <<"konva">> => NewKonva
-                    }}
-            };
+              <<"method">> => <<"PUT">>,
+              <<"path">> => <<"/classes/View/", Viewid/binary>>,
+              <<"body">> => #{
+                              <<"objectId">> => Viewid,
+                              <<"data">> => Data#{
+                                              <<"icon">> => ImageUrl,
+                                              <<"konva">> => NewKonva
+                                             }
+                             }
+             };
         _ ->
             Data = #{
-                <<"icon">> => ImageUrl,
-                <<"konva">> => #{
-                    <<"Stage">> => #{
-                        <<"attrs">> => #{
-                            <<"width">> => Width,
-                            <<"height">> => Heigh},
-                        <<"className">> => <<"Stage">>,
-                        <<"children">> => [#{
-                            <<"attrs">> => #{
-                                <<"id">> => <<"Layer_Thing">>},
-                            <<"className">> => <<"Layer">>,
-                            <<"children">> => [#{
-                                <<"attrs">> => #{
-                                    <<"id">> => <<"bg">>,
-                                    <<"type">> => <<"bg-image">>,
-                                    <<"width">> => Width,
-                                    <<"height">> => Heigh,
-                                    <<"src">> => ImageUrl},
-                                <<"className">> => <<"Image">>}]}]}}},
-            #{<<"method">> => <<"POST">>,
-                <<"path">> => <<"/classes/View">>,
-                <<"body">> => #{
-                    <<"objectId">> => Viewid,
-                    <<"title">> => Index,
-                    <<"key">> => TaskId,
-                    <<"type">> => <<"topo">>,
-                    <<"class">> => <<"Device">>,
-                    <<"data">> => Data}
-            }
+                     <<"icon">> => ImageUrl,
+                     <<"konva">> => #{
+                                      <<"Stage">> => #{
+                                                       <<"attrs">> => #{
+                                                                        <<"width">> => Width,
+                                                                        <<"height">> => Heigh
+                                                                       },
+                                                       <<"className">> => <<"Stage">>,
+                                                       <<"children">> => [#{
+                                                                            <<"attrs">> => #{
+                                                                                             <<"id">> => <<"Layer_Thing">>
+                                                                                            },
+                                                                            <<"className">> => <<"Layer">>,
+                                                                            <<"children">> => [#{
+                                                                                                 <<"attrs">> => #{
+                                                                                                                  <<"id">> => <<"bg">>,
+                                                                                                                  <<"type">> => <<"bg-image">>,
+                                                                                                                  <<"width">> => Width,
+                                                                                                                  <<"height">> => Heigh,
+                                                                                                                  <<"src">> => ImageUrl
+                                                                                                                 },
+                                                                                                 <<"className">> => <<"Image">>
+                                                                                                }]
+                                                                           }]
+                                                      }
+                                     }
+                    },
+            #{
+              <<"method">> => <<"POST">>,
+              <<"path">> => <<"/classes/View">>,
+              <<"body">> => #{
+                              <<"objectId">> => Viewid,
+                              <<"title">> => Index,
+                              <<"key">> => TaskId,
+                              <<"type">> => <<"topo">>,
+                              <<"class">> => <<"Device">>,
+                              <<"data">> => Data
+                             }
+             }
     end.
+
 
 update_bgimage(#{<<"Stage">> := #{<<"children">> := Children} = Stage} = Konva, ImageUrl, Heigh, Width) ->
     NewChildren = get_children(Children, ImageUrl, Heigh, Width),
     Konva#{<<"Stage">> => Stage#{<<"children">> := NewChildren}}.
 
+
 get_children(Children, ImageUrl, Heigh, Width) ->
     lists:foldl(fun(X, Acc) ->
-        #{<<"attrs">> := Attrs, <<"className">> := ClassName} = X,
-        X1 = get_attrs(Attrs, ImageUrl, Heigh, Width, ClassName, X),
-        X2 =
-            case maps:find(<<"children">>, X1) of
-                error ->
-                    X1;
-                {ok, SubChildren} ->
-                    X1#{<<"children">> => get_children(SubChildren, ImageUrl, Heigh, Width)}
-            end,
-        Acc ++ [X2]
-                end, [], Children).
+                        #{<<"attrs">> := Attrs, <<"className">> := ClassName} = X,
+                        X1 = get_attrs(Attrs, ImageUrl, Heigh, Width, ClassName, X),
+                        X2 =
+                            case maps:find(<<"children">>, X1) of
+                                error ->
+                                    X1;
+                                {ok, SubChildren} ->
+                                    X1#{<<"children">> => get_children(SubChildren, ImageUrl, Heigh, Width)}
+                            end,
+                        Acc ++ [X2]
+                end,
+                [],
+                Children).
+
 
 get_attrs(Attrs, ImageUrl, Heigh, Width, ClassName, X) ->
     case ClassName of
@@ -697,18 +845,82 @@ get_attrs(Attrs, ImageUrl, Heigh, Width, ClassName, X) ->
             X
     end.
 
+
 get_tabledata(Parameter, Avgdatas) ->
     Keys = binary:split(Parameter, <<$,>>, [global, trim]),
     lists:foldl(fun(Avg, {Acc1, Num}) ->
-        Data =
-            lists:foldl(fun(Key, Acc) ->
-                Values = dgiot_utils:to_binary(maps:get(Key, Avg, 0)),
-                <<Acc/binary, ",", Values/binary>>
-                        end, dgiot_utils:to_binary(Num), Keys),
-        {Acc1 ++ [Data], Num + 1}
-                end, {[], 1}, Avgdatas).
+                        Data =
+                            lists:foldl(fun(Key, Acc) ->
+                                                Values = dgiot_utils:to_binary(maps:get(Key, Avg, 0)),
+                                                <<Acc/binary, ",", Values/binary>>
+                                        end,
+                                        dgiot_utils:to_binary(Num),
+                                        Keys),
+                        {Acc1 ++ [Data], Num + 1}
+                end,
+                {[], 1},
+                Avgdatas).
 
 
+file_server_url() ->
+    application:get_env(evidence, fileserver_baseurl, not_find).
+% "http://192.168.1.5:1250".
 
 
+% encode_utf8_to_url(String) ->
+% Utf8Binary = unicode:characters_to_binary(String),
+% ByteList = binary_to_list(Utf8Binary),
+% lists:append([
+%     [$% | integer_to_list(Byte, 16)]
+%     || Byte <- ByteList
+% ]).
+% uri_string:transcode(String, [{in_encoding, unicode}, {out_encoding, utf8}]).
 
+
+read_jsonFile(FileName) ->
+    try
+        dgiot_utils:get_JsonFile(?MODULE, FileName)
+    catch
+        _:_ ->
+            % io:format("~s ~p ❌ Failed to open file for reading:[~p]~n", [?FILE, ?LINE, FileName])
+            {}
+    end.
+
+
+get_areas() ->
+    read_jsonFile(<<"areas.json">>).
+
+
+get_levels() ->
+    read_jsonFile(<<"levels.json">>).
+
+
+get_report_data() ->
+    read_jsonFile(<<"report.json">>).
+
+
+get_depts() ->
+    read_jsonFile(<<"depts.json">>).
+
+
+get_workareas() ->
+    read_jsonFile(<<"workareas.json">>).
+
+
+get_indexs() ->
+    read_jsonFile(<<"indexs.json">>).
+
+
+save_indexs(Data) ->
+    Mod = ?MODULE,
+    FileName = <<"indexs.json">>,
+    {file, Here} = code:is_loaded(Mod),
+    Dir = filename:dirname(filename:dirname(Here)),
+    Path = dgiot_httpc:url_join([Dir, "/priv/json/", dgiot_utils:to_list(FileName)]),
+    case file:open(Path, [write, binary]) of
+        {ok, FileHandle} ->
+            file:write(FileHandle, dgiot_utils:to_binary(Data)),
+            file:close(FileHandle);
+        _ ->
+            io:format("~s ~p ❌ Failed to open file for writing:[~p]~n", [?FILE, ?LINE, Path])
+    end.

@@ -33,6 +33,7 @@
     to_localtime/1,
     format/1,
     format/2,
+    format_timestamp/2,
     timestamp_to_datetime/1
 ]).
 
@@ -251,6 +252,27 @@ format2(<<F:1/bytes, Other/binary>>, L, Format) ->
             format2(Other, L, Format)
     end.
 
+format_timestamp(Timestamp, Format) when is_number(Timestamp) ->
+    %% 分离整数秒和小数微秒
+    TotalSeconds = trunc(Timestamp),
+    MegaSecs = TotalSeconds div 1000000,
+    Secs = TotalSeconds rem 1000000,
+    MicroSecs = trunc((Timestamp - TotalSeconds) * 1000000), % 将小数部分转换为微秒
+
+    %% 将时间戳转换为本地时间元组 {{Year, Month, Day}, {Hour, Minute, Second}}
+    LocalTime = calendar:now_to_local_time({MegaSecs, Secs, MicroSecs}),
+    {{Year, Month, Day}, {Hour, Minute, Second}} = LocalTime,
+
+    %% 使用 io_lib:format 格式化字符串，确保每位数字不足两位时前面补零
+    % FormattedStr = io_lib:format(
+    %     "~4..0B-~2..0B-~2..0B ~2..0B:~2..0B:~2..0B",
+    %     [Year, Month, Day, Hour, Minute, Second]
+    % ),
+
+    %% 将 io_lib:format 返回的深层列表转换为扁平字符串
+    % lists:flatten(FormattedStr).
+    format({{Year, Month, Day}, {Hour, Minute, Second}}, Format).
+
 to_unixtime(Time) when is_integer(Time) ->
     Time;
 to_unixtime(Time) when is_binary(Time) ->
@@ -280,7 +302,7 @@ day_from({Year, Month, Day}) ->
 day_from({{Year, Month, Day}, _}) ->
     day_from({Year, Month, Day});
 day_from(Arg) ->
-    ?LOG(error, "dgiot_datatime:day_from - bad arg [~p]", [Arg]),
+    ?LOG(error, "dgiot_datetime:day_from - bad arg [~p]", [Arg]),
     0.
 
 month_from() ->
@@ -297,7 +319,7 @@ month_from({Year, Month, _}) ->
 month_from({{Year, Month, _}, _}) ->
     month_from({Year, Month, 1});
 month_from(Arg) ->
-    ?LOG(error, "dgiot_datatime:month_from - bad arg [~p]", [Arg]),
+    ?LOG(error, "dgiot_datetime:month_from - bad arg [~p]", [Arg]),
     0.
 
 hour_from() ->
@@ -309,7 +331,7 @@ hour_from(Timestamp) when is_integer(Timestamp) ->
     [UniversalDatatime] = calendar:local_time_to_universal_time_dst({{Year, Month, Day}, {Hour, 0, 0}}),
     datetime_to_gregorian_ms(UniversalDatatime);
 hour_from(Arg) ->
-    ?LOG(error, "dgiot_datatime:month_from - bad arg [~p]", [Arg]),
+    ?LOG(error, "dgiot_datetime:month_from - bad arg [~p]", [Arg]),
     0.
 
 -spec timestamp_from(tuple()) -> integer().
@@ -332,7 +354,7 @@ timestamp_from({"hour", Datetime}) ->
 timestamp_from({<<"hour">>, Datetime}) ->
     hour_from(Datetime);
 timestamp_from(CycleDatetime) ->
-    ?LOG(error, "dgiot_datatime:timestamp_from - bad arg [~p]", [CycleDatetime]),
+    ?LOG(error, "dgiot_datetime:timestamp_from - bad arg [~p]", [CycleDatetime]),
     0.
 
 -spec datetime_to_gregorian_ms(tuple()) -> integer().
