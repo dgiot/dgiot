@@ -3,11 +3,9 @@
 [![GitHub Release](https://img.shields.io/github/release/dgiot/dgiot?color=brightgreen)](https://github.com/dgiot/dgiot/releases)
 [![Docker Pulls](https://img.shields.io/docker/pulls/dgiot/dgiot)](https://hub.docker.com/r/dgiot/dgiot)
 [![Community](https://img.shields.io/badge/Community-DGIOT-yellow)](https://www.dgiotcloud.cn/)
-[![QQ群346566935](https://img.shields.io/badge/QQ群-346566935-brightgreen)](https://jq.qq.com/?_wv=1027&k=LipWZvDe)
-
 
 [English](./README.md) | [中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)|
-[github](https://github.com/dgiot)|[gitee](https://gitee.com/dgiiot)|[官网](https://www.dgiotcloud.cn/)|[博客](https://www.dgiotcloud.cn/?cat=19)|[体验](https://prod.dgiotcloud.cn)|[微信群](#jump)
+[github](https://github.com/dgiot)|[gitee](https://gitee.com/dgiiot)|[官网](https://www.dgiotcloud.cn/)|[博客](https://www.dgiotcloud.cn/?cat=19)|[体验](https://prod.dgiotcloud.cn)|[Discord社区](#社区)
 
 ## DGIOT简介
 DGIOT是国内首款轻量级开源工业物联网平台，我们致力于提供五类物联网解决方案：
@@ -186,7 +184,6 @@ wget -qO dgiot_install.sh https://gitee.com/dgiiot/dgiot/raw/master/dgiot_instal
         <td class="a1" style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV15u411z73i?spm_id_from=333.999.0.0" title="dgiot api编写教程">dgiot api编写教程</a></td>
      </tr>
 </table>
-
 
 ## 智慧校园传感接入教程
 <table style={{border : 'none'}}>
