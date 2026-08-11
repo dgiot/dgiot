@@ -1,0 +1,30 @@
+# DGIOT Quick Start — Single Node
+# docker-compose up -d
+# Open http://localhost:5080 (admin / dgiot_admin)
+
+version: '3.9'
+
+services:
+  dgiot:
+    image: dgiot/dgiot:latest
+    container_name: dgiot
+    restart: unless-stopped
+    ports:
+      - "5080:5080"
+      - "1883:1883"
+      - "8083:8083"
+      - "8084:8084"
+    environment:
+      - DGIOT_HOST=localhost
+    volumes:
+      - dgiot_data:/opt/dgiot/data
+      - dgiot_log:/opt/dgiot/log
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5080/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  dgiot_data:
+  dgiot_log:
