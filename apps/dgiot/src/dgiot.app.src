@@ -1,7 +1,7 @@
-{application, dgiot,
+﻿{application, dgiot,
     [
         {description, "DGIOT"},
-        {vsn, "4.3.0"},
+        {vsn, "4.3.7"},
         {modules, [dgiot_udp_sdk]},
         {registered, [dgiot_sup]},
 <<<<<<< HEAD

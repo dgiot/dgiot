@@ -1,5 +1,15 @@
 # [4.4.0](https://github.com/dgiot/dgiot/compare/v4.3.9...v) (2021-11-23)
 
+## v4.3.7 (2026-08-13)
+
+- 新增: 设备影子 dgiot_shadow + API（desired/reported/version/delta）
+- 新增: 任务通道 TaskChannel + 时序通道 TDChannel + 自动创建
+- 新增: 国密安全 dgiot_sm（SM2/SM3/SM4，测试向量通过）
+- 新增: Hub Worker v2（遥测计数+阈值告警+去重）
+- 新增: 设备指令处理器 cmd_handler
+- 修复: 通道 start/stop arity 对齐 dgiot_channelx behavior
+- 安全: 全面脱敏（pSpace/DQYT/凭证/IP）+ git 历史重写
+
 
 ### Features
 
