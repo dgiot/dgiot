@@ -37,7 +37,7 @@
 
 设备路径解析:
   cmd=0x0101 (功图数据):
-    偏移0:  DevicePath (变长, 以00结尾)  →  "K1_51/M5/y9065..."
+    偏移0:  DevicePath (变长, 以00结尾)  →  "WELL-03/WELL-07/y9065..."
     偏移N:  Timestamp (4B, Unix)
     偏移N+4: PointCount (1B)
     偏移N+5: Points[] (每点8B: x[float32]+y[float32])

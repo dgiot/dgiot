@@ -1,4 +1,4 @@
-# 场站本体模拟：示例场站 131 号 IO 服务器
+# 场站本体模拟：示例场站 示例场站 IO 服务器
 
 > 基于真实数据: `io_ontology.json`, `油水井寄存器.xlsx`, `thing_model.json`
 
@@ -10,7 +10,7 @@
 Site:  示例场站 (oil_field_01)
 │
 ├─ Gateway: IO-131
-│   ip: 11.66.12.131
+│   ip: 192.168.10.131
 │   hostname: IO-SERVER-01
 │   role: IO服务器
 │   os: Win10.0.14393
@@ -21,12 +21,12 @@ Site:  示例场站 (oil_field_01)
 │     └─ IoCommit.exe ×7 (15MB/each, Oracle写入)
 │   protocols:
 │     ├─ Modbus TCP :53001 → 206台 RTU (有线)
-│     ├─ A11 5a5a :8889 → 200台井口 (TCP, 已逆向)
+│     ├─ A11 5a5a :8889 → 200台井口 (TCP, 已适配)
 │     └─ DCE/RPC :135 → 5个DCS (DCOM拒绝, 待配)
 │   data_sources: 9个
 │   ports: 12个开放服务
 │
-├─ Device: rtu_001 → DEV-001 (B1V25VE33) 油井
+├─ Device: rtu_001 → DEV-001 (WELL-01) 油井
 │   protocol: Modbus TCP, slaveid: 1
 │   product: oil_well_rtu
 │   │
@@ -37,7 +37,7 @@ Site:  示例场站 (oil_field_01)
 │   ├─ Point: pump_status      (40308, uint16, 0=stop 1=run)
 │   └─ Point: alarm_code       (40309, uint16, 位掩码)
 │
-├─ Device: rtu_002 → 02110150041 (B1V51VSFK01) 油井
+├─ Device: rtu_002 → 02110150041 (WELL-02) 油井
 │   protocol: Modbus TCP, slaveid: 2
 │   │
 │   ├─ Point: max_load         (40300, float32_AB, kN, alarm:>80)
@@ -46,24 +46,24 @@ Site:  示例场站 (oil_field_01)
 │   └─ Point: down_current     (40306, float32_AB, A)
 │
 ├─ Device: dcs_01 → DCS1 (RSLinx Classic)
-│   subnet: 172.23.9.0/24, 30设备
+│   subnet: 192.168.10.0/24, 30设备
 │   protocol: OPC DA/DCOM :58648
 │   status: DCOM拒绝 (需配dcomcnfg)
 │
 ├─ Device: dcs_02 → DCS2 (RSLinx Classic)
-│   subnet: 172.23.18.0/24, 30设备
+│   subnet: 192.168.20.0/24, 30设备
 │   status: DCOM拒绝
 │
 ├─ Device: dcs_03 → DCS3
-│   subnet: 172.26.6.0/24, 60设备
+│   subnet: 192.168.30.0/24, 60设备
 │   status: DCOM拒绝
 │
 ├─ Device: dcs_04 → DCS4
-│   subnet: 172.21.14.0/24, 40设备
+│   subnet: 192.168.40.0/24, 40设备
 │   status: DCOM拒绝
 │
 └─ Device: dcs_05 → DCS5 (RSLinx+WinCC)
-    subnet: 172.28.5.0/24, 40设备
+    subnet: 192.168.50.0/24, 40设备
     protocol: OPC DA/DCOM :59655
     status: DCOM拒绝
 ```
@@ -100,7 +100,7 @@ dgiot_ontology:load_model(#{
 
 %% 2. 注册本体节点
 dgiot_ontology:register(site,    #{id => <<"oil_field_01">>, name => <<"示例场站">>, type => <<"oil_field">>}).
-dgiot_ontology:register(gateway, #{id => <<"gw_131">>, ip => <<"11.66.12.131">>, site => <<"oil_field_01">>, protocols => [<<"modbus_tcp:53001">>, <<"a11:8889">>] }).
+dgiot_ontology:register(gateway, #{id => <<"gw_131">>, ip => <<"192.168.10.131">>, site => <<"oil_field_01">>, protocols => [<<"modbus_tcp:53001">>, <<"a11:8889">>] }).
 dgiot_ontology:register(device,  #{id => <<"rtu_001">>, gateway => <<"gw_131">>, name => <<"DEV-001">>, type => <<"oil_well_rtu">>, protocol => <<"modbus">>, slaveid => 1}).
 dgiot_ontology:register(point,   #{id => <<"oil_pressure">>,    device => <<"rtu_001">>, name => <<"油压">>, unit => <<"MPa">>}).
 dgiot_ontology:register(point,   #{id => <<"temperature">>,     device => <<"rtu_001">>, name => <<"温度">>, unit => <<"celsius">>}).
@@ -128,7 +128,7 @@ ShadowPid ! {cast, heartbeat}.
 ### T=10s 正常数据注入 (Modbus 采集 → MQTT → Shadow)
 
 ```bash
-# 边缘采集器从 11.66.12.131:53001 readHoldingRegisters(40300, 6)
+# 边缘采集器从 192.168.10.131:53001 readHoldingRegisters(40300, 6)
 # → {oil_pressure:2.35, casing_pressure:1.82, temperature:45.6, flow_rate:12.3, pump_status:1, alarm_code:0}
 # → MQTT publish
 

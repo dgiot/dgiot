@@ -44,29 +44,29 @@
 │  └──────────────────────────────────────────────────────────────┘  │
 │                                                                     │
 │  ┌─ 数据出口 (Data Servers) ────────────────────────────────────┐  │
-│  │ Oracle @ 11.66.12.129:1521/orcl (INDUSTRYPROD/INDUSTRYA11_pass) ←主 │  │
-│  │ RTDB @ 11.66.11.131:8889 (GENERIC_VENDOR实时库) ←辅助               │  │
+│  │ Oracle @ 192.168.10.129:1521/orcl (INDUSTRYPROD/INDUSTRYA11_pass) ←主 │  │
+│  │ RTDB @ 192.168.10.141:8889 (GENERIC_VENDOR实时库) ←辅助               │  │
 │  │ eForceCon DB (空配置/未启用)                                  │  │
 │  │ OPC Server (空配置/未启用)                                    │  │
 │  └──────────────────────────────────────────────────────────────┘  │
 │                                                                     │
 │  ┌─ 现场设备 (从 Event.txt + runBack1.zio 发现) ────────────────┐  │
 │  │ ~20+ 井口RTU (Modbus TCP :502, IPv6 240C:8042:... )          │  │
-│  │ 16 口油井 (K1_51,M5,S21,Y9065~Y9832,YPing1...)              │  │
+│  │ 16 口油井 (WELL-03,WELL-07,WELL-06,WELL-04~WELL-05,WELL-08...)              │  │
 │  │ 18 台仿真泵 (SJ0001~SJ0018, FORCE_HLS_SIM协议)              │  │
 │  │ 966 口井 (Oracle SYS_SINGLE_WELL_BASE_INFO)                  │  │
 │  └──────────────────────────────────────────────────────────────┘  │
 │                                                                     │
 │  ┌─ 网络拓扑 ──────────────────────────────────────────────────┐  │
-│  │ 11.66.12.131 (本机 IO Server)                                │  │
+│  │ 192.168.10.131 (本机 IO Server)                                │  │
 │  │   ├─ :502     Modbus TCP 接入 (20+ RTU)                      │  │
 │  │   ├─ :135     DCOM (OPC DA)                                  │  │
 │  │   ├─ :7001    IOFileServer                                   │  │
 │  │   ├─ :6582    IOConfig Client                                │  │
-│  │   └─ :6000/1  冗余心跳 (→ 196.168.65.102)                    │  │
-│  │ 11.66.12.129 :1521 Oracle 数据库 (INDUSTRYPROD)                  │  │
-│  │ 11.66.11.131 :8889 RTDB 实时库                             │  │
-│  │ 196.168.65.102      冗余备机                                  │  │
+│  │   └─ :6000/1  冗余心跳 (→ 192.168.10.102)                    │  │
+│  │ 192.168.10.129 :1521 Oracle 数据库 (INDUSTRYPROD)                  │  │
+│  │ 192.168.10.141 :8889 RTDB 实时库                             │  │
+│  │ 192.168.10.102      冗余备机                                  │  │
 │  └──────────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -162,7 +162,7 @@
 | `DTU_DATA6211` | 唐山平升 Data6211 | Tangshan Pingsheng |
 | `DTU_DATA86` | 唐山平升 Data6100 | Tangshan Pingsheng |
 | `DTU_DLHB_HJT212` | 动力环保 HJT212 | HJ/T212 国标 |
-| `DTU_DQQY` | GENERIC_VENDOR | Daqing Qingyuan |
+| `DTU_DQQY` | GENERIC_VENDOR | (redacted) |
 | `DTU_ETUNG` | 亿通 | Etung |
 | `DTU_FENGSHI` | 山东锋士 | Shandong Fengshi |
 | `DTU_FOUR_FAITH` | 四信 | Four Faith |
@@ -251,12 +251,12 @@ IoMonitor.exe (主采集引擎, CommitRealSpan=300ms)
    │
    ├──→ IoCommit.exe (12 提交组, 每批 15K 点)
    │      │
-   │      ├──[ADO/OLEDB]──→ Oracle 11.66.12.129:1521/orcl (INDUSTRYPROD)
+   │      ├──[ADO/OLEDB]──→ Oracle 192.168.10.129:1521/orcl (INDUSTRYPROD)
    │      │     └── A11SQLSERVICE.exe ──→ F:\TRANgo\...\RTUSql
    │      │
-   │      ├──[RTDB API]──→ RTDB 11.66.11.131:8889
+   │      ├──[RTDB API]──→ RTDB 192.168.10.141:8889
    │      │
-   │      └──[Redundancy]──→ 196.168.65.102:6000/6001
+   │      └──[Redundancy]──→ 192.168.10.102:6000/6001
    │
    ├──[FileServer :7001]──→ IOFileServer.exe ──→ IOConfig clients (:6582)
    │
@@ -313,7 +313,7 @@ IoMonitor.exe (主采集引擎, CommitRealSpan=300ms)
 #### 9.3.4 冗余关系
 
 ```
-IO-SERVER-01 (主) ←→ 196.168.65.102 (备)
+IO-SERVER-01 (主) ←→ 192.168.10.102 (备)
   Port 6000 (收)          Port 6000
   Port 6001 (发)          Port 6001
   心跳 1500ms × 3次超时 = 4.5s 判定离线
@@ -383,9 +383,9 @@ CPU故障 / 采样故障 / RAM故障 / EEPROM故障 / 电源故障 / A/D故障 /
 
 ```
 ✅ IoMonitor.exe PID 18400, Session 2, 运行中 (2026-07-10 以来)
-✅ IoMonitor → Oracle 11.66.12.129:1521 ESTABLISHED
-✅ 131 → 11.66.12.130:8889 ×7 ESTABLISHED (A11 RTU)
-✅ 131 → 20+ 11.248.x.x:53001 ESTABLISHED (Modbus RTU)
+✅ IoMonitor → Oracle 192.168.10.129:1521 ESTABLISHED
+✅ 131 → 192.168.10.130:8889 ×7 ESTABLISHED (A11 RTU)
+✅ 131 → 20+ 192.168.20.x:53001 ESTABLISHED (Modbus RTU)
 ✅ 运行率 99.31% @ 2026-07-11 23:50
 ✅ Oracle PC_FD_PUMPJACK_FDYNA_DIA_T: 4,814,742 行
 ✅ RTDB 服务心跳正常
@@ -504,7 +504,7 @@ devaddr 强制标签:
 | DG-IoT | dgiot_lite |
 |--------|-----------|
 | Parse :1337 + PG :7432 | `parse_lite.py` + SQLite `parse.db` |
-| TDengine :6041 | config.yaml → 172.22.193.167:6041 (远端) 或 SQLite 降级 |
+| TDengine :6041 | config.yaml → 192.168.10.167:6041 (远端) 或 SQLite 降级 |
 
 ---
 
@@ -571,7 +571,7 @@ sensor_update(Props)
 ┌──────────┐    Modbus/A11       ┌──────────────────────┐
 │ RTU-001  │ ──────────────────→ │ gen_statem Shadow    │
 │ 油井井口 │   MQTT Topic:       │ PID: <0.123.0>       │
-│ 11.66.12 │ dgiot/oil_field_01/ │ State: online        │
+│ 192.168. │ dgiot/oil_field_01/ │ State: online        │
 │ .130:8889│ gw_131/rtu_001/     │ Props: #{            │
 └──────────┘ oil_pressure/data   │   oil_pressure→2.35  │
                                  │   temperature→45.6   │
@@ -590,7 +590,7 @@ sensor_update(Props)
 
 ```
 Site:  oil_field_01    ← 采油厂
-  └─ Gateway: gw_131   ← IO服务器 11.66.12.131:53001 (Modbus主站)
+  └─ Gateway: gw_131   ← IO服务器 192.168.10.131:53001 (Modbus主站)
        └─ Device: rtu_001  ← 井口RTU (物理设备)
             ├─ Point: oil_pressure     ← Modbus 40300 float32_AB
             ├─ Point: casing_pressure  ← Modbus 40302
@@ -704,7 +704,7 @@ Model → Ontology → Device Access → TimeSeries → Rules → Dashboard
 | parse_lite.py (CRUD/ACL/CLP/Hooks/Batch) | ✅ |
 | dgiot_schema.py (Device/Product/Channel/Templet) | ✅ |
 | 多租户 (tenants + user_roles + X-Tenant-ID) | ✅ |
-| TDengine 连接 (172.22.193.167:6041) | ✅ |
+| TDengine 连接 (192.168.10.167:6041) | ✅ |
 | 厂商通道插件 (6个 VENDOR_CHANNELS) | ✅ |
 | youyeyun.py 协议适配器 | ✅ |
 | Vue3 前端 (12页7组) | ✅ |
@@ -734,7 +734,7 @@ Model → Ontology → Device Access → TimeSeries → Rules → Dashboard
 | A11SQLSERVICE.exe | 转储服务 | RTUSql 目录 | ✅ A11→Oracle |
 | eForceCon DB | 数据库 | GENERIC_VENDOR自研 | ⛔ 已停用 |
 | RTDB | 实时库 | GENERIC_VENDOR实时数据库 | ⛔ 2022年停 |
-| Oracle 11.2.0.1 | 数据库 | 11.66.12.129:1521/orcl | ✅ 活跃 |
+| Oracle 11.2.0.1 | 数据库 | 192.168.10.129:1521/orcl | ✅ 活跃 |
 | OPCDAAuto.dll | COM组件 | SysWOW64 | ✅ 已注册(32位) |
 | OPC Core Components 2.00 | SDK | D:\OPC Core Components...msi | ✅ 已安装 |
 | TagID_IOCommitDB*.dat | 映射文件 | E:\IO ServerOnLine\run\ | ✅ 实时更新 |
@@ -762,7 +762,7 @@ Model → Ontology → Device Access → TimeSeries → Rules → Dashboard
 
 | 实体 | 值 |
 |------|-----|
-| Oracle 凭据 | INDUSTRYPROD / dqyta11_PASS |
+| Oracle 凭据 | INDUSTRYPROD / industrya11_PASS |
 | WinRM 入口 | Administrator / 5985 |
 
 ### Step 2: 连线成网 — 关系矩阵
@@ -771,7 +771,7 @@ Model → Ontology → Device Access → TimeSeries → Rules → Dashboard
                       Field Layer (物理世界)
                       ─────────────────────
   井口RTU (20+)           OPC Server ×4           Modbus RTU
-  11.248.x.x             .9.23 .18.194            11.248.x.x
+  192.168.20.x             .9.23 .18.194            192.168.20.x
   A11 TCP :8889          .26.6.3 .21.14.192      TCP :53001
        │                       │                       │
        │ A11协议               │ DCOM                  │ Modbus TCP
@@ -805,7 +805,7 @@ Model → Ontology → Device Access → TimeSeries → Rules → Dashboard
 | device → point | 6+ | Ia,Ib,Ic,Ua,F,P (sample) |
 | gateway → datasource | 3 | Oracle, RTDB, eForceCon |
 | constraint → channel | 6 | 实时提交/批量/超时/连接池 |
-| gateway → opc_server | 4 | 172.23.9.23/.3/.18.194/.26.6.3 |
+| gateway → opc_server | 4 | 192.168.10.23/.3/.18.194/.26.6.3 |
 
 ### Step 3: 设卡立规 — 6 条约束
 
@@ -823,17 +823,17 @@ Model → Ontology → Device Access → TimeSeries → Rules → Dashboard
 ```
 TagID_IOCommitDB3_DEVICE_D.dat → 2026-07-11 21:45 (385KB) ✅ 活跃
 TagID_IOCommitDB5_DEVICE_D.dat → 2026-07-11 22:52 (319KB) ✅ 活跃
-IoMonitor.exe → 11.66.12.129:1521 ESTABLISHED          ✅ Oracle连通
-131 → 11.66.12.130:8889 ×7 ESTABLISHED                  ✅ A11连通
-131 → 20+ 11.248.x.x:53001 ESTABLISHED                  ✅ Modbus连通
-131 → 172.23.9.23:135 ESTABLISHED                       ✅ OPC DA连通
+IoMonitor.exe → 192.168.10.129:1521 ESTABLISHED          ✅ Oracle连通
+131 → 192.168.10.130:8889 ×7 ESTABLISHED                  ✅ A11连通
+131 → 20+ 192.168.20.x:53001 ESTABLISHED                  ✅ Modbus连通
+131 → 192.168.10.23:135 ESTABLISHED                       ✅ OPC DA连通
 ```
 
 ### 五层本体结构总览
 
 ```
 Site:    industry_c1 (示例场站)
-  └─ Gateway: gw_131 (IO-SERVER-01, 11.66.12.131)
+  └─ Gateway: gw_131 (IO-SERVER-01, 192.168.10.131)
        ├─ Channel: ch_opc_da       → OPC DA Client → 4 OPC Servers
        ├─ Channel: ch_a11_rtu      → A11 采油厂协议 → 130:8889
        ├─ Channel: ch_modbus_tcp   → Modbus → 20+ RTU

@@ -204,7 +204,7 @@ TDengine 存储:
 
 `tqics_action.erl` 将此映射到具体的规则处理器：`?RULE_P2_HEALTH_LOW` 触发维护请求，`?RULE_D1_SEAL_OFFSET` 触发供料器自动调整，`?RULE_A2_ESCALATE` 升级告警。
 
-在边缘采集层（dgiot_collector），还有第二套 15 种实时流式算法作为补充，用于油田特有的工况诊断：
+在边缘采集层（dgiot_collector），还有第二套 15 种实时流式算法作为补充，用于油气行业特有的工况诊断：
 
 | 算法 | 触发条件 | 告警示例 |
 |----------|------|-------|
@@ -224,7 +224,7 @@ TDengine 存储:
 | difference_check | 差值检测 | 油压-套压差值异常 |
 | periodic_pattern | 周期模式 | 冲次偏离 > 50% |
 
-两层规则之间的关系是正交的：**本体层规则**（通过 gen_statem guard 子句）管理设备状态转换（normal -> warning -> fault）；**边缘层规则**（通过 EdgeStreamEngine 滑动窗口）管理油田特有的工况诊断。前者由物模型编译而来，后者由 `stream_tasks.yaml` 配置驱动。
+两层规则之间的关系是正交的：**本体层规则**（通过 gen_statem guard 子句）管理设备状态转换（normal -> warning -> fault）；**边缘层规则**（通过 EdgeStreamEngine 滑动窗口）管理油气行业特有的工况诊断。前者由物模型编译而来，后者由 `stream_tasks.yaml` 配置驱动。
 
 ### 5. 边缘采集架构：9 种访问模式
 
@@ -355,7 +355,7 @@ TDengine 存储:
 
 该架构不是选择编译时或运行时规则评估，而是同时采用两者：将关键阈值（如温度>85C）编译为 gen_statem guard 子句（纳秒级评估），同时将复杂条件（多属性 AND/OR）保留在运行时引擎（`dgiot_ontology_rule:evaluate/3`）中，支持动态规则追加。这种双层方法避免了纯 AOT 系统的僵化和纯 JIT 系统的延迟。
 
-在边缘采集层还有一个额外的规则层——15 种基于滑动窗口的流式算法，与本体层规则正交。前者管理设备状态转换（由物模型编译而来），后者管理油田工况诊断（由 stream_tasks.yaml 配置驱动）。
+在边缘采集层还有一个额外的规则层——15 种基于滑动窗口的流式算法，与本体层规则正交。前者管理设备状态转换（由物模型编译而来），后者管理行业工况诊断（由 stream_tasks.yaml 配置驱动）。
 
 ### 5. 四层本体架构（DLAS），而非三层
 
@@ -420,7 +420,7 @@ TDengine 存储:
 | `D:\ai\dgiot_collector\src\core\dgiot_adapter.py` | dgiot 平台双通道适配器（REST + MQTT） |
 | `D:\ai\dgiot_collector\src\storage\tdengine_manager.py` | TDengine 批量写入器（5s 缓冲） |
 | `D:\ai\dgiot_collector\src\config\endpoints.yaml` | 9 种接入场景端点配置 |
-| `D:\ai\dgiot_collector\src\config\thing_models\G1-G8_standard.yaml` | 8 组标准油田物模型（80+ 测点） |
+| `D:\ai\dgiot_collector\src\config\thing_models\G1-G8_standard.yaml` | 8 组标准行业物模型（80+ 测点） |
 
 ### 架构参考
 

@@ -26,10 +26,10 @@
 -define(LIVE_URL_RTMP, "rtmp://live.example.com").
 -define(LIVE_URL_HTTP, "http://live.example.com").
 -define(SignatureVersion, "1.0").
--define(AccessKeyId, <<"<redacted-akid>">>).
--define(AccessKeySecret, <<"<redacted-aksecret>">>).
+-define(AccessKeyId, <<"<your-accessKeyId>">>).
+-define(AccessKeySecret, <<"<your-accessKeySecret>">>).
 -define(DomainName, "http://vod.cn-shanghai.aliyuncs.com").
--define(UPLOAD_CALLBACK_URL, "http://<redacted-ip>:8081").
+-define(UPLOAD_CALLBACK_URL, "http://<your-callback-ip>:8081").
 
 -define(UPLOAD_HOST, "http://<your-oss-host>").
 

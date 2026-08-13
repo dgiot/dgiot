@@ -8,7 +8,7 @@ import json, time, random, os
 # ── 真实 IO Server 拓扑 ──
 SITE = "oil_field_01"
 GATEWAY = "gw_131"
-IO_IP = "11.66.12.131"
+IO_IP = "192.168.10.131"
 
 # ── 进程 (from psNTService.csv) ──
 PROCESSES = {
@@ -29,7 +29,7 @@ RELAY_FORMULAS = {
 
 # ── 油井设备 (from Event.txt + runBack1.zio) ──
 WELLS = [
-    {"id":"rtu_001","devaddr":"DEV-001","name":"K1_51","ip":"11.66.12.131:502","protocol":"Modbus TCP",
+    {"id":"rtu_001","devaddr":"DEV-001","name":"K1_51","ip":"192.168.10.131:502","protocol":"Modbus TCP",
      "points":[
         {"id":"oil_pressure","addr":40300,"fmt":"float32_AB","unit":"MPa","lo":0,"hi":10,"alarm_hi":3.0},
         {"id":"casing_pressure","addr":40302,"fmt":"float32_AB","unit":"MPa","lo":0,"hi":10},
@@ -37,7 +37,7 @@ WELLS = [
         {"id":"flow_rate","addr":40306,"fmt":"float32_AB","unit":"m3/h","lo":0,"hi":100},
         {"id":"pump_status","addr":40308,"fmt":"uint16","unit":"","lo":0,"hi":1},
     ]},
-    {"id":"rtu_002","devaddr":"02110150041","name":"M5","ip":"11.66.12.131:502","protocol":"Modbus TCP",
+    {"id":"rtu_002","devaddr":"02110150041","name":"M5","ip":"192.168.10.131:502","protocol":"Modbus TCP",
      "points":[
         {"id":"max_load","addr":40300,"fmt":"float32_AB","unit":"kN","lo":0,"hi":100,"alarm_hi":80},
         {"id":"min_load","addr":40302,"fmt":"float32_AB","unit":"kN"},
@@ -48,8 +48,8 @@ WELLS = [
 
 # ── 数据导出 (from Data Servers) ──
 DATA_EXPORTS = {
-    "Oracle": "11.66.12.129:1521/orcl (INDUSTRYPROD, 966 wells)",
-    "RTDB": "11.66.11.131:8889 (GENERIC_VENDOR实时库)",
+    "Oracle": "192.168.10.129:1521/orcl (INDUSTRYPROD, 966 wells)",
+    "RTDB": "192.168.10.141:8889 (GENERIC_VENDOR实时库)",
 }
 
 # ── 协议驱动 (from IO Servers) ──

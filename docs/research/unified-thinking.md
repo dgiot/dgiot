@@ -54,7 +54,7 @@ properties:              └─ Gateway: gw_131         PID: <0.123.0>          
 
 ```
 Site:   oil_field_01          ← 示例场站
- └─ Gateway: gw_131           ← IO服务器 11.66.12.131
+ └─ Gateway: gw_131           ← IO服务器 192.168.10.131
       ├─ protocols: [modbus_tcp:53001, a11:8889]
       ├─ processes:  [IOMan x36, LegacyComm]
       └─ Device: rtu_001      ← 井口RTU (物理)
