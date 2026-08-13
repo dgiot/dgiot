@@ -46,12 +46,12 @@ Site:  PLANT_A (oil_field_01)
 │   └─ Point: down_current     (40306, float32_AB, A)
 │
 ├─ Device: dcs_01 → DCS1 (RSLinx Classic)
-│   subnet: 172.23.9.0/24, 30设备
+│   subnet: 192.168.10.0/24, 30设备
 │   protocol: OPC DA/DCOM :58648
 │   status: DCOM拒绝 (需配dcomcnfg)
 │
 ├─ Device: dcs_02 → DCS2 (RSLinx Classic)
-│   subnet: 172.23.18.0/24, 30设备
+│   subnet: 192.168.20.0/24, 30设备
 │   status: DCOM拒绝
 │
 ├─ Device: dcs_03 → DCS3

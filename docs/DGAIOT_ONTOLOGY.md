@@ -162,7 +162,7 @@
 | `DTU_DATA6211` | 唐山平升 Data6211 | Tangshan Pingsheng |
 | `DTU_DATA86` | 唐山平升 Data6100 | Tangshan Pingsheng |
 | `DTU_DLHB_HJT212` | 动力环保 HJT212 | HJ/T212 国标 |
-| `DTU_DQQY` | 大庆庆远 | Daqing Qingyuan |
+| `DTU_DQQY` | GENERIC_VENDOR | (redacted) |
 | `DTU_ETUNG` | 亿通 | Etung |
 | `DTU_FENGSHI` | 山东锋士 | Shandong Fengshi |
 | `DTU_FOUR_FAITH` | 四信 | Four Faith |
@@ -385,7 +385,7 @@ CPU故障 / 采样故障 / RAM故障 / EEPROM故障 / 电源故障 / A/D故障 /
 ✅ IoMonitor.exe PID 18400, Session 2, 运行中 (2026-07-10 以来)
 ✅ IoMonitor → Oracle 192.168.10.129:1521 ESTABLISHED
 ✅ 131 → 192.168.10.130:8889 ×7 ESTABLISHED (A11 RTU)
-✅ 131 → 20+ 11.248.x.x:53001 ESTABLISHED (Modbus RTU)
+✅ 131 → 20+ 192.168.20.x:53001 ESTABLISHED (Modbus RTU)
 ✅ 运行率 99.31% @ 2026-07-11 23:50
 ✅ Oracle PC_FD_PUMPJACK_FDYNA_DIA_T: 4,814,742 行
 ✅ RTDB 服务心跳正常
@@ -570,9 +570,9 @@ sensor_update(Props)
 
 ┌──────────┐    Modbus/A11       ┌──────────────────────┐
 │ RTU-001  │ ──────────────────→ │ gen_statem Shadow    │
-│ 油井井口 │   MQTT Topic:       │ PID: <0.123.0>       │
-│ 11.66.12 │ dgiot/oil_field_01/ │ State: online        │
-│ .130:8889│ gw_131/rtu_001/     │ Props: #{            │
+│ 井口设备 │   MQTT Topic:       │ PID: <0.123.0>       │
+│ 192.168. │ dgiot/oil_field_01/ │ State: online        │
+│ 10.130:8889│ gw_131/rtu_001/     │ Props: #{            │
 └──────────┘ oil_pressure/data   │   oil_pressure→2.35  │
                                  │   temperature→45.6   │
   物理设备                        │ }                    │
@@ -771,8 +771,8 @@ Model → Ontology → Device Access → TimeSeries → Rules → Dashboard
                       Field Layer (物理世界)
                       ─────────────────────
   井口RTU (20+)           OPC Server ×4           Modbus RTU
-  11.248.x.x             .9.23 .18.194            11.248.x.x
-  A11 TCP :8889          .26.6.3 .21.14.192      TCP :53001
+  192.168.20.x             .10.23 .10.194            192.168.20.x
+  A11 TCP :8889          .10.63 .10.142      TCP :53001
        │                       │                       │
        │ A11协议               │ DCOM                  │ Modbus TCP
        ▼                       ▼                       ▼
@@ -805,7 +805,7 @@ Model → Ontology → Device Access → TimeSeries → Rules → Dashboard
 | device → point | 6+ | Ia,Ib,Ic,Ua,F,P (sample) |
 | gateway → datasource | 3 | Oracle, RTDB, eForceCon |
 | constraint → channel | 6 | 实时提交/批量/超时/连接池 |
-| gateway → opc_server | 4 | 172.23.9.23/.3/.18.194/.26.6.3 |
+| gateway → opc_server | 4 | 192.168.10.23/.3/.194/.63 |
 
 ### Step 3: 设卡立规 — 6 条约束
 
@@ -825,14 +825,14 @@ TagID_IOCommitDB3_DEVICE_D.dat → 2026-07-11 21:45 (385KB) ✅ 活跃
 TagID_IOCommitDB5_DEVICE_D.dat → 2026-07-11 22:52 (319KB) ✅ 活跃
 IoMonitor.exe → 192.168.10.129:1521 ESTABLISHED          ✅ Oracle连通
 131 → 192.168.10.130:8889 ×7 ESTABLISHED                  ✅ A11连通
-131 → 20+ 11.248.x.x:53001 ESTABLISHED                  ✅ Modbus连通
-131 → 172.23.9.23:135 ESTABLISHED                       ✅ OPC DA连通
+131 → 20+ 192.168.20.x:53001 ESTABLISHED                  ✅ Modbus连通
+131 → 192.168.10.23:135 ESTABLISHED                       ✅ OPC DA连通
 ```
 
 ### 五层本体结构总览
 
 ```
-Site:    industry_c1 (大庆采油厂)
+Site:    industry_c1 (示例场站)
   └─ Gateway: gw_131 (IO-SERVER-01, 192.168.10.131)
        ├─ Channel: ch_opc_da       → OPC DA Client → 4 OPC Servers
        ├─ Channel: ch_a11_rtu      → A11 采油厂协议 → 130:8889

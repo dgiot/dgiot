@@ -98,7 +98,7 @@ accept-encoding: gzip, deflate, br, zstd
 accept-language: en,zh;q=0.9,zh-CN;q=0.8
 author: dgiot
 connection: keep-alive
-cookie: cna=4292c8fec0554c6b8670a0a359e62809; fileServer=http://127.0.0.1; handleRoute=true; expired_timestamp=1774400690000; dgiot_auth_token=r:d211e1a8fb916bd660b8ddf1ee48dc49; departmentToken=r:d211e1a8fb916bd660b8ddf1ee48dc49
+cookie: cna=<redacted>; fileServer=http://127.0.0.1; handleRoute=true; expired_timestamp=<redacted>; dgiot_auth_token=r:<redacted>; departmentToken=r:<redacted>
 email: dgiot@iotn2n.com
 host: 127.0.0.1
 platform: web
@@ -109,7 +109,7 @@ sec-ch-ua-platform: "Windows"
 sec-fetch-dest: empty
 sec-fetch-mode: cors
 sec-fetch-site: same-origin
-sessiontoken: r:d211e1a8fb916bd660b8ddf1ee48dc49
+sessiontoken: r:<redacted>
 user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36
 ```
 

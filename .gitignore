@@ -22,3 +22,4 @@ token*
 secret*
 *.pem
 *.key
+changelog-from-release

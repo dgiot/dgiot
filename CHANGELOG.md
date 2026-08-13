@@ -1,10 +1,6 @@
 # [4.4.0](https://github.com/dgiot/dgiot/compare/v4.3.9...v) (2021-11-23)
 
 
-<<<<<<< HEAD
-=======
-d
->>>>>>> origin/dgaiot-plugins
 ### Features
 
 * add dgiot_image ([c52dd70](https://github.com/dgiot/dgiot/commit/c52dd7007227963a7b1f455a0e22959fe6d2e00d))

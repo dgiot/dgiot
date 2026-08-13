@@ -26,7 +26,7 @@
   registers[4:5]  uint16      →  pump_status  (0/1)
 ```
 
-## A11 (5a5a 中石油私有)
+## A11 (5a5a 行业私有协议)
 
 ```
 帧头:  5a 5a
