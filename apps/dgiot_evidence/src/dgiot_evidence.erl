@@ -376,7 +376,7 @@ trim_string(Str, Ret) ->
 %%content-type: multipart/form-data; boundary=-----------------------acebdf135724681
 %%content-length: 636
 %%te:
-%%host: 192.168.2.7:1250
+%%host: <redacted>:1250
 %%connection: keep-alive
 %%
 %%-------------------------acebdf135724681
@@ -394,7 +394,7 @@ trim_string(Str, Ret) ->
 %%-------------------------acebdf135724681
 %%Content-Disposition: form-data;name="auth_token"
 %%
-%%r:a152e09b9bf9623712fd9c6f942fb20f
+%%r:<redacted>
 %%-------------------------acebdf135724681
 %%Content-Disposition: form-data;name="text"; filename="a0_bd_1d_ce_8d_a7_1591269070.mp4"
 %%Content-Type: application/octet-stream
@@ -406,7 +406,7 @@ trim_string(Str, Ret) ->
 %%content-type: multipart/form-data; boundary=-----------------------acebdf135724681
 %%content-length: 636
 %%te:
-%%host: 192.168.2.7:1250
+%%host: <redacted>:1250
 %%connection: keep-alive
 %%
 %%-------------------------acebdf135724681
@@ -424,7 +424,7 @@ trim_string(Str, Ret) ->
 %%-------------------------acebdf135724681
 %%Content-Disposition: form-data;name="auth_token"
 %%
-%%r:a152e09b9bf9623712fd9c6f942fb20f
+%%r:<redacted>
 %%-------------------------acebdf135724681
 %%Content-Disposition: form-data;name="text"; filename="a0_bd_1d_ce_8d_a7_1591269151.mp4"
 %%Content-Type: application/octet-stream

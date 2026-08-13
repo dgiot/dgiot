@@ -141,7 +141,7 @@ _build/emqx/rel/emqx/bin/emqx eval '
 ```bash
 # 通过API验证设备状态
 curl -X GET "http://127.0.0.1/iotapi/devicecard/wrj_dm-zqy-20000" \
-  -H "Authorization: Bearer r:db1f3d43d05c782c8ceebb87724a2ac0" \
+  -H "Authorization: Bearer <redacted>" \
   -H "Content-Type: application/json"
 ```
 

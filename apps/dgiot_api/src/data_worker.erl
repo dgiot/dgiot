@@ -117,7 +117,7 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 
-%%  data_worker:export_parse(<<"r:21debcab56050159c174a61195e4f8d6">>).
+%%  data_worker:export_parse(<<"r:<redacted>">>).
 export_parse(SessionToken) ->
     RoleNames =
         case dgiot_auth:get_session(SessionToken) of
@@ -133,7 +133,7 @@ export_parse(SessionToken) ->
         os:cmd(dgiot_utils:to_atom(Cmd))
                 end, #{}, RoleNames).
 
-%% data_worker:export_td(<<"r:21debcab56050159c174a61195e4f8d6">>).
+%% data_worker:export_td(<<"r:<redacted>">>).
 export_td(SessionToken) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} ->
@@ -151,7 +151,7 @@ export_td(SessionToken) ->
             {ok, #{<<"path">> => dgiot_utils:to_binary(FileName)}}
     end.
 
-%% data_worker:export_files(<<"r:6dff46c8028917292acc8679f3e790f5">>).
+%% data_worker:export_files(<<"r:<redacted>">>).
 export_files(SessionToken) ->
     Query = #{
         <<"keys">> => [<<"path">>, <<"name">>]
@@ -177,7 +177,7 @@ import_parse(Fullpath) ->
     io:format("~s ~p Cmd = ~p.~n", [?FILE, ?LINE, Cmd]),
     os:cmd(dgiot_utils:to_atom(Cmd)).
 
-%% data_worker:import_td(<<"r:a4f169ffbbb37cdca429570396573ce3">>).
+%% data_worker:import_td(<<"r:<redacted>">>).
 import_td(SessionToken) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} ->
@@ -199,7 +199,7 @@ import_files() ->
     io:format("~s ~p Cmd = ~p.~n", [?FILE, ?LINE, Cmd]),
     os:cmd(dgiot_utils:to_atom(Cmd)).
 
-%% data_worker:restart_channel(<<"r:a4f169ffbbb37cdca429570396573ce3">>)
+%% data_worker:restart_channel(<<"r:<redacted>">>)
 restart_channel(SessionToken) ->
     case dgiot_parse:query_object(<<"Channel">>, #{<<"where">> => #{<<"isEnable">> => true}}) of
         {ok, #{<<"results">> := Results}} ->

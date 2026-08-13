@@ -31,8 +31,8 @@ if __name__ == "__main__":
     driver.implicitly_wait(30)
     # 访问目标URL
     driver.get('https://prod.iotn2n.com')
-    driver.find_element_by_xpath('/html/body/div[1]/div/div/div[2]/form/div[2]/div/div/input').send_keys("dgiot_dev")
-    driver.find_element_by_xpath('/html/body/div[1]/div/div/div[2]/form/div[3]/div/div/input').send_keys("dgiot_dev")
+    driver.find_element_by_xpath('/html/body/div[1]/div/div/div[2]/form/div[2]/div/div/input').send_keys("<your-username>")
+    driver.find_element_by_xpath('/html/body/div[1]/div/div/div[2]/form/div[3]/div/div/input').send_keys("<your-password>")
     driver.find_element_by_xpath('/html/body/div[1]/div/div/div[2]/form/div[4]/div/div/div/button').click()
     time.sleep(1)
 

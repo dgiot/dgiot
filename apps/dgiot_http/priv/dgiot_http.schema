@@ -64,7 +64,7 @@
 %%--------------------------------------------------------------------
 
 {mapping, "umeng.appkey", "dgiot_http.umeng_appkey", [
-{default, "5f8bfc1780455951e4ad0482"},
+{default, "<redacted>"},
 {datatype, string}
 ]}.
 
@@ -181,6 +181,6 @@
 ]}.
 
 {mapping, "onenet.secret", "dgiot_http.onenet_secret", [
-{default, "TTY4NDMyMTExNjAyNTU1ODI4MTc5"},
+{default, "<redacted>"},
 {datatype, string}
 ]}.

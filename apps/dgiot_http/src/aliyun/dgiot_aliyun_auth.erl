@@ -20,24 +20,19 @@
 -include_lib("dgiot/include/logger.hrl").
 
 -define(ALIYUN_VERSION, "2017-03-21").
--define(PUSH_KEY, "GE6T11xiXY").
--define(LIVE_KEY, "rzdZr4nvtc").
-<<<<<<< HEAD
--define(PUSH_URL, "rtmp://push.iotn2n.com").
--define(LIVE_URL_RTMP, "rtmp://live.iotn2n.com").
--define(LIVE_URL_HTTP, "http://live.iotn2n.com").
-=======
+-define(PUSH_KEY, "<redacted>").
+-define(LIVE_KEY, "<redacted>").
 -define(PUSH_URL, "rtmp://push.example.com").
 -define(LIVE_URL_RTMP, "rtmp://live.example.com").
 -define(LIVE_URL_HTTP, "http://live.example.com").
->>>>>>> origin/dgaiot-plugins
 -define(SignatureVersion, "1.0").
--define(AccessKeyId, <<"LTAI3jscIxezgvmt">>).
--define(AccessKeySecret, <<"WsVErdNZsfcX4PUaQZ4KkALT2Lc98o">>).
+%% 凭证请勿硬编码，通过 dgiot_http.conf 的 aliyun.accessKeyId / aliyun.accessKeySecret 配置
+-define(AccessKeyId, <<"<your-accessKeyId>">>).
+-define(AccessKeySecret, <<"<your-accessKeySecret>">>).
 -define(DomainName, "http://vod.cn-shanghai.aliyuncs.com").
--define(UPLOAD_CALLBACK_URL, "http://25.40.204.194:8081").
+-define(UPLOAD_CALLBACK_URL, "<your-callback-url>").
 
--define(UPLOAD_HOST, "http://dgiotpump.oss-cn-shanghai.aliyuns.com").
+-define(UPLOAD_HOST, "<your-oss-host>").
 
 %% API
 -export([aliyun_upload/0
@@ -167,11 +162,7 @@ to_aliyun_url(Datas) ->
     ?DomainName ++ "?" ++ lists:concat(lists:join("&", [K ++ "=" ++ V || {K, V} <- maps:to_list(Datas)])).
 
 uuid() ->
-<<<<<<< HEAD
-    {A, B, C} = emqx_guid:new(),
-=======
     {A, B, C} = dgiot_guid:new(),
->>>>>>> origin/dgaiot-plugins
     dgiot_utils:to_list(A) ++ dgiot_utils:to_list(B) ++ dgiot_utils:to_list(C).
 
 base_args(Action) ->
@@ -382,8 +373,6 @@ try_get_category(Cookie, Type) ->
 get_categorys() ->
     {ok, Cookie} = getCookie(),
     dgiot_utils:format("~p", [Cookie]),
-<<<<<<< HEAD
-%%    Cookie = <<"cna=DkBtGsN+XnYCAbeeROWKLCR7; channel=bFSTcHN2%2FxDYyijD%2BCLV4vIbsjGrZmztkHbkOTlwi3XiByQoZantQxAb%2BJ2GoQuH%2B29TdmEmtrQ0HnRwogpg6w%3D%3D; aliyun_choice=CN; aliyun_lang=zh; _uab_collina=164489179900937299843432; _umdata=G14CFDB599B535EFC844DE670F61AE64E512C36; changelog_date=1624579200000; session-lead-visited/6049b3869191edede7ffbb6f=false; currentRegionId=cn-shanghai; iot_regionid=cn-shanghai; login_aliyunid="w4c****@qq.com"; login_aliyunid_csrf=_csrf_tk_1073347328016184; login_aliyunid_pk=1357932084858144; aliyun_country=CN; aliyun_site=CN; iot_instanceid=W3siMTg3OTUwMDk5ODMyOTIxMCI6ImlvdC0wNnowMGlpODZ1NzRsOGEifSx7IjEzNTc5MzIwODQ4NTgxNDQiOiIifV0=; serviceUnitCode=; tfstk=cIiFB3i9NHKEh-EWkkZyOoPgYBBNawHnEGyb-2BD5GIczpa3gsAPwRV9DRy5Q_4h.; l=eBEPbk1cg73PjQ5oBOfwhurza77tdIRfguPzaNbMiOCP94sW5zDCW60Y8m9XCnGVnsQDR3lrOrBaBcLSoy4EC85Hah5eMjVtndLh.; isg=BKSkOzNEmid0_e2xCeufrYWRdaKWPcin8WoDkr7FFm8yaUUz5knPNo-DKcHxsQD_">>
     {ok, #{<<"results">> := Datas}} = dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"type">> => <<"abilityInfo">>}}),
     A = lists:foldl(
         fun(#{<<"data">> := #{<<"CategoryType">> := Type}}, Acc) ->
@@ -409,8 +398,6 @@ get_categorys() ->
 
 %%
 %% @description: 读取文件并返回
-=======
->>>>>>> origin/dgaiot-plugins
 %%
 getCookie() ->
     {file, Here} = code:is_loaded(?MODULE),
@@ -425,7 +412,7 @@ getCookie() ->
     end.
 
 %% 阿里云工业互联网 ⾏业平台账号免登对接
-%% dgiot_aliyun_auth:aliyun_isplat(<<"b1797239c4e942898649274da642ab84">>).
+%% dgiot_aliyun_auth:aliyun_isplat(<<"<redacted>">>).
 aliyun_isplat(AccessCode) ->
     Md5Idtoken = dgiot_utils:to_md5(AccessCode),
     case dgiot_data:get({userinfo, Md5Idtoken}) of
