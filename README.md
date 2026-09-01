@@ -79,16 +79,16 @@ Modbus 40300 → MQTT(dgiot/{site}/{gw}/{dev}/{pt}/data) → Shadow PID
 ## Quick Start
 
 ```bash
-git clone git@gitee.com:dgaiot/dgaiot.git
-cd dgaiot
+git clone https://github.com/dgiot/dgiot.git
+cd dgiot
 export PATH=/usr/local/erlang_24.3/bin:$PATH
 make
 ```
 
 ## Related
 
-- [iotStudio](https://gitee.com/dgiiot/iotStudio) — Edge Agent & Application (Python + Vue)
-- [dgiot](https://gitee.com/dgiiot/dgiot) — Full Erlang IoT Platform
+- [iotStudio](https://github.com/dgiot/iotStudio) — Edge Agent & Application (Python + Vue)
+- [dgiot](https://github.com/dgiot/dgiot) — Full Erlang IoT Platform
 
 ## License
 
