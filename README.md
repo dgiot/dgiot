@@ -78,10 +78,21 @@ Modbus 40300 → MQTT(dgiot/{site}/{gw}/{dev}/{pt}/data) → Shadow PID
 
 ## Quick Start
 
+One-click deploy with Docker (recommended for evaluation):
+
 ```bash
 git clone https://github.com/dgiot/dgiot.git
 cd dgiot
-export PATH=/usr/local/erlang_24.3/bin:$PATH
+docker compose up -d
+```
+
+Build from source — the bootstrap script installs Erlang/OTP 24.3 and build
+tools automatically (Ubuntu / Debian / CentOS / openEuler / macOS):
+
+```bash
+git clone https://github.com/dgiot/dgiot.git
+cd dgiot
+bash scripts/bootstrap.sh
 make
 ```
 
