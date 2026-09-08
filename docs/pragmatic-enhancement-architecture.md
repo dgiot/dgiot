@@ -8,6 +8,8 @@
 > components — **no dependency on unproven "open-source Palantir" clones**. The
 > landscape survey shows only two such projects have real communities (WorldMonitor,
 > Semantica), and neither targets the industrial edge. We do not need them to ship.
+>
+> 中文版（Chinese version）: [zh/pragmatic-enhancement-architecture.md](zh/pragmatic-enhancement-architecture.md)
 
 ## Core Principles
 
