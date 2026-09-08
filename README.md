@@ -85,6 +85,12 @@ export PATH=/usr/local/erlang_24.3/bin:$PATH
 make
 ```
 
+## Documentation
+
+- [DGIOT vs. Palantir](docs/comparison.md) — positioning: the brain and the limbs, complementary by design
+- [Open-Source Palantir Landscape](docs/open-source-palantir-landscape.md) — reality-checked survey of "open-source Palantir" projects
+- [Pragmatic Enhancement Architecture](docs/pragmatic-enhancement-architecture.md) — Kafka + TimescaleDB + rules + BI in four phases (中文版: [zh/pragmatic-enhancement-architecture.md](docs/zh/pragmatic-enhancement-architecture.md))
+
 ## Related
 
 - [iotStudio](https://github.com/dgiot/iotStudio) — Edge Agent & Application (Python + Vue)
