@@ -45,3 +45,11 @@
 **Bottom line:** the verified landscape confirms the ontology-first direction DGIOT
 already ships, and confirms the open periphery: the "brain" projects are crowding
 fast, the "limbs and senses" layer remains open. Ship the protocol depth.
+
+## Related
+
+- [comparison.md](comparison.md) — why DGIOT and Palantir-class platforms are
+  complementary (the brain and the limbs).
+- [pragmatic-enhancement-architecture.md](pragmatic-enhancement-architecture.md) —
+  a build plan that achieves the same outcomes with production-proven components,
+  without depending on any of the clones above.
