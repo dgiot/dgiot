@@ -1,0 +1,12 @@
+{application, dgiot_broker,
+ [{description, "dgiot owned broker port + native MQTT core (EMQX replacement)"},
+  {vsn, "0.1.0"},
+  {registered, [dgiot_broker_sup]},
+  {mod, {dgiot_broker_app, []}},
+  {applications, [kernel, stdlib]},
+  {env, [
+      %% emqx = 现网委托 EMQX；dgiot = 自研内核（刀 6 起可切换）
+      {backend, emqx}
+  ]},
+  {modules, []}
+ ]}.
