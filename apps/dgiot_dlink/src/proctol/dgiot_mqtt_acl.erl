@@ -30,8 +30,9 @@ check_acl(ClientInfo, PubSub, <<"$dg/", _/binary>> = Topic, _NoMatchAction, _Par
             ok
     end;
 
-check_acl(_ClientInfo, _PubSub, _Topic, _NoMatchAction, _Params) ->
-    ok.
+check_acl(ClientInfo, PubSub, Topic, _NoMatchAction, _Params) ->
+    %% P2 ABAC: doctrine dgiot/ namespace -> attribute PDP (hot-reload)
+    dgiot_pdp_acl:check(PubSub, Topic, ClientInfo).
 
 description() -> "Acl with Dlink".
 

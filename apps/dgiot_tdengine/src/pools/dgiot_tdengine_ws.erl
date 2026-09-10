@@ -42,7 +42,10 @@ test() ->
     gun:close(ConnPid).
 
 login(ChannelId, Ip, Port, UserName, Password) ->
-    case gun:open(Ip, Port, #{
+    %% fail soft: gun 2.0.0-rc.2 has no websocket support; a bare gun:open
+    %% crash would kill the channel worker. Return {error,_} instead so the
+    %% caller's {error,_} branch keeps the worker alive (HTTP driver path).
+    case catch gun:open(Ip, Port, #{
         supervise => false,
         ws_opts => #{keepalive => 1000 * 20}
     }) of
@@ -61,6 +64,8 @@ login(ChannelId, Ip, Port, UserName, Password) ->
                 {_, Error} ->
                     {error, Error}
             end;
+        {'EXIT', Reason} ->
+            {error, {gun_open, Reason}};
         {_, Error} ->
             {error, Error}
     end.
