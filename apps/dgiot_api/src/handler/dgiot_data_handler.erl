@@ -607,11 +607,26 @@ do_request(post_station_data, Args, #{<<"sessionToken">> := SessionToken} = _Con
 %% 请求:POST /iotapi/post_device_debug
 do_request(post_device_debug, #{<<"deviceid">> := DeviceId, <<"messagetype">> := _Messagetype, <<"data">> := Data} = _Args, _Context, _Req) ->
     case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
-        {ok, #{<<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}}} ->
-            ProfileTopic = <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/debug">>,
-            NewData = Data, % dgiot_edge:get_writeData(Messagetype,Data) 函数已移除，直接使用原始数据
-            dgiot_mqtt:publish(DeviceId, ProfileTopic, NewData),
-            {200, #{<<"status">> => 0, <<"data">> => #{<<"topic">> => ProfileTopic}}};
+        {ok, #{<<"devaddr">> := Devaddr} = Device} when is_binary(Devaddr) ->
+            %% product arrives either as a Pointer map (installer-created
+            %% rows) or as a plain ObjectId binary (headless-seeded lab
+            %% rows); the original pattern matched only the pointer shape
+            %% and answered "not find device" for everything else.
+            ProductId =
+                case Device of
+                    #{<<"product">> := #{<<"objectId">> := Pid0}} -> Pid0;
+                    #{<<"product">> := Pid1} when is_binary(Pid1) -> Pid1;
+                    _ -> undefined
+                end,
+            case is_binary(ProductId) of
+                false ->
+                    {200, #{<<"status">> => <<"error">>, <<"msg">> => <<"device has no product">>}};
+                true ->
+                    ProfileTopic = <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/debug">>,
+                    NewData = Data, % dgiot_edge:get_writeData(Messagetype,Data) 函数已移除，直接使用原始数据
+                    dgiot_mqtt:publish(DeviceId, ProfileTopic, NewData),
+                    {200, #{<<"status">> => 0, <<"data">> => #{<<"topic">> => ProfileTopic}}}
+            end;
         _ ->
             {200, #{<<"status">> => <<"error">>, <<"msg">> => <<"not find device">>}}
     end;
