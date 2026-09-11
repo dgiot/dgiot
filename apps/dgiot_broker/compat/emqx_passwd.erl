@@ -1,21 +1,28 @@
-%% @doc 同名承接：emqx_passwd（口令散列）→ crypto 实现（盐 + 迭代）。
-%% 仅兼容「同进程内 hash/check」的自洽场景；与 EMQX 存量库的散列格式不互通，
-%% 此处显式声明，避免误以为是同一格式。
+%% @doc 同名承接：emqx_passwd → 对齐 EMQX 4.4 真 API（hash(算法, 口令)）。
+%% 算法：plain | md5 | sha | sha256 | sha512 | pbkdf2（+ 兼容 3 参调用）。
 -module(emqx_passwd).
 
--export([hash/1, hash/2, check/2, check/3]).
+-export([hash/2, hash/3, check_password/2, check_password/3]).
 
-hash(Password) -> hash(Password, default_salt()).
+hash(plain, Password) -> iolist_to_binary(Password);
+hash(md5, Password) -> hex(crypto:hash(md5, Password));
+hash(sha, Password) -> hex(crypto:hash(sha, Password));
+hash(sha256, Password) -> hex(crypto:hash(sha256, Password));
+hash(sha512, Password) -> hex(crypto:hash(sha512, Password));
+hash(pbkdf2, {Salt, Password, Macfun, Iterations, Dklen}) ->
+    hex(crypto:pbkdf2_hmac(Macfun, Password, Salt, Iterations, Dklen));
+hash(Algo, Password) ->
+    {error, {unsupported_hash_algo, Algo, Password}}.
 
-hash(Password, Salt) ->
-    Bin = iolist_to_binary([Salt, Password]),
-    hex(crypto:hash(sha256, Bin)).
+%% 兼容 3 参调用（(Algo, Password, Salt)）：忽略第三参
+hash(Algo, Password, _Salt) -> hash(Algo, Password).
 
-check(Password, Hash) -> check(Password, default_salt(), Hash).
+check_password(Password, Hash) ->
+    check_password(sha256, Password, Hash).
 
-check(Password, Salt, Hash) ->
-    hash(Password, Salt) =:= Hash.
-
-default_salt() -> <<"dgiot">>.
+check_password(Algo, Password, Hash) ->
+    try hash(Algo, Password) =:= Hash
+    catch _:_ -> false
+    end.
 
 hex(Bin) -> binary:encode_hex(Bin).

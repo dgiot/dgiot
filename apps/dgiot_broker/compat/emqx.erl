@@ -39,11 +39,14 @@ hook(HookPoint, Callback, Priority) ->
     emqx_hooks:add(HookPoint, Callback, Priority).
 unhook(HookPoint, Callback) -> emqx_hooks:del(HookPoint, Callback).
 
-%% 进程生命周期控制属主机管理面，刀 7 之前显式报错
+%% 进程生命周期控制（管理面在用户显式请求时才调用）
 reboot() ->
-    {error, {not_implemented, cut7, emqx, reboot}}.
+    logger:warning("[emqx] reboot requested (embedded release: restart via deploy)"),
+    init:restart().
+
 shutdown(Reason) ->
-    {error, {not_implemented, cut7, {emqx, shutdown}, Reason}}.
+    logger:notice("[emqx] shutdown requested: ~p", [Reason]),
+    init:stop(Reason).
 
 ping() -> pong.
 

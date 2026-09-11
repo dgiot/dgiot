@@ -5,7 +5,9 @@
 %% 调用方拿到真实订阅者。
 -module(emqx_router).
 
--export([match_routes/1, has_routes/1, do_match/1]).
+-include("emqx.hrl").
+
+-export([match_routes/1, has_routes/1, do_match/1, lookup_routes/1]).
 
 %% 真实订阅者（我们的路由簿）
 match_routes(Topic) when is_binary(Topic) ->
@@ -22,3 +24,13 @@ has_routes(Topic) when is_binary(Topic) ->
 has_routes(_) -> false.
 
 do_match(Topic) -> match_routes(Topic).
+
+%% @doc 管理端路由查询：返回命中 Topic 的路由（#route{}，单节点 dest=node()）。
+%% EMQX 这里查 exact 主题表；我们按"会收到 Topic 的订阅过滤器"给出，语义
+%% 更贴近可观测意图，形态对齐 #route{topic, dest} 供管理 API 序列化。
+lookup_routes(Topic) when is_binary(Topic) ->
+    [#route{topic = Filter, dest = node()}
+     || {Filter, _ClientId, _V} <- dgiot_broker_router:subscriptions(),
+        dgiot_broker_router:topic_matches(Filter, Topic)];
+lookup_routes(_) ->
+    [].

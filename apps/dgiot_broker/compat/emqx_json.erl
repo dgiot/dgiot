@@ -3,7 +3,8 @@
 %% 未支持的可选参数显式报错，不静默忽略。
 -module(emqx_json).
 
--export([encode/1, encode/2, decode/1, decode/2]).
+-export([encode/1, encode/2, decode/1, decode/2,
+         safe_encode/1, safe_encode/2, safe_decode/1, safe_decode/2]).
 
 encode(Term) -> dgiot_json:encode(Term).
 
@@ -21,3 +22,12 @@ decode(Bin, Opts) when is_list(Opts) ->
         [] -> dgiot_json:decode(Bin);
         _ -> {error, {unsupported_options, Opts}}
     end.
+
+%% safe_*：永不抛，失败回 {error, _}（EMQX 语义）
+safe_encode(Term) ->
+    try {ok, dgiot_json:encode(Term)} catch C:R -> {error, {C, R}} end.
+safe_encode(Term, _Opts) -> safe_encode(Term).
+
+safe_decode(Json) ->
+    try {ok, dgiot_json:decode(Json)} catch C:R -> {error, {C, R}} end.
+safe_decode(Json, _Opts) -> safe_decode(Json).

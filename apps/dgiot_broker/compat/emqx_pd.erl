@@ -5,7 +5,7 @@
 -compile({no_auto_import, [get/1, get/2, put/2, erase/1]}).
 
 -export([get/1, get/2, put/2, erase/1, get_counter/1, inc_counter/1,
-         inc_counter/2, reset_counter/1]).
+         inc_counter/2, reset_counter/1, get_counters/1]).
 
 get(Key) -> erlang:get(Key).
 
@@ -29,3 +29,6 @@ inc_counter(Key, N) ->
     V.
 
 reset_counter(Key) -> put(Key, 0), 0.
+
+get_counters(Keys) when is_list(Keys) ->
+    [{Key, get_counter(Key)} || Key <- Keys].

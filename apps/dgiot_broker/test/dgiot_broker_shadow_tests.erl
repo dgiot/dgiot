@@ -140,9 +140,11 @@ metrics_test() ->
 %% ---------------- 未实现的必须响亮 ----------------
 
 unimplemented_is_loud_test() ->
-    ?assertMatch({error, {not_implemented, _, emqx, reboot}}, emqx:reboot()),
+    %% 仍显式未实现的（离线队列等）必须响亮；reboot/shutdown 已实现，不再断言
     ?assertMatch({error, {not_implemented, _, server_side_subscribe}},
-                 dgiot_broker_native:subscribe(<<"c">>, <<"t">>, #{})).
+                 dgiot_broker_native:subscribe(<<"c">>, <<"t">>, #{})),
+    ?assertMatch({error, {not_implemented, _, offline_replay}},
+                 emqx_session:replay(<<"c">>, self())).
 
 %% ---------------- 记录级兼容（刀 5）：dgiot 真实模式必须匹配 ----------------
 

@@ -8,7 +8,7 @@
 -module(emqx_hooks).
 
 -export([init/0, add/2, add/3, del/2, del/3, lookup/1, run/2, run/3, run_fold/3,
-         reset/0]).
+         put/2, put/3, reset/0]).
 
 -define(TAB, dgiot_broker_hooks).
 
@@ -28,6 +28,10 @@ add(HookPoint, Callback, Priority) when is_integer(Priority) ->
     Key = {HookPoint, Priority, erlang:phash2(Callback)},
     ets:insert(?TAB, {Key, Callback}),
     ok.
+
+%% EMQX 4.4 的 put 变体（与 add 同语义；Filter 参数忽略）
+put(HookPoint, Callback) -> add(HookPoint, Callback).
+put(HookPoint, Action, _Filter) -> add(HookPoint, Action).
 
 del(HookPoint, Callback) ->
     init(),

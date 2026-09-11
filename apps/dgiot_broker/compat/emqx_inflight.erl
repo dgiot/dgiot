@@ -3,7 +3,7 @@
 -module(emqx_inflight).
 
 -export([new/0, is_full/2, insert/2, update/2, lookup/2, delete/2,
-         size/1, is_empty/1, foreach/2, reset/1]).
+         size/1, is_empty/1, foreach/2, reset/1, to_list/1]).
 
 -define(TAB, dgiot_broker_inflight).
 
@@ -32,3 +32,7 @@ is_empty(_Tab) -> ets:info(?TAB, size) =:= 0.
 
 foreach(_Tab, Fun) -> lists:foreach(Fun, ets:tab2list(?TAB)), ok.
 reset(_Tab) -> ets:delete_all_objects(?TAB), ok.
+
+%% @doc 在途窗口 → {Key, Val} 列表（QoS 重放观测用）。
+%% 注：当前 inflight 是单共享 ETS（连接级隔离属后续刀），to_list 返回全部。
+to_list(_Inflight) -> ets:tab2list(?TAB).

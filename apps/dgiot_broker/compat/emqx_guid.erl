@@ -2,8 +2,20 @@
 %% EMQX 的 guid 是 128bit 二进制；我们保持同形态（二进制/十六进制/Base62）。
 -module(emqx_guid).
 
--export([gen/0, gen_hex/0, gen_timestamp/0, to_base62/1, to_hex/1,
+-export([gen/0, gen_hex/0, gen_timestamp/0, new/0, to_base62/1, to_hex/1,
          to_hexstr/1, to_binstr/1, from_hex/1, is_guid/1]).
+
+%% @doc new/0：EMQX 语义，返回 {Ts, NPid, Seq} 三元组（阿里云 auth 用）。
+%% Ts=微秒时间戳，NPid=节点 48bit 标识，Seq=序号（首值 0）。
+new() ->
+    {ts(), npid(), 0}.
+
+ts() ->
+    erlang:system_time(microsecond).
+
+npid() ->
+    <<N:48, _/binary>> = crypto:hash(md5, atom_to_binary(node(), utf8)),
+    N.
 
 gen() ->
     <<A:32, B:16, C:16, D:16, E:48>> = crypto:strong_rand_bytes(16),
