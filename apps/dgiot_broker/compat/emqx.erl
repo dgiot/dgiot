@@ -8,19 +8,22 @@
 %% 未实现的函数一律显式报错，绝不静默返回 ok。
 -module(emqx).
 
+-include("emqx.hrl").
+
 -export([publish/1, subscribe/3, unsubscribe/2,
          hook/2, hook/3, unhook/2,
          reboot/0, shutdown/1, ping/0, version/0]).
 
 %% 内部发布：委托 emqx_broker（单一实现路径，钩子与指标只做一次）
-publish(Message) when is_map(Message) ->
+publish(#message{} = Message) ->
     emqx_broker:publish(Message);
 publish(Other) ->
     {error, {bad_message, Other}}.
 
-%% 内部订阅：进程 Pid 订阅 Filter
+%% 内部订阅：进程 Pid 订阅 Filter（VM 内按记录形态投递）
 subscribe(Pid, Filter, Qos) when is_pid(Pid) ->
-    dgiot_broker_router:subscribe(Filter, client_id_of(Pid), Pid, Qos);
+    dgiot_broker_router:subscribe(Filter, client_id_of(Pid), Pid, Qos,
+                                  #{shape => record});
 subscribe(Other, _F, _Q) ->
     {error, {bad_subscriber, Other}}.
 

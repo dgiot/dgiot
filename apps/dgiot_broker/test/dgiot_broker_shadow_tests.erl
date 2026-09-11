@@ -8,6 +8,7 @@
 %% 真实会经历的路径。
 -module(dgiot_broker_shadow_tests).
 -include_lib("eunit/include/eunit.hrl").
+-include("emqx.hrl").
 
 setup() ->
     ok = dgiot_broker_router:init(),
@@ -143,13 +144,56 @@ unimplemented_is_loud_test() ->
     ?assertMatch({error, {not_implemented, _, server_side_subscribe}},
                  dgiot_broker_native:subscribe(<<"c">>, <<"t">>, #{})).
 
-%% 测试用订阅进程：把投递回执给调用者
+%% ---------------- 记录级兼容（刀 5）：dgiot 真实模式必须匹配 ----------------
+
+%% 与 apps/dgiot_dlink/src/proctol/dgiot_mqtt_message.erl 的真实子句同形
+dgiot_thing_clause(#message{topic = <<"$dg/thing/", Rest/binary>>,
+                            payload = Payload, from = From, headers = Headers}) ->
+    {ok, Rest, Payload, From, Headers};
+dgiot_thing_clause(_) ->
+    no_match.
+
+record_pattern_compat_test() ->
+    setup(),
+    Sub = spawn(fun loop/0),
+    ok = emqx_broker:subscribe(Sub, <<"$dg/thing/#">>, 0),
+    Msg = emqx_message:make(<<"$dg/thing/1893e1feb3/dev1/properties/report">>,
+                            <<"{\"a\":1}">>),
+    %% 生产者侧：dgiot 真实构造姿势 `#message{...}` 记录
+    Msg2 = Msg#message{headers = #{username => <<"1893e1feb3">>}},
+    ?assertEqual(0, emqx_message:qos(Msg2)),   %% make/2 默认 QoS 0
+    ?assertMatch({ok, _, _, _, #{username := _}}, dgiot_thing_clause(Msg2)),
+    ?assertEqual(no_match, dgiot_thing_clause(#message{topic = <<"other/t">>})),
+    {ok, 1} = emqx:publish(Msg2),
+    %% 订阅者侧：VM 内收到的是 {deliver, #message{}} 记录（EMQX 语义）
+    Sub ! {report, self()},
+    receive
+        {got, Topic, Payload} ->
+            ?assertEqual(<<"$dg/thing/1893e1feb3/dev1/properties/report">>, Topic),
+            ?assertEqual(<<"{\"a\":1}">>, Payload)
+    after 1000 ->
+            ?assert(false)
+    end,
+    Sub ! stop,
+    setup().
+
+record_to_wire_roundtrip_test() ->
+    Msg = emqx_message:make(<<"dgiot/x/y/z/p/data">>, #{<<"v">> => 1}),
+    Wire = emqx_message:to_map(Msg),
+    ?assertEqual(<<"dgiot/x/y/z/p/data">>, maps:get(topic, Wire)),
+    Back = dgiot_broker_record_bridge:to_message(Wire),
+    ?assertEqual(emqx_message:topic(Msg), emqx_message:topic(Back)),
+    ?assertEqual(emqx_message:payload(Msg), emqx_message:payload(Back)).
+
+%% 测试用订阅进程：VM 内订阅者按 EMQX 语义收 {deliver, #message{}}
 loop() ->
     receive
-        {'$gen_cast', {deliver, Packet}} ->
-            Topic = maps:get(topic, Packet, undefined),
-            Payload = maps:get(payload, Packet, <<>>),
+        {deliver, #message{topic = Topic, payload = Payload}} ->
             put(last, {Topic, Payload}),
+            loop();
+        {'$gen_cast', {deliver, Packet}} when is_map(Packet) ->
+            put(last, {maps:get(topic, Packet, undefined),
+                       maps:get(payload, Packet, <<>>)}),
             loop();
         {report, From} ->
             From ! case get(last) of

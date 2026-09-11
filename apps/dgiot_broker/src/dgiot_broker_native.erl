@@ -49,14 +49,14 @@ publish(ClientId, Topic, Payload) ->
               Other -> iolist_to_binary(io_lib:format("~p", [Other]))
           end,
     Packet = #{type => publish, qos => 0, retain => false, dup => false,
-               topic => Topic, payload => Bin},
-    Matches = dgiot_broker_router:match(Topic),
+               topic => Topic, payload => Bin, from => ClientId},
+    Matches = dgiot_broker_router:match_full(Topic),
     Delivered =
         lists:foldl(
-          fun({Cid, Pid, _Q}, Acc) ->
+          fun({Cid, Pid, _Q, Meta}, Acc) ->
                   case is_process_alive(Pid) of
                       true ->
-                          dgiot_broker_conn:deliver(Pid, Packet),
+                          deliver_to(Pid, Packet, Meta),
                           Acc + 1;
                       false ->
                           logger:warning("[broker-native] stale subscriber ~p purged", [Cid]),
@@ -67,6 +67,19 @@ publish(ClientId, Topic, Payload) ->
     logger:notice("[broker-native] publish ~s from ~p -> ~p/~p delivered",
                   [Topic, ClientId, Delivered, length(Matches)]),
     {ok, Delivered}.
+
+%% 投递形态：wire（外部客户端，线上 map）/ record（VM 内订阅者，#message{}）。
+%% 记录桥（dgiot_broker_record_bridge）只在无 EMQX 模式编译，故用运行时探测：
+%% 在位 EMQX 时它不存在，走 wire 路径，互不干扰。
+deliver_to(Pid, Packet, #{shape := record}) ->
+    Bridge = dgiot_broker_record_bridge,
+    case erlang:function_exported(Bridge, deliver, 2) orelse
+         code:ensure_loaded(Bridge) =:= {module, Bridge} of
+        true -> Bridge:deliver(Pid, Packet);
+        false -> dgiot_broker_conn:deliver(Pid, Packet)
+    end;
+deliver_to(Pid, Packet, _Meta) ->
+    dgiot_broker_conn:deliver(Pid, Packet).
 
 subscribe(_ClientId, _Filter, _Opts) ->
     {error, {not_implemented, cut4, server_side_subscribe}}.

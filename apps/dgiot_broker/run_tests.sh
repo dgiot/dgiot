@@ -13,14 +13,14 @@ EBIN="${1:-$ROOT/_build/emqx/lib/dgiot_broker/ebin}"
 SHADOW=/tmp/dgiot_broker_shadow
 rm -rf "$SHADOW" && mkdir -p "$SHADOW"
 
-echo "== 编译影子内核（同名承接）=="
+echo "== 编译影子内核（同名承接 + 同名 hrl）=="
 for f in "$HERE"/compat/*.erl; do
-  erlc -o "$SHADOW" -pa "$EBIN" "$f"
+  erlc -o "$SHADOW" -pa "$EBIN" -I "$HERE/compat/include" "$f"
 done
 
 echo "== 编译测试 =="
 for t in "$HERE"/test/*.erl; do
-  erlc -o "$SHADOW" -pa "$EBIN" -pa "$SHADOW" "$t"
+  erlc -o "$SHADOW" -pa "$EBIN" -pa "$SHADOW" -I "$HERE/compat/include" "$t"
 done
 
 DEPS=""

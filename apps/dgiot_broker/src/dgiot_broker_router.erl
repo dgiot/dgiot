@@ -11,8 +11,8 @@
 -module(dgiot_broker_router).
 
 -export([init/0, reset/0,
-         subscribe/4, unsubscribe/2, unsubscribe_all/1,
-         match/1, subscriptions/0, count/0,
+         subscribe/4, subscribe/5, unsubscribe/2, unsubscribe_all/1,
+         match/1, match_full/1, subscriptions/0, count/0,
          validate_filter/1, topic_matches/2]).
 
 -define(TAB, dgiot_broker_routes).
@@ -32,11 +32,18 @@ reset() ->
     ok.
 
 %% @doc 注册订阅。过滤器非法时显式报错（由调用方回 SUBACK 0x80）。
+%% shape 决定投递形态：wire（线上 map，外部客户端）/ record（VM 内
+%% #message{}，EMQX 语义，供 dgiot 与插件订阅者）。
 -spec subscribe(binary(), binary(), pid(), 0 | 1 | 2) -> ok | {error, term()}.
 subscribe(Filter, ClientId, Pid, Qos0) ->
+    subscribe(Filter, ClientId, Pid, Qos0, #{shape => wire}).
+
+-spec subscribe(binary(), binary(), pid(), 0 | 1 | 2, map()) -> ok | {error, term()}.
+subscribe(Filter, ClientId, Pid, Qos0, Opts) ->
     case validate_filter(Filter) of
         ok when Qos0 >= 0, Qos0 =< 2 ->
             ets:insert(?TAB, {{Filter, ClientId}, #{pid => Pid, qos => Qos0,
+                                                    shape => maps:get(shape, Opts, wire),
                                                     ts => erlang:system_time(second)}}),
             ok;
         ok ->
@@ -63,6 +70,18 @@ match(Topic) ->
       fun({{Filter, ClientId}, #{pid := Pid, qos := Qos}}, Acc) ->
               case topic_matches(Filter, Topic) of
                   true -> [{ClientId, Pid, Qos} | Acc];
+                  false -> Acc
+              end
+      end, [], ets:tab2list(?TAB)).
+
+%% @doc 带元信息的命中列表：{ClientId, Pid, Qos, Meta}
+%% 投递方需要 Meta.shape 决定发线格式还是 #message{} 记录。
+-spec match_full(binary()) -> [{binary(), pid(), 0 | 1 | 2, map()}].
+match_full(Topic) ->
+    lists:foldl(
+      fun({{Filter, ClientId}, #{pid := Pid, qos := Qos} = Meta}, Acc) ->
+              case topic_matches(Filter, Topic) of
+                  true -> [{ClientId, Pid, Qos, Meta} | Acc];
                   false -> Acc
               end
       end, [], ets:tab2list(?TAB)).
