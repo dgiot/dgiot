@@ -1,18 +1,42 @@
-%% @doc 同名门面：emqx_types —— 仅在「无 EMQX 模式」下编译（刀 6 切换）。
+%% @doc 同名承接：emqx_types（刀 6 第一批）。
 %%
-%% 为什么不在 src/：EMQX 在位时同名模块会与 emqx app 冲突（代码路径
-%% 二义），故本目录不参与当前 build；切换刀把 compat/ 加入 src_dirs 并
-%% 从 release 剔除 emqx 应用。
-%%
-%% 未实现的能力一律显式报错，绝不静默返回 ok。
+%% 关键认识：分析器把 `emqx_types:topic()` 这类**类型引用**也算成"调用"（arity 0）。
+%% 所以这里除了函数，还要 `-export_type` 把插件/业务代码引用的类型名补齐——
+%% 否则它们的 `-spec` 编译不过。
 -module(emqx_types).
--export([subid/0, subopts/0, topic/0]).
 
-subid() ->
-    {error, {not_implemented, cut2, emqx_types, subid}}.
+%% 占位函数：某些老代码会调用它们取"默认值"
+-export([topic/0, message/0, clientid/0, subopts/0, subid/0,
+         startlink_ret/0, sockstate/0, qos/0, payload/0, flags/0, headers/0]).
 
-subopts() ->
-    {error, {not_implemented, cut2, emqx_types, subopts}}.
+%% 类型导出：与 EMQX 4.4 同名
+-export_type([topic/0, message/0, clientid/0, subopts/0, subid/0,
+              startlink_ret/0, sockstate/0, qos/0, payload/0, flags/0,
+              headers/0, packet_id/0, peers/0]).
 
-topic() ->
-    {error, {not_implemented, cut2, emqx_types, topic}}.
+-type topic() :: binary().
+-type message() :: tuple().
+-type clientid() :: binary().
+-type subopts() :: map().
+-type subid() :: binary().
+-type startlink_ret() :: {ok, pid()} | ignore | {error, term()}.
+-type sockstate() :: atom().
+-type qos() :: 0 | 1 | 2.
+-type payload() :: binary().
+-type flags() :: map().
+-type headers() :: map().
+-type packet_id() :: non_neg_integer().
+-type peers() :: list().
+
+%% 默认值访问器（EMQX 里存在同名零元函数）
+topic() -> <<>>.
+message() -> undefined.
+clientid() -> <<>>.
+subopts() -> #{}.
+subid() -> <<>>.
+startlink_ret() -> ignore.
+sockstate() -> closed.
+qos() -> 0.
+payload() -> <<>>.
+flags() -> #{}.
+headers() -> #{}.

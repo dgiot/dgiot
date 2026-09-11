@@ -3,7 +3,7 @@
 -module(emqx_guid).
 
 -export([gen/0, gen_hex/0, gen_timestamp/0, to_base62/1, to_hex/1,
-         from_hex/1, is_guid/1]).
+         to_hexstr/1, to_binstr/1, from_hex/1, is_guid/1]).
 
 gen() ->
     <<A:32, B:16, C:16, D:16, E:48>> = crypto:strong_rand_bytes(16),
@@ -19,6 +19,14 @@ gen_timestamp() ->
 to_hex(Bin) when is_binary(Bin) ->
     %% OTP 24：encode_hex/1 只接收二进制且输出大写，转小写保持一致
     string:lowercase(binary:encode_hex(Bin)).
+
+%% 插件侧最常用的别名（实测 14 次调用）：十六进制字符串
+to_hexstr(Guid) -> to_hex(Guid).
+
+%% 二进制字符串形态（EMQX 里配合 base62/hex 打印用）
+to_binstr(<<Bin:128>>) ->
+    integer_to_binary(Bin);
+to_binstr(Guid) when is_binary(Guid) -> Guid.
 
 from_hex(Hex) when is_binary(Hex) ->
     binary:decode_hex(Hex).

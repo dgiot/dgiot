@@ -7,10 +7,13 @@
 -module(emqx_message).
 
 -include("emqx.hrl").
+-include("emqx_mqtt.hrl").
 
--export([make/1, make/2, make/3, make/4,
+-export([make/1, make/2, make/3, make/4, make/6,
          id/1, qos/1, flags/1, headers/1, topic/1, payload/1, from/1, timestamp/1,
          set_topic/2, set_payload/2, set_qos/2, set_headers/2,
+         set_flags/2, set_flag/3, get_header/2, get_header/3,
+         set_header/3, to_packet/2,
          is_message/1, to_map/1]).
 
 %% make/1：已是记录则原样返回（补默认）；二进制视为只有主题的消息
@@ -35,6 +38,10 @@ make(From, Qos, Topic, Payload) ->
              topic = to_bin(Topic),
              payload = to_payload(Payload),
              timestamp = erlang:system_time(millisecond)}.
+
+%% make/6：headers 与 flags 也可给（插件侧会用到）
+make(From, Qos, Topic, Payload, Headers, Flags) ->
+    (make(From, Qos, Topic, Payload))#message{headers = Headers, flags = Flags}.
 
 id(#message{id = Id}) -> Id;
 id(_) -> undefined.
@@ -64,6 +71,31 @@ set_topic(Msg, Topic) -> Msg#message{topic = to_bin(Topic)}.
 set_payload(Msg, Payload) -> Msg#message{payload = to_payload(Payload)}.
 set_qos(Msg, Qos) -> Msg#message{qos = Qos}.
 set_headers(Msg, Headers) -> Msg#message{headers = Headers}.
+
+%% ---- 头部/标志位（插件侧 30+ 次调用）----
+get_header(Msg, Key) -> get_header(Msg, Key, undefined).
+
+get_header(#message{headers = H}, Key, Default) ->
+    maps:get(Key, H, Default);
+get_header(_, _Key, Default) -> Default.
+
+set_header(Msg, Key, Value) ->
+    Msg#message{headers = (Msg#message.headers)#{Key => Value}}.
+
+set_flags(Msg, Flags) when is_map(Flags) ->
+    Msg#message{flags = Flags};
+set_flags(Msg, _Other) -> Msg.
+
+set_flag(Msg, Key, Value) ->
+    Msg#message{flags = (Msg#message.flags)#{Key => Value}}.
+
+%% 转线上包记录（与我们 frame map 语义一致，形态用 EMQX 的 #mqtt_packet{}）
+to_packet(#message{topic = Topic, payload = Payload, qos = Qos, id = Id}, _Version) ->
+    #mqtt_packet{header = #mqtt_packet_header{type = ?PUBLISH, qos = Qos,
+                                              retain = false, dup = false},
+                 variable = #mqtt_packet_publish{topic_name = Topic,
+                                                 packet_id = Id},
+                 payload = Payload}.
 
 is_message(Msg) -> is_record(Msg, message).
 
