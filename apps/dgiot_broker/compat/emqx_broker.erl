@@ -1,18 +1,48 @@
-%% @doc 同名门面：emqx_broker —— 仅在「无 EMQX 模式」下编译（刀 6 切换）。
-%%
-%% 为什么不在 src/：EMQX 在位时同名模块会与 emqx app 冲突（代码路径
-%% 二义），故本目录不参与当前 build；切换刀把 compat/ 加入 src_dirs 并
-%% 从 release 剔除 emqx 应用。
-%%
-%% 未实现的能力一律显式报错，绝不静默返回 ok。
+%% @doc 同名承接：emqx_broker（影子内核，刀 4 手写实现）。
+%% dgiot 的 channels/bridge/task 用它做 VM 内发布订阅。
+%% 未实现函数显式报错（不静默）。
 -module(emqx_broker).
--export([safe_publish/1, subscribe/3, unsubscribe/1]).
 
-safe_publish(_A0) ->
-    {error, {not_implemented, cut4, emqx_broker, safe_publish}}.
+-export([publish/1, safe_publish/1,
+         subscribe/2, subscribe/3, unsubscribe/1,
+         subscribers/1, stats/0]).
 
-subscribe(_A0, _A1, _A2) ->
-    {error, {not_implemented, cut4, emqx_broker, subscribe}}.
+publish(Message) when is_map(Message) ->
+    Topic = emqx_message:topic(Message),
+    Payload = emqx_message:payload(Message),
+    %% 与 EMQX 语义一致：message.publish 钩子在投递前可见
+    _ = emqx_hooks:run('message.publish', [Message]),
+    emqx_metrics:inc('messages.publish'),
+    case dgiot_broker_native:publish(emqx_message:from(Message),
+                                     Topic, Payload) of
+        {ok, Delivered} ->
+            [emqx_metrics:inc('messages.delivered') || _ <- lists:seq(1, Delivered)],
+            {ok, Delivered};
+        {error, Reason} ->
+            {error, Reason}
+    end;
+publish(Other) ->
+    {error, {bad_message, Other}}.
 
-unsubscribe(_A0) ->
-    {error, {not_implemented, cut4, emqx_broker, unsubscribe}}.
+%% 语义同 EMQX：safe_publish 失败不抛，返回 {error, _}
+safe_publish(Message) ->
+    try publish(Message)
+    catch Class:Reason ->
+        {error, {Class, Reason}}
+    end.
+
+subscribe(Pid, Filter) -> subscribe(Pid, Filter, 0).
+subscribe(Pid, Filter, Qos) -> emqx:subscribe(Pid, Filter, Qos).
+
+unsubscribe(Pid) ->
+    dgiot_broker_router:unsubscribe_all(client_id(Pid)),
+    ok.
+
+subscribers(Topic) ->
+    [Pid || {_Cid, Pid, _Q} <- dgiot_broker_router:match(Topic)].
+
+stats() ->
+    #{subscriptions => dgiot_broker_router:count(),
+      sessions => dgiot_broker_session:count()}.
+
+client_id(Pid) -> iolist_to_binary(io_lib:format("inproc-~p", [Pid])).

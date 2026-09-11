@@ -1,15 +1,32 @@
-%% @doc 同名门面：emqx_topic —— 仅在「无 EMQX 模式」下编译（刀 6 切换）。
-%%
-%% 为什么不在 src/：EMQX 在位时同名模块会与 emqx app 冲突（代码路径
-%% 二义），故本目录不参与当前 build；切换刀把 compat/ 加入 src_dirs 并
-%% 从 release 剔除 emqx 应用。
-%%
-%% 未实现的能力一律显式报错，绝不静默返回 ok。
+%% @doc 同名承接：emqx_topic（影子内核，刀 4）。
+%% 主题工具函数转发到我们的 router（匹配/校验逻辑同源，避免两套语义）。
 -module(emqx_topic).
--export([match/2, topic/0]).
 
-match(_A0, _A1) ->
-    {error, {not_implemented, cut4, emqx_topic, match}}.
+-export([match/2, validate/1, wildcard/1, join/1, split/1, split/2,
+         words/1, is_valid/1]).
 
-topic() ->
-    {error, {not_implemented, cut4, emqx_topic, topic}}.
+match(Filter, Topic) ->
+    dgiot_broker_router:topic_matches(Filter, Topic).
+
+validate(Filter) ->
+    case dgiot_broker_router:validate_filter(Filter) of
+        ok -> true;
+        {error, _} -> false
+    end.
+
+is_valid(Filter) -> validate(Filter).
+
+wildcard(<<"#">>) -> true;
+wildcard(<<"+">>) -> true;
+wildcard(Topic) when is_binary(Topic) ->
+    lists:any(fun(L) -> L =:= <<"#">> orelse L =:= <<"+">> end,
+              binary:split(Topic, <<"/">>, [global])).
+
+join(Words) when is_list(Words) -> iolist_to_binary(lists:join(<<"/">>, Words));
+join(Bin) when is_binary(Bin) -> Bin.
+
+split(Topic) -> split(Topic, <<"/">>).
+split(Topic, Sep) when is_binary(Topic) ->
+    binary:split(Topic, Sep, [global]).
+
+words(Topic) -> split(Topic).

@@ -1,27 +1,53 @@
-%% @doc 同名门面：emqx —— 仅在「无 EMQX 模式」下编译（刀 6 切换）。
+%% @doc 同名承接：emqx（影子内核，刀 4 手写实现）。
 %%
-%% 为什么不在 src/：EMQX 在位时同名模块会与 emqx app 冲突（代码路径
-%% 二义），故本目录不参与当前 build；切换刀把 compat/ 加入 src_dirs 并
-%% 从 release 剔除 emqx 应用。
+%% 为什么存在：dgiot 自家应用与 12 个 emqx_* 插件都是**在 VM 内**通过
+%% `emqx:publish/1`、`emqx_broker:subscribe/2` 这类同名 API 收发的。
+%% 「主程序接管」= 让这些调用落到我们的内核上，而不是换端口。
 %%
-%% 未实现的能力一律显式报错，绝不静默返回 ok。
+%% 只在**无 EMQX 模式**下编译（同名模块在 code path 中二义）；
+%% 未实现的函数一律显式报错，绝不静默返回 ok。
 -module(emqx).
--export([hook/3, publish/1, reboot/0, shutdown/1, subscribe/3, unhook/2]).
 
-hook(_A0, _A1, _A2) ->
-    {error, {not_implemented, cut1, emqx, hook}}.
+-export([publish/1, subscribe/3, unsubscribe/2,
+         hook/2, hook/3, unhook/2,
+         reboot/0, shutdown/1, ping/0, version/0]).
 
-publish(_A0) ->
-    {error, {not_implemented, cut4, emqx, publish}}.
+%% 内部发布：委托 emqx_broker（单一实现路径，钩子与指标只做一次）
+publish(Message) when is_map(Message) ->
+    emqx_broker:publish(Message);
+publish(Other) ->
+    {error, {bad_message, Other}}.
 
+%% 内部订阅：进程 Pid 订阅 Filter
+subscribe(Pid, Filter, Qos) when is_pid(Pid) ->
+    dgiot_broker_router:subscribe(Filter, client_id_of(Pid), Pid, Qos);
+subscribe(Other, _F, _Q) ->
+    {error, {bad_subscriber, Other}}.
+
+unsubscribe(Pid, Filter) when is_pid(Pid) ->
+    dgiot_broker_router:unsubscribe(Filter, client_id_of(Pid));
+unsubscribe(_Other, _Filter) ->
+    ok.
+
+%% 钩子面（dgiot 实测只用五个钩子点）
+hook(HookPoint, Callback) -> emqx_hooks:add(HookPoint, Callback).
+hook(HookPoint, Callback, Priority) ->
+    emqx_hooks:add(HookPoint, Callback, Priority).
+unhook(HookPoint, Callback) -> emqx_hooks:del(HookPoint, Callback).
+
+%% 进程生命周期控制属主机管理面，刀 7 之前显式报错
 reboot() ->
     {error, {not_implemented, cut7, emqx, reboot}}.
+shutdown(Reason) ->
+    {error, {not_implemented, cut7, {emqx, shutdown}, Reason}}.
 
-shutdown(_A0) ->
-    {error, {not_implemented, cut7, emqx, shutdown}}.
+ping() -> pong.
 
-subscribe(_A0, _A1, _A2) ->
-    {error, {not_implemented, cut4, emqx, subscribe}}.
+version() ->
+    case application:get_key(dgiot_broker, vsn) of
+        {ok, V} -> V;
+        _ -> <<"dgiot_broker">>
+    end.
 
-unhook(_A0, _A1) ->
-    {error, {not_implemented, cut1, emqx, unhook}}.
+client_id_of(Pid) ->
+    iolist_to_binary(io_lib:format("inproc-~p", [Pid])).
