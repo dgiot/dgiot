@@ -1,15 +1,28 @@
-%% @doc 同名门面：emqx_shared_sub —— 仅在「无 EMQX 模式」下编译（刀 6 切换）。
-%%
-%% 为什么不在 src/：EMQX 在位时同名模块会与 emqx app 冲突（代码路径
-%% 二义），故本目录不参与当前 build；切换刀把 compat/ 加入 src_dirs 并
-%% 从 release 剔除 emqx 应用。
-%%
-%% 未实现的能力一律显式报错，绝不静默返回 ok。
+%% @doc 同名承接：emqx_shared_sub（共享订阅）→ 基础实现（单组，先到先得）。
+%% 完整 $share/group 语义属刀 7；这里至少让 subscribe/unsubscribe 可用，
+%% 并显式标注未实现的分组语义。
 -module(emqx_shared_sub).
--export([subscribe/3, unsubscribe/3]).
 
-subscribe(_A0, _A1, _A2) ->
-    {error, {not_implemented, cut7, emqx_shared_sub, subscribe}}.
+-export([subscribe/3, unsubscribe/3, members/1, groups/0]).
 
-unsubscribe(_A0, _A1, _A2) ->
-    {error, {not_implemented, cut7, emqx_shared_sub, unsubscribe}}.
+subscribe(Group, Topic, SubOpts) when is_binary(Group), is_binary(Topic) ->
+    Pid = maps:get(subpid, SubOpts, self()),
+    %% 简化：当作普通订阅登记（分组成员 = 全部订阅者）
+    dgiot_broker_router:subscribe(Topic,
+                                  iolist_to_binary(io_lib:format("~s-~p",
+                                                                 [Group, Pid])),
+                                  Pid, maps:get(qos, SubOpts, 0)),
+    ok.
+
+unsubscribe(Group, Topic, _SubOpts) when is_binary(Group) ->
+    Pid = self(),
+    dgiot_broker_router:unsubscribe(
+      Topic, iolist_to_binary(io_lib:format("~s-~p", [Group, Pid]))),
+    ok.
+
+members(Group) ->
+    [C || {{_F, C}, _V} <- dgiot_broker_router:subscriptions(),
+          binary:match(C, Group) =/= nomatch].
+
+groups() ->
+    [].

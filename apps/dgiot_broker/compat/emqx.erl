@@ -12,6 +12,7 @@
 
 -export([publish/1, subscribe/3, unsubscribe/2,
          hook/2, hook/3, unhook/2,
+         get_env/1, get_config/2,
          reboot/0, shutdown/1, ping/0, version/0]).
 
 %% 内部发布：委托 emqx_broker（单一实现路径，钩子与指标只做一次）
@@ -45,6 +46,24 @@ shutdown(Reason) ->
     {error, {not_implemented, cut7, {emqx, shutdown}, Reason}}.
 
 ping() -> pong.
+
+%% 配置读取：EMQX 的 env 都挂在 emqx 应用下；这里映射到 dgiot_broker 的 env，
+%% 取不到再回落 kernel 环境，最终给默认值（不抛，避免插件启动崩）。
+get_env(Key) ->
+    case application:get_env(dgiot_broker, Key) of
+        {ok, V} -> V;
+        undefined ->
+            case application:get_env(emqx, Key) of
+                {ok, V2} -> V2;
+                undefined -> undefined
+            end
+    end.
+
+get_config(Key, Default) ->
+    case get_env(Key) of
+        undefined -> Default;
+        V -> V
+    end.
 
 version() ->
     case application:get_key(dgiot_broker, vsn) of

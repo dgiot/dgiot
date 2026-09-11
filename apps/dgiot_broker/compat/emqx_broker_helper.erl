@@ -1,21 +1,21 @@
-%% @doc 同名门面：emqx_broker_helper —— 仅在「无 EMQX 模式」下编译（刀 6 切换）。
-%%
-%% 为什么不在 src/：EMQX 在位时同名模块会与 emqx app 冲突（代码路径
-%% 二义），故本目录不参与当前 build；切换刀把 compat/ 加入 src_dirs 并
-%% 从 release 剔除 emqx 应用。
-%%
-%% 未实现的能力一律显式报错，绝不静默返回 ok。
+%% @doc 同名承接：emqx_broker_helper（订阅分片助手）→ 我们的路由簿。
+%% EMQX 集群里订阅按 shard 分片；我们单节点 = 单一分片，语义显式声明。
 -module(emqx_broker_helper).
--export([get_sub_shard/2, lookup_subpid/1, reclaim_seq/1, register_sub/2]).
 
-get_sub_shard(_A0, _A1) ->
-    {error, {not_implemented, cut4, emqx_broker_helper, get_sub_shard}}.
+-export([register_sub/2, lookup_subpid/1, get_sub_shard/2, reclaim_seq/1,
+         shard_count/0]).
 
-lookup_subpid(_A0) ->
-    {error, {not_implemented, cut4, emqx_broker_helper, lookup_subpid}}.
+%% 单一分片：总是 shard 0
+get_sub_shard(_Topic, _ShardCount) -> 0.
+shard_count() -> 1.
 
-reclaim_seq(_A0) ->
-    {error, {not_implemented, cut4, emqx_broker_helper, reclaim_seq}}.
+%% 进程级订阅登记（EMQX 的订阅表用 subpid 反查；我们路由簿以 pid 存）
+register_sub(_SubPid, _Sub) ->
+    {error, {not_implemented, cut7, shared_sub_registry}}.
 
-register_sub(_A0, _A1) ->
-    {error, {not_implemented, cut4, emqx_broker_helper, register_sub}}.
+lookup_subpid(_SubId) ->
+    {error, {not_implemented, cut7, shared_sub_registry}}.
+
+%% 消息序号回收（QoS 消息队列）——刀 4 inflight；显式声明
+reclaim_seq(_SeqId) ->
+    {error, {not_implemented, cut4, inflight_seq}}.

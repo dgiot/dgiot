@@ -1,12 +1,8 @@
-%% @doc 同名门面：emqx_alarm_handler —— 仅在「无 EMQX 模式」下编译（刀 6 切换）。
-%%
-%% 为什么不在 src/：EMQX 在位时同名模块会与 emqx app 冲突（代码路径
-%% 二义），故本目录不参与当前 build；切换刀把 compat/ 加入 src_dirs 并
-%% 从 release 剔除 emqx 应用。
-%%
-%% 未实现的能力一律显式报错，绝不静默返回 ok。
+%% @doc 同名承接：emqx_alarm_handler（告警日志处理器）→ 卸载即 ok。
+%% EMQX 的 alarm_handler 是 SASL 告警处理器；我们无 SASL 告警源，
+%% unload 幂等返回 ok（显式声明）。
 -module(emqx_alarm_handler).
+
 -export([unload/0]).
 
-unload() ->
-    {error, {not_implemented, cut7, emqx_alarm_handler, unload}}.
+unload() -> ok.
