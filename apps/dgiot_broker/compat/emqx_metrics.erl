@@ -1,9 +1,9 @@
-%% @doc 同名承接：emqx_metrics（影子内核，刀 4）。
-%% 计数器放 ETS；`ensure/1` 先建后加（EMQX 的语义是"没有就建"）。
-%% 未实现的函数（如 create/1 的高级变体）显式报错。
+%% @doc 同名承接：emqx_metrics（刀 6 批次 2 补齐）。在刀 4 的计数基础上补
+%% inc_msg/1、inc_recv/1、set/2 等 EMQX 常用入口。
 -module(emqx_metrics).
 
 -export([init/0, ensure/1, create/1, val/1, inc/1, inc/2, dec/1, dec/2,
+         set/2, inc_msg/1, inc_recv/1, inc_sent/1,
          reset/0, all/0]).
 
 -define(TAB, dgiot_broker_metrics).
@@ -36,8 +36,24 @@ inc(Name, N) when is_integer(N) ->
     ok.
 
 dec(Name) -> dec(Name, 1).
-
 dec(Name, N) when is_integer(N) -> inc(Name, -N).
+
+set(Name, Value) when is_integer(Value) ->
+    init(),
+    ets:insert(?TAB, {Name, Value}),
+    ok.
+
+%% EMQX 的消息计数族：按方向归类到我们自己的指标名
+inc_msg(Dir) ->
+    inc(metric_of_dir(Dir)),
+    inc('messages.total').
+
+inc_recv(Dir) -> inc({recv, metric_of_dir(Dir)}).
+inc_sent(Dir) -> inc({sent, metric_of_dir(Dir)}).
+
+metric_of_dir(publish) -> 'messages.publish';
+metric_of_dir(P) when is_atom(P) -> {messages, P};
+metric_of_dir(Other) -> {messages, Other}.
 
 val(Name) ->
     init(),

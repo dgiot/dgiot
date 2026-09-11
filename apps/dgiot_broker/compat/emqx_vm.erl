@@ -1,12 +1,30 @@
-%% @doc 同名门面：emqx_vm —— 仅在「无 EMQX 模式」下编译（刀 6 切换）。
-%%
-%% 为什么不在 src/：EMQX 在位时同名模块会与 emqx app 冲突（代码路径
-%% 二义），故本目录不参与当前 build；切换刀把 compat/ 加入 src_dirs 并
-%% 从 release 剔除 emqx 应用。
-%%
-%% 未实现的能力一律显式报错，绝不静默返回 ok。
+%% @doc 同名承接：emqx_vm（刀 6 批次 2）。VM 负载与内存。
 -module(emqx_vm).
--export([get_otp_version/0]).
+
+-export([get_otp_version/0, loads/0, mem_info/0, cpu_info/0, used_memory/0,
+         process_count/0]).
 
 get_otp_version() ->
-    {error, {not_implemented, cut1, emqx_vm, get_otp_version}}.
+    list_to_integer(erlang:system_info(otp_release)).
+
+loads() ->
+    case erlang:statistics(run_queue) of
+        RQ when is_integer(RQ) -> {RQ, RQ, RQ};
+        _ -> {0, 0, 0}
+    end.
+
+mem_info() ->
+    case erlang:memory() of
+        L when is_list(L) -> maps:from_list(L);
+        _ -> #{}
+    end.
+
+used_memory() ->
+    proplists:get_value(total, erlang:memory(), 0).
+
+cpu_info() ->
+    #{logical_processors => erlang:system_info(logical_processors),
+      schedulers => erlang:system_info(schedulers)}.
+
+process_count() ->
+    erlang:system_info(process_count).
