@@ -1,15 +1,15 @@
-%% @doc 自研 broker 后端（dgiot 模式）——刀 3-5 逐步落地。
+%% @doc 自研 broker 后端（dgiot 模式）——刀 3 已接通数据面主干。
 %%
-%% 本模块的每个函数在对应刀完成后才从 not_implemented 变成实现：
-%%   start_listener/2  -> 刀 3（TCP 1883 监听 + 会话 + 认证钩子）
-%%   publish/3         -> 刀 4（路由 trie + QoS0/1 投递）
-%%   subscribe/3       -> 刀 4（含持久会话）           unsubscribe/3 -> 刀 4
-%%   routes/1          -> 刀 4（可观测）               sessions/0    -> 刀 3
-%%   capabilities/0    -> 刀 1（能力矩阵，先声明目标）
-%%   backend_info/0    -> 刀 1（诚实标注"未就绪"）
-%%
-%% 铁律：未实现的调用一律 {error, {not_implemented, ...}}，
-%% 直到对应刀有实机验收证据为止。
+%% 已实现（有实机验收）：
+%%   start_listener/2 stop_listener/1  刀 3：TCP + acceptor 池（开发期 1884）
+%%   publish/3                          刀 3：服务端发布 → 本机路由投递
+%%                                     （这正是 EMQX 侧静默丢弃的那条路径）
+%%   routes/1 sessions/0                刀 3：可观测
+%%   capabilities/0 backend_info/0      刀 3：能力矩阵如实标注
+%% 仍待办（显式 not_implemented，绝不假装）：
+%%   subscribe/3 unsubscribe/2          服务端代订阅（客户端订阅走连接进程）
+%% 刀 4：持久会话离线队列 / QoS1 重投与 inflight；刀 5：retain/will；
+%% 刀 7：shared_sub/$SYS。
 -module(dgiot_broker_native).
 -behaviour(dgiot_broker_port).
 
@@ -18,34 +18,95 @@
          routes/1, sessions/0,
          capabilities/0, backend_info/0]).
 
--define(NI(Cut), {error, {not_implemented, dgiot_broker_native, Cut}}).
+%% ---------------- 监听 ----------------
+start_listener(tcp, Opts) when is_map(Opts) ->
+    case whereis(dgiot_broker_listener) of
+        undefined ->
+            case dgiot_broker_listener:start_link(Opts) of
+                {ok, Pid} -> {ok, Pid};
+                {error, Reason} -> {error, Reason}
+            end;
+        Pid ->
+            {error, {already_started, Pid}}
+    end;
+start_listener(Name, _Opts) ->
+    {error, {unsupported_listener, Name}}.
 
-start_listener(_Name, _Opts) -> ?NI(cut3_tcp_listener).
-stop_listener(_Name) -> ?NI(cut3_tcp_listener).
-publish(_ClientId, _Topic, _Payload) -> ?NI(cut4_router_delivery).
-subscribe(_ClientId, _Filter, _Opts) -> ?NI(cut4_router_delivery).
-unsubscribe(_ClientId, _Filter) -> ?NI(cut4_router_delivery).
-routes(_Topic) -> ?NI(cut4_router_delivery).
-sessions() -> ?NI(cut3_session_store).
+stop_listener(tcp) ->
+    dgiot_broker_listener:stop();
+stop_listener(Name) ->
+    {error, {unsupported_listener, Name}}.
 
-%% 目标能力矩阵（对 EMQX 后端逐项对齐；QoS2/will 依据实测使用量为 0 而延后）
+%% ---------------- 数据面 ----------------
+%% 服务端发布：路由簿命中 → 逐个投递给订阅者连接进程（QoS0 语义；QoS 降级由
+%% 订阅端协商，这里不静默丢弃）。返回投递数量，便于上层断言。
+-spec publish(binary(), binary(), term()) -> {ok, non_neg_integer()} | {error, term()}.
+publish(ClientId, Topic, Payload) ->
+    Bin = case Payload of
+              B when is_binary(B) -> B;
+              L when is_list(L) -> iolist_to_binary(L);
+              M when is_map(M) -> dgiot_json:encode(M);
+              Other -> iolist_to_binary(io_lib:format("~p", [Other]))
+          end,
+    Packet = #{type => publish, qos => 0, retain => false, dup => false,
+               topic => Topic, payload => Bin},
+    Matches = dgiot_broker_router:match(Topic),
+    Delivered =
+        lists:foldl(
+          fun({Cid, Pid, _Q}, Acc) ->
+                  case is_process_alive(Pid) of
+                      true ->
+                          dgiot_broker_conn:deliver(Pid, Packet),
+                          Acc + 1;
+                      false ->
+                          logger:warning("[broker-native] stale subscriber ~p purged", [Cid]),
+                          dgiot_broker_router:unsubscribe_all(Cid),
+                          Acc
+                  end
+          end, 0, Matches),
+    logger:notice("[broker-native] publish ~s from ~p -> ~p/~p delivered",
+                  [Topic, ClientId, Delivered, length(Matches)]),
+    {ok, Delivered}.
+
+subscribe(_ClientId, _Filter, _Opts) ->
+    {error, {not_implemented, cut4, server_side_subscribe}}.
+
+unsubscribe(_ClientId, _Filter) ->
+    {error, {not_implemented, cut4, server_side_unsubscribe}}.
+
+%% ---------------- 观测面 ----------------
+routes(Topic) when is_binary(Topic) ->
+    dgiot_broker_router:match(Topic);
+routes(_) ->
+    {error, {bad_topic, need_binary}}.
+
+sessions() ->
+    dgiot_broker_session:list().
+
 capabilities() ->
     #{backend => dgiot,
-      status => planned,
+      status => partial,
       mqtt_versions => [v3_1_1],
-      qos => [0, 1],
-      retain => pending,          %% 刀 5
-      will => pending,            %% 刀 5
-      shared_sub => pending,      %% 刀 7
-      persistent_session => true, %% 刀 4
-      listeners => tcp,
-      planned_cuts => #{start_listener => cut3, publish => cut4,
-                        subscribe => cut4, retain => cut5, will => cut5,
-                        shared_sub => cut7}}.
+      qos => [0, 1],                 %% QoS1 已收/PUBACK；重投待刀 4
+      retain => pending,             %% 刀 5
+      will => pending,               %% 刀 5
+      shared_sub => pending,         %% 刀 7
+      persistent_session => partial, %% 内存会话已通；离线队列待刀 4
+      listeners => tcp,              %% 开发期 1884
+      implemented => [connect_auth, suback, unsuback, pingreq,
+                      publish_local_delivery, server_side_publish,
+                      session_takeover, keepalive, sessions, routes],
+      pending => #{cut4 => [qos1_retransmit, offline_queue, inflight_window],
+                   cut5 => [retain, will],
+                   cut7 => [shared_sub, sys_topics]}}.
 
 backend_info() ->
     #{backend => dgiot,
-      status => not_ready,
-      implemented => [],
-      next_cut => cut2_frame_codec,
-      note => <<"自研内核未就绪：当前请使用 backend=emqx">>}.
+      status => partial,
+      listener => case whereis(dgiot_broker_listener) of
+                      undefined -> not_running;
+                      _ -> dgiot_broker_listener:info()
+                  end,
+      sessions => dgiot_broker_session:count(),
+      subscriptions => dgiot_broker_router:count(),
+      note => <<"自研内核：TCP/会话/认证/订阅/本机投递已通；retain/will/shared_sub 待后续刀">>}.

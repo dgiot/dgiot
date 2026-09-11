@@ -12,7 +12,9 @@
          publish/3, subscribe/3, unsubscribe/2,
          routes/1, sessions/0,
          capabilities/0, backend_info/0,
-         backend/0, backend_mod/0, set_backend/1]).
+         backend/0, backend_mod/0, set_backend/1,
+         plugins/0, plugin_host_info/0, plugin_start/1, plugin_stop/1,
+         host_status/0]).
 
 -define(BACKENDS, #{emqx => dgiot_broker_backend_emqx,
                     dgiot => dgiot_broker_native}).
@@ -46,6 +48,24 @@ routes(Topic) -> call(routes, [Topic]).
 sessions() -> call(sessions, []).
 capabilities() -> call(capabilities, []).
 backend_info() -> call(backend_info, []).
+
+%% -- 插件宿主（刀 3 骨架：发现/启停/状态；同名 emqx_plugins 接管在切换刀）------
+plugins() -> dgiot_broker_plugins:list().
+plugin_host_info() -> dgiot_broker_plugins:host_info().
+plugin_start(Name) -> dgiot_broker_plugins:start(Name).
+plugin_stop(Name) -> dgiot_broker_plugins:stop(Name).
+
+%% @doc 主机总览：后端 + 监听 + 会话/订阅 + 插件（运维一眼看全）
+host_status() ->
+    #{backend => backend(),
+      backend_info => backend_info(),
+      listener => case whereis(dgiot_broker_listener) of
+                      undefined -> not_running;
+                      _ -> dgiot_broker_listener:info()
+                  end,
+      sessions => dgiot_broker_session:count(),
+      subscriptions => dgiot_broker_router:count(),
+      plugins => plugin_host_info()}.
 
 %% 统一派发 + 未实现显式化：后端模块未导出该函数即报 not_implemented，
 %% 不允许出现"悄悄返回 ok"。

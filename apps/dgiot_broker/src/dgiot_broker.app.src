@@ -1,12 +1,19 @@
 {application, dgiot_broker,
  [{description, "dgiot owned broker port + native MQTT core (EMQX replacement)"},
   {vsn, "0.1.0"},
-  {registered, [dgiot_broker_sup]},
+  {registered, [dgiot_broker_sup, dgiot_broker_conn_sup, dgiot_broker_listener]},
   {mod, {dgiot_broker_app, []}},
   {applications, [kernel, stdlib]},
   {env, [
-      %% emqx = 现网委托 EMQX；dgiot = 自研内核（刀 6 起可切换）
-      {backend, emqx}
+      %% emqx = 现网委托 EMQX（默认）；dgiot = 自研内核（切换刀启用）
+      {backend, emqx},
+      %% 开发期自研监听跑 1884，与在位 EMQX(1883) 并行；切换刀改 1883
+      {listeners, #{tcp => #{enabled => false, port => 1884,
+                             acceptors => 4, max_conns => 1024}}},
+      %% 认证策略：allow_all（实验室）| callback（module => Mod）
+      {auth, #{mode => allow_all}},
+      %% 插件清单来源（缺省读发布清单文件）
+      {plugins_file, "/data/dgiot/data/loaded_plugins"}
   ]},
   {modules, []}
  ]}.
