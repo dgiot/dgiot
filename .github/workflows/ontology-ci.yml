@@ -37,7 +37,7 @@ jobs:
           pip install -r apps/dgiot_ontology/requirements-ontology-ci.txt
 
       - name: 本体检查（语法 · 附录 A 最小元数据集 · SHACL 可执行）
-        run: python apps/dgiot_ontology/check工具链仓_ci.py
+        run: python apps/dgiot_ontology/check_ontology_ci.py
 
       - name: 列出本仓本体文件规模（构建产物，便于历史对比）
         run: |

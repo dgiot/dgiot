@@ -1,6 +1,6 @@
 ﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-r"""check工具链仓_ci.py — dgiot 仓内本体 CI 检查（2026-10-13）
+r"""check_ontology_ci.py — dgiot 仓内本体 CI 检查（2026-10-13）
 
 **定位**：本脚本是 **CI 专用**，只检查**本仓内**的本体文件（`apps/dgiot_ontology/priv/*.ttl`）。
 完整工具链在另一仓（工具链仓的 tools/ontology.py，含 15 个子命令：国标合规 / 一致性 /
