@@ -1,0 +1,59 @@
+﻿# 本体 CI —— dgiot 仓内本体检查（2026-10-13 建）
+#
+# 定位与边界（务必知道 ✗）：
+#  · 本工作流**只做 Python 侧的本体检查**，**不碰 Erlang 构建**（不调用 make compile，
+#    该命令在 CLAUDE.md 中明确标注为 unsupported 且会挂起）；
+#  · 完整工具链（国标逐条合规 / OWL 一致性 / OQuaRE 质量度量 / 版本差分 / 能力问题 CQ，
+#    共 15 个子命令）在工具链仓的 tools/ontology.py 中，**本仓不复制那一整套** ✓
+#    —— 一处一事；
+#  · 本工作流只覆盖**可在本仓独立完成**的部分：语法可解析 + 附录 A 最小元数据集（label/domain/range）。
+#  · SHACL 的 ABox 验证需要 standard-abox.ttl（在工具链仓）⇒ 本工作流对缺失只提示不判失败。
+name: ontology-ci
+
+on:
+  push:
+    paths:
+      - 'apps/dgiot_ontology/**'
+      - '.github/workflows/ontology-ci.yml'
+  pull_request:
+    paths:
+      - 'apps/dgiot_ontology/**'
+  workflow_dispatch:
+
+jobs:
+  ontology-check:
+    name: 本体文件检查（Python 侧）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 安装依赖（锁版本）
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r apps/dgiot_ontology/requirements-ontology-ci.txt
+
+      - name: 本体检查（语法 · 附录 A 最小元数据集 · SHACL 可执行）
+        run: python apps/dgiot_ontology/check工具链仓_ci.py
+
+      - name: 列出本仓本体文件规模（构建产物，便于历史对比）
+        run: |
+          python - <<'PY' | tee ontology-inventory.txt
+          from pathlib import Path
+          from rdflib import Graph
+          for p in sorted(Path('apps/dgiot_ontology/priv').glob('*.ttl')):
+              try:
+                  print('%-34s %6d 三元组' % (p.name, len(Graph().parse(p))))
+              except Exception as e:
+                  print('%-34s 解析失败 %s' % (p.name, e))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ontology-inventory
+          path: ontology-inventory.txt
+          if-no-files-found: warn

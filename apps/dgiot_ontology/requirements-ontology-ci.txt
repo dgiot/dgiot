@@ -1,0 +1,7 @@
+﻿# dgiot 仓内本体 CI 的依赖（2026-10-13 锁定，与本机实测环境一致）
+# 用法：pip install -r apps/dgiot_ontology/requirements-ontology-ci.txt
+#
+# 说明：这是**CI 专用最小集** ✗ —— 完整本体工具链（国标合规 / 一致性 / 质量度量 /
+# 版本差分 / 能力问题 CQ）在工具链仓的 tools/ 下，本仓不复制 ✓
+rdflib==7.6.0
+pyshacl==0.40.1
