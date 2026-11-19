@@ -135,20 +135,40 @@ export_parse(SessionToken) ->
 
 %% data_worker:export_td(<<"r:<redacted>">>).
 export_td(SessionToken) ->
-    case dgiot_product_tdengine:get_channel(SessionToken) of
-        {error, Error} ->
-            {error, Error};
+    case dgiot_product_iotdb:get_channel(SessionToken) of
         {ok, ChannelId} ->
-            file:make_dir(<<"/home/station/tdengine">>),
+            FileName = "/home/station/iotdb/tables.zip",
+            case dgiot_iotdb_dump:export(ChannelId, #{<<"sessionToken">> => SessionToken}) of
+                {ok, NewData} -> write_archive(FileName, <<"iotdb">>, NewData);
+                {error, Reason} -> {error, Reason}
+            end;
+        {error, <<"not find channel">>} ->
+            export_tdengine(SessionToken);
+        {error, Error} ->
+            {error, Error}
+    end.
+
+export_tdengine(SessionToken) ->
+    case dgiot_product_tdengine:get_channel(SessionToken) of
+        {error, Error} -> {error, Error};
+        {ok, ChannelId} ->
             FileName = "/home/station/tdengine/tables.zip",
             NewData = dgiot_tdengine_dump:export(ChannelId, #{<<"sessionToken">> => SessionToken}),
-            case zip:create(<<"tdengine">>, NewData, [memory]) of
+            write_archive(FileName, <<"tdengine">>, NewData)
+    end.
+
+write_archive(FileName, ArchiveName, NewData) ->
+    case filelib:ensure_dir(FileName) of
+        ok ->
+            case zip:create(ArchiveName, NewData, [memory]) of
                 {ok, {_, ZipFile}} ->
-                    file:write_file(FileName, ZipFile);
-                _ ->
-                    pass
-            end,
-            {ok, #{<<"path">> => dgiot_utils:to_binary(FileName)}}
+                    case file:write_file(FileName, ZipFile) of
+                        ok -> {ok, #{<<"path">> => dgiot_utils:to_binary(FileName)}};
+                        Error -> Error
+                    end;
+                Error -> Error
+            end;
+        Error -> Error
     end.
 
 %% data_worker:export_files(<<"r:<redacted>">>).
@@ -179,16 +199,36 @@ import_parse(Fullpath) ->
 
 %% data_worker:import_td(<<"r:<redacted>">>).
 import_td(SessionToken) ->
-    case dgiot_product_tdengine:get_channel(SessionToken) of
-        {error, Error} ->
-            {error, Error};
-        {ok, ChannelId} ->
-            case zip:unzip("/data/dgiot/dgiot/lib/dgiot_api-4.3.0/priv/www/upload/station/tdengine/tables.zip", [memory]) of
-                {ok, Result} ->
-                    dgiot_tdengine_dump:import(ChannelId, Result);
-                {error, Reason} ->
-                    {error, Reason}
+    IotdbPath = "/data/dgiot/dgiot/lib/dgiot_api-4.3.0/priv/www/upload/station/iotdb/tables.zip",
+    TdenginePath = "/data/dgiot/dgiot/lib/dgiot_api-4.3.0/priv/www/upload/station/tdengine/tables.zip",
+    case dgiot_product_iotdb:get_channel(SessionToken) of
+        {ok, ChannelId} -> import_iotdb_archive(ChannelId, IotdbPath);
+        {error, <<"not find channel">>} -> import_tdengine_archive(SessionToken, TdenginePath);
+        {error, Error} -> {error, Error}
+    end.
+
+import_iotdb_archive(ChannelId, Path) ->
+    case filelib:is_regular(Path) of
+        false -> {error, archive_not_found};
+        true ->
+            case zip:unzip(Path, [memory]) of
+                {ok, Result} -> dgiot_iotdb_dump:import(ChannelId, Result);
+                {error, Reason} -> {error, Reason}
             end
+    end.
+
+import_tdengine_archive(SessionToken, Path) ->
+    case dgiot_product_tdengine:get_channel(SessionToken) of
+        {ok, ChannelId} ->
+            case filelib:is_regular(Path) of
+                false -> {error, archive_not_found};
+                true ->
+                    case zip:unzip(Path, [memory]) of
+                        {ok, Result} -> dgiot_tdengine_dump:import(ChannelId, Result);
+                        {error, Reason} -> {error, Reason}
+                    end
+            end;
+        {error, Error} -> {error, Error}
     end.
 
 %% data_worker:import_files().

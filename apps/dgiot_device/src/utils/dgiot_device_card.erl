@@ -40,13 +40,19 @@ get_devcard(Channel, ProductId, DeviceId, Devaddr, Args) ->
 
 get_device_card(Channel, ProductId, DeviceId, Args) ->
     Results =
-        case dgiot_device_tdengine:get_realtime_data(Channel, ProductId, DeviceId, Args) of
+        case get_realtime_data(Channel, ProductId, DeviceId, Args) of
             {ok, #{<<"results">> := TdResults}} when length(TdResults) > 0 ->
                 TdResults;
             _ ->
                 [#{}]
         end,
     get_card(ProductId, Results, DeviceId, Args, dgiot_data:get({shard_storage, ProductId})).
+
+get_realtime_data(Channel, ProductId, DeviceId, Args) ->
+    case dgiot_data:get({ProductId, <<"IOTDB">>}) of
+        not_find -> dgiot_device_tdengine:get_realtime_data(Channel, ProductId, DeviceId, Args);
+        _ -> dgiot_device_iotdb:get_realtime_data(Channel, ProductId, DeviceId, Args)
+    end.
 
 
 decode_shard_data(Data, Result) ->
@@ -88,7 +94,10 @@ get_card(ProductId, Results, DeviceId, Args, _) ->
     Keys = maps:get(<<"keys">>, Args, <<"*">>),
     Props = dgiot_product:get_props(ProductId, Keys),
     Time = maps:get(<<"createdat">>, Result, dgiot_datetime:now_secs()),
-    NewTime = dgiot_tdengine_field:get_time(dgiot_utils:to_binary(Time), <<"111">>),
+    NewTime = case dgiot_data:get({ProductId, <<"IOTDB">>}) of
+        not_find -> dgiot_tdengine_field:get_time(dgiot_utils:to_binary(Time), <<"111">>);
+        _ -> dgiot_iotdb_field:get_time(Time, <<"111">>)
+    end,
     lists:foldl(fun(X, Acc) ->
         case X of
             #{<<"dataSource">> := #{<<"api">> := _}, <<"name">> := Name, <<"identifier">> := Identifier, <<"dataForm">> := #{<<"protocol">> := Protocol}, <<"dataType">> := #{<<"type">> := Typea} = DataType} ->
@@ -113,7 +122,7 @@ get_card(ProductId, Results, DeviceId, Args, _) ->
                                 error ->
                                     {<<>>, <<"--">>};
                                 {ok, V} ->
-                                    {V, dgiot_product_tdengine:check_field(Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId})}
+                                    {V, format_value(ProductId, Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId})}
                             end,
                         Acc ++ [#{<<"identifier">> => Identifier, <<"name">> => Name,
                             <<"type">> => Typea, <<"number">> => NewV, <<"value">> => Value,
@@ -125,7 +134,7 @@ get_card(ProductId, Results, DeviceId, Args, _) ->
                             <<"time">> => NewTime, <<"unit">> => Unit,
                             <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}];
                     V ->
-                        NewV = dgiot_product_tdengine:check_field(Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId}),
+                        NewV = format_value(ProductId, Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId}),
                         Acc ++ [#{<<"identifier">> => Identifier, <<"name">> => Name,
                             <<"type">> => Typea, <<"number">> => NewV,
                             <<"time">> => NewTime, <<"unit">> => Unit,
@@ -150,7 +159,7 @@ get_card(ProductId, Results, DeviceId, Args, _) ->
                         {ok, null} ->
                             {<<>>, <<"--">>};
                         {ok, V} ->
-                            {V, dgiot_product_tdengine:check_field(Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId})};
+                            {V, format_value(ProductId, Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId})};
                         _ ->
                             {<<>>, <<"--">>}
                     end,
@@ -162,6 +171,12 @@ get_card(ProductId, Results, DeviceId, Args, _) ->
                 Acc
         end
                 end, [], Props).
+
+format_value(ProductId, Type, Value, Context) ->
+    case dgiot_data:get({ProductId, <<"IOTDB">>}) of
+        not_find -> dgiot_product_tdengine:check_field(Type, Value, Context);
+        _ -> dgiot_iotdb_field:check_field(Type, Value, Context)
+    end.
 
 do_hook(Key, Args) ->
     case catch dgiot_hook:run_hook(Key, Args) of

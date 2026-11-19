@@ -134,7 +134,12 @@ get_konva_view(View, Devaddr, ProductId, Type, SessionToken) ->
         _ ->
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
             dgiot_mqtt:subscribe_route_key([<<"$dg/user/konva/", DeviceId/binary, "/#">>], <<"konva">>, SessionToken),
-            case dgiot_device_tdengine:get_device(ProductId, Devaddr, #{<<"keys">> => <<"*">>, <<"limit">> => 1}) of
+            Query = #{<<"keys">> => <<"*">>, <<"limit">> => 1},
+            DataResult = case dgiot_data:get({ProductId, <<"IOTDB">>}) of
+                not_find -> dgiot_device_tdengine:get_device(ProductId, Devaddr, Query);
+                _ -> dgiot_device_iotdb:get_device(ProductId, Devaddr, Query)
+            end,
+            case DataResult of
                 {ok, #{<<"results">> := [Result | _]}} ->
                     put({self(), td}, Result);
                 _ ->
