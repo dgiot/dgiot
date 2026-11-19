@@ -1,0 +1,15 @@
+{application, dgiot_iotdb,
+    [{description, "DGIOT IoTDB time-series connector"},
+        {vsn, "4.3.0"},
+        {registered, []},
+        {mod, {dgiot_iotdb_app, []}},
+        {applications, [kernel, stdlib, inets, ssl, dgiot, dgiot_parse, dgiot_bridge, dgiot_device]},
+        {env, []},
+        {modules, []},
+        {licenses, ["Apache-2.0"]},
+        {maintainers, ["DGIOT Team"]},
+        {links, [{"Homepage", "https://iotdb.apache.org/"},
+            {"Github", "https://github.com/apache/iotdb"}
+        ]}
+    ]
+}.

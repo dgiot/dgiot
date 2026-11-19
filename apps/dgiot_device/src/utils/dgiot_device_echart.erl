@@ -43,11 +43,17 @@ get_echart_data(Channel, ProductId, DeviceId, Devaddr, Args) ->
 
 get_echart_data(Channel, ProductId, DeviceId, Args) ->
     Query = maps:without([<<"productid">>, <<"deviceid">>], Args),
-    case dgiot_device_tdengine:get_history_data(Channel, ProductId, DeviceId, Query) of
+    case get_history_data(Channel, ProductId, DeviceId, Query) of
         {TdNames, {ok, #{<<"results">> := TdResults}}} ->
             {TdNames, TdResults};
         _ ->
             {[], []}
+    end.
+
+get_history_data(Channel, ProductId, DeviceId, Query) ->
+    case dgiot_data:get({ProductId, <<"IOTDB">>}) of
+        not_find -> dgiot_device_tdengine:get_history_data(Channel, ProductId, DeviceId, Query);
+        _ -> dgiot_device_iotdb:get_history_data(Channel, ProductId, DeviceId, Query)
     end.
 
 
@@ -60,19 +66,35 @@ format_line_(_ProductId, _Interval, [], Acc) ->
     Acc;
 
 format_line_(ProductId, Interval, [{<<"createdat">>, V} | Tail], Acc) ->
-    NewV = dgiot_tdengine_field:get_time(V, Interval),
+    NewV = format_time(ProductId, V, Interval),
     NewAcc = Acc#{<<"日期"/utf8>> => NewV},
     format_line_(ProductId, Interval, Tail, NewAcc);
 
 format_line_(ProductId, Interval, [{K, V} | Tail], Acc) ->
     NewAcc =
-        case dgiot_product:get_product_identifier(ProductId, K) of
+        case find_product_identifier(ProductId, K) of
             #{<<"name">> := Name} ->
                 Acc#{Name => V};
             _ ->
                 Acc
         end,
     format_line_(ProductId, Interval, Tail, NewAcc).
+
+find_product_identifier(ProductId, Key) ->
+    case dgiot_product:get_product_identifier(ProductId, Key) of
+        #{<<"name">> := _} = ProductIdentifier -> ProductIdentifier;
+        _ ->
+            case re:run(Key, <<"^(?:sum|last|first|max|min)\\(([^)]+)\\)$">>, [{capture, [1], binary}]) of
+                {match, [Identifier]} -> dgiot_product:get_product_identifier(ProductId, Identifier);
+                nomatch -> not_find
+            end
+    end.
+
+format_time(ProductId, Value, Interval) ->
+    case dgiot_data:get({ProductId, <<"IOTDB">>}) of
+        not_find -> dgiot_tdengine_field:get_time(Value, Interval);
+        _ -> dgiot_iotdb_field:get_time(Value, Interval)
+    end.
 
 format_results(_ProductId, _Interval, [], Acc) ->
     Acc;
@@ -149,7 +171,7 @@ get_data_by_month(Channel, ProductId, DeviceId, Args) ->
 %%            配置参数
     Interval = <<"1d">>,
     %%传入参数获得结果
-    case dgiot_device_tdengine:get_history_data2(Sql, Channel, DeviceId, Interval, ProductId, StartTime, EndTime) of
+    case query_month_data(Channel, ProductId, DeviceId, Keys, StartTime, EndTime, Interval, Sql) of
 %%                判断结果并转换格式
         {ok, #{<<"results">> := Results}} ->
 %%                    io:format("~s ~p Results = ~p,Name_and_nuit = ~p ~n",[?FILE,?LINE,Results,Name_and_nuit]),
@@ -158,6 +180,21 @@ get_data_by_month(Channel, ProductId, DeviceId, Args) ->
             {ok, Tabledata};
         _ ->
             {ok, #{<<"code">> => 400, <<"msg">> => <<"no data">>}}
+    end.
+
+query_month_data(Channel, ProductId, DeviceId, Keys, StartTime, EndTime, Interval, Sql) ->
+    case dgiot_data:get({ProductId, <<"IOTDB">>}) of
+        not_find ->
+            dgiot_device_tdengine:get_history_data2(Sql, Channel, DeviceId, Interval, ProductId, StartTime, EndTime);
+        _ ->
+            {FieldKeys, Functions} = dgiot_device_iotdb:get_aggregate_functions(ProductId, Keys),
+            Query = #{<<"keys">> => FieldKeys, <<"functions">> => Functions,
+                <<"starttime">> => StartTime, <<"endtime">> => EndTime, <<"interval">> => Interval},
+            case dgiot_device_iotdb:get_history_data(Channel, ProductId, DeviceId, Query) of
+                {_Names, {ok, #{<<"results">> := Results}}} ->
+                    {ok, #{<<"results">> => dgiot_device_iotdb:format_aggregate_results(Results, Functions)}};
+                {_Names, Error} -> Error
+            end
     end.
 
 get_keys(#{<<"thing">> := #{<<"properties">> := Properties}}, [<<"*">>]) ->
@@ -281,6 +318,27 @@ get_table(Results, Name_and_nuit) ->
 
 
 get_data_by_echart_category(Channel, ProductId, DeviceId, Args) ->
+    case dgiot_data:get({ProductId, <<"IOTDB">>}) of
+        not_find -> get_data_by_echart_category_tdengine(Channel, ProductId, DeviceId, Args);
+        _ -> get_data_by_echart_category_iotdb(Channel, ProductId, DeviceId, Args)
+    end.
+
+get_data_by_echart_category_iotdb(Channel, ProductId, DeviceId, Args) ->
+    {ok, Count} = maps:find(<<"month_count">>, Args),
+    {StartTime, EndTime} = dgiot_datetime:last_month(Count),
+    {ok, KeyArg} = maps:find(<<"keys">>, Args),
+    Keys = re:split(KeyArg, <<",">>, [trim]),
+    {ok, Product} = dgiot_product:lookup_prod(ProductId),
+    #{<<"name_and_unit">> := NameAndUnit, <<"sql">> := Sql} = get_keys(Product, Keys),
+    Interval = <<"1d">>,
+    case query_month_data(Channel, ProductId, DeviceId, Keys, StartTime, EndTime, Interval, Sql) of
+        {ok, #{<<"results">> := Results}} ->
+            {ok, get_table(Results, NameAndUnit)};
+        _ ->
+            {ok, #{<<"code">> => 400, <<"msg">> => <<"no data">>}}
+    end.
+
+get_data_by_echart_category_tdengine(Channel, ProductId, DeviceId, Args) ->
     %%    io:format("~s ~p Channel = ~p , ProductId = ~p, DeviceId = ~p    ~n",[?FILE,?LINE,Channel, ProductId, DeviceId]),
     case dgiot_data:get({tdengine_os, Channel}) of
         <<"windows">> ->
@@ -303,7 +361,7 @@ get_data_by_echart_category(Channel, ProductId, DeviceId, Args) ->
                   end,
 %%            io:format("~s ~p Res = ~p~n",[?FILE,?LINE,Res]),
             {ok, Sql} = maps:find(<<"sql">>, Res),
-            {ok, Names} = maps:find(<<"names">>, Res),
+            {ok, Names} = maps:find(<<"name_and_unit">>, Res),
 %%            配置参数
             Interval = <<"1d">>,
             %%传入参数获得结果

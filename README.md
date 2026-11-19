@@ -75,6 +75,7 @@ Modbus 40300 → MQTT(dgiot/{site}/{gw}/{dev}/{pt}/data) → Shadow PID
 | `dgiot_api` | Security | REST API + auth gateway |
 | `dgiot_http` | — | HTTP service layer |
 | `dgiot_tdengine` | Data | TDengine timeseries connector |
+| `dgiot_iotdb` | Data | Apache IoTDB time-series connector |
 
 ## Quick Start
 

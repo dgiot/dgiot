@@ -87,7 +87,7 @@ All code follows strict layer separation. Each layer communicates only with adja
 | 2. Protocol | Frame parse/encode, CRC check, format conversion | `modbus_rtu.erl` |
 | 3. Message Routing | MQTT routing, task queues, parent-device aggregation | Message routing functions |
 | 4. Business | Data decoding, attribute calculation, alarms, state mgmt | `dgiot_task.erl` |
-| 5. Data | Time-series storage, queries, aggregation (TDengine) | `dgiot_tdengine_adapter.erl` |
+| 5. Data | Time-series storage, queries, aggregation (TDengine / IoTDB) | `dgiot_tdengine_adapter.erl`, `dgiot_iotdb_adapter.erl` |
 | 6. Cache | Real-time cache, device state cache, session mgmt | Cache logic in `dgiot_task.erl` |
 | 7. API | REST/gRPC queries, control commands, dashboard data | API handler modules |
 
@@ -109,6 +109,7 @@ apps/
   dgiot_device/      Device management (thing models)
   dgiot_task/        Task and data processing pipeline
   dgiot_tdengine/    TDengine time-series DB adapter
+  dgiot_iotdb/       Apache IoTDB time-series DB adapter
   dgiot_http/        HTTP protocol adapter
   dgiot_modbus/      Modbus RTU/TCP protocol adapter
   dgiot_meter/       Meter reading protocols

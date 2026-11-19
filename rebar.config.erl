@@ -187,6 +187,7 @@ overlay_vars_rel(RelType) ->
     , {enable_plugin_dgiot_api, true}
     , {enable_plugin_dgiot_bridge, true}
     , {enable_plugin_dgiot_tdengine, true}
+    , {enable_plugin_dgiot_iotdb, true}
     , {enable_plugin_dgiot_task, true}
     , {enable_plugin_dgiot_device, true}
     , {enable_plugin_dgiot_http, true}
@@ -272,6 +273,7 @@ relx_plugin_apps(ReleaseType) ->
     , dgiot_api
     , dgiot_bridge
     , dgiot_tdengine
+    , dgiot_iotdb
     , dgiot_task
     , dgiot_device
     , dgiot_http
@@ -292,6 +294,7 @@ relx_plugin_apps_per_rel(cloud) ->
     , dgiot_parse
     , dgiot_bridge
     , dgiot_tdengine
+    , dgiot_iotdb
     , dgiot_task
     , dgiot_device
     , dgiot_http

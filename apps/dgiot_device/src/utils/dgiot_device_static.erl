@@ -119,7 +119,7 @@ get_labels(ProductId, Results) ->
                                             Specs = maps:get(<<"specs">>, DataType, #{}),
                                             Unit = maps:get(<<"unit">>, Specs, <<"">>),
                                             {Color, _, _} = dgiot_device:get_color(DeviceId, <<"quantity">>),
-                                            NewV = dgiot_product_tdengine:check_field(Typea, Value, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId}),
+                                            NewV = check_storage_field(ProductId, Typea, Value, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId}),
                                             Lcc ++ [#{<<"label">> => <<DeviceId/binary, "_", Identifier/binary, "_text">>, <<"number">> => NewV, <<"unit">> => Unit, <<"color">> => Color, <<"screen_deviceid">> => DeviceId, <<"funcId">> => Identifier}];
                                         _ ->
                                             Lcc
@@ -129,6 +129,12 @@ get_labels(ProductId, Results) ->
                         Acc
                 end, [], Results).
 
+check_storage_field(ProductId, Type, Value, Context) ->
+    case dgiot_data:get({ProductId, <<"IOTDB">>}) of
+        not_find -> dgiot_product_tdengine:check_field(Type, Value, Context);
+        _ -> dgiot_iotdb_field:check_field(Type, Value, Context)
+    end.
+
 %% INSERT INTO _24b9b4bc50._77c57f6860 using _24b9b4bc50._19c923fd82 TAGS("322000_AL_usb7") VALUES(now,15,30,29,26.9,54.7);
 %% select last(devaddr) as devaddr, last(process_duration) as process_duration FROM  _24b9b4bc50._5392ccb3d7 group by devaddr;
 %% select last(devaddr) as devaddr, sum(process_duration) as process_duration FROM  _24b9b4bc50._5392ccb3d7 where quantity = 2 group by devaddr;
@@ -136,8 +142,12 @@ get_realdata({Token, Realdatas}) when is_map(Realdatas) ->
     Payload =
         maps:fold(
             fun
-                (ProductId, #{<<"keys">> := Keys, <<"deviceids">> := _Deviceids}, Acc) ->
-                    case dgiot_product_tdengine:get_channel(Token) of
+                (ProductId, #{<<"keys">> := Keys, <<"deviceids">> := Deviceids}, Acc) ->
+                    case dgiot_data:lookup({ProductId, <<"IOTDB">>}) of
+                        {ok, IotdbChannel} ->
+                            Acc ++ get_iotdb_labels(ProductId, IotdbChannel, Deviceids, Keys);
+                        {error, not_find} ->
+                            case dgiot_product_tdengine:get_channel(Token) of
                         {error, Error} ->
                             {error, Error};
                         {ok, Channel} ->
@@ -160,6 +170,7 @@ get_realdata({Token, Realdatas}) when is_map(Realdatas) ->
                                 _ ->
                                     Acc
                             end
+                            end
                     end;
                 (_, _, Acc) ->
                     Acc
@@ -171,6 +182,24 @@ get_realdata({Token, Realdatas}) when is_map(Realdatas) ->
 
 get_realdata(_) ->
     pass.
+
+get_iotdb_labels(ProductId, Channel, DeviceIds, Keys) ->
+    lists:foldl(fun(DeviceId, Acc) ->
+        case dgiot_device:lookup(dgiot_utils:to_binary(DeviceId)) of
+            {ok, #{<<"devaddr">> := DevAddr}} ->
+                Query = #{<<"keys">> => Keys, <<"limit">> => 1},
+                case dgiot_device_iotdb:get_realtime_data(Channel, ProductId, DeviceId, Query) of
+                    {ok, #{<<"results">> := [Result | _]}} ->
+                        Acc ++ dgiot_device_static:get_labels(ProductId, [Result#{<<"devaddr">> => DevAddr}]);
+                    _ -> Acc
+                end;
+            _ -> Acc
+        end
+    end, [], normalize_device_ids(DeviceIds)).
+
+normalize_device_ids(DeviceIds) when is_list(DeviceIds) -> DeviceIds;
+normalize_device_ids(undefined) -> [];
+normalize_device_ids(DeviceId) -> [DeviceId].
 
 get_count(Token) ->
     RoleIds =

@@ -1,0 +1,103 @@
+{
+  "tags": [
+    {"name": "Basic", "description": "IoTDB time-series data"},
+    {"name": "View", "description": "IoTDB device views"}
+  ],
+  "definitions": {},
+  "paths": {
+    "/iotdb/product/{pid}": {
+      "get": {
+        "summary": "Query time-series data for a product",
+        "parameters": [
+          {"in": "path", "name": "pid", "required": true, "type": "string"},
+          {"in": "query", "name": "keys", "required": false, "type": "string", "default": "*"},
+          {"in": "query", "name": "where", "required": false, "type": "string"},
+          {"in": "query", "name": "order", "required": false, "type": "string", "default": "createdat"},
+          {"in": "query", "name": "limit", "required": false, "type": "integer", "default": 10},
+          {"in": "query", "name": "skip", "required": false, "type": "integer", "default": 0},
+          {"in": "query", "name": "starttime", "required": false, "type": "string"},
+          {"in": "query", "name": "endtime", "required": false, "type": "string"},
+          {"in": "query", "name": "interval", "required": false, "type": "string"},
+          {"in": "query", "name": "function", "required": false, "type": "string"}
+        ],
+        "responses": {"200": {"description": "Query results"}, "400": {"description": "Invalid query"}},
+        "tags": ["Basic"]
+      }
+    },
+    "/iotdb/device/{deviceid}": {
+      "get": {
+        "summary": "Query time-series data for a device",
+        "parameters": [
+          {"in": "path", "name": "deviceid", "required": true, "type": "string"},
+          {"in": "query", "name": "keys", "required": false, "type": "string", "default": "*"},
+          {"in": "query", "name": "where", "required": false, "type": "string"},
+          {"in": "query", "name": "order", "required": false, "type": "string", "default": "createdat"},
+          {"in": "query", "name": "limit", "required": false, "type": "integer", "default": 10},
+          {"in": "query", "name": "skip", "required": false, "type": "integer", "default": 0},
+          {"in": "query", "name": "starttime", "required": false, "type": "string"},
+          {"in": "query", "name": "endtime", "required": false, "type": "string"},
+          {"in": "query", "name": "interval", "required": false, "type": "string"},
+          {"in": "query", "name": "function", "required": false, "type": "string"}
+        ],
+        "responses": {"200": {"description": "Query results"}, "400": {"description": "Invalid query"}},
+        "tags": ["Basic"]
+      }
+    },
+    "/iotdb/echart/{deviceid}": {
+      "get": {
+        "summary": "Query chart data for a device",
+        "parameters": [
+          {"in": "path", "name": "deviceid", "required": true, "type": "string"},
+          {"in": "query", "name": "style", "required": true, "type": "string", "enum": ["amis_table", "line", "echart_category"]},
+          {"in": "query", "name": "keys", "required": false, "type": "string", "default": "*"},
+          {"in": "query", "name": "starttime", "required": false, "type": "string"},
+          {"in": "query", "name": "endtime", "required": false, "type": "string"},
+          {"in": "query", "name": "interval", "required": false, "type": "string"},
+          {"in": "query", "name": "limit", "required": false, "type": "integer", "default": 10},
+          {"in": "query", "name": "month_count", "required": false, "type": "integer", "default": 1},
+          {"in": "query", "name": "function", "required": false, "type": "string"}
+        ],
+        "responses": {"200": {"description": "Chart results"}, "400": {"description": "Invalid query"}},
+        "tags": ["View"]
+      }
+    },
+    "/iotdb/devicecard/{deviceid}": {
+      "get": {
+        "summary": "Get the latest device data card",
+        "parameters": [
+          {"in": "path", "name": "deviceid", "required": true, "type": "string"},
+          {"in": "query", "name": "keys", "required": false, "type": "string"}
+        ],
+        "responses": {"200": {"description": "Device card"}, "400": {"description": "Invalid device"}},
+        "tags": ["View"]
+      }
+    },
+    "/iotdb/gps/track/{deviceid}": {
+      "get": {
+        "summary": "Get the GPS track for a device",
+        "parameters": [
+          {"in": "path", "name": "deviceid", "required": true, "type": "string"},
+          {"in": "query", "name": "starttime", "required": true, "type": "string"},
+          {"in": "query", "name": "endtime", "required": true, "type": "string"}
+        ],
+        "responses": {"200": {"description": "GPS track"}, "400": {"description": "Invalid query"}},
+        "tags": ["View"]
+      }
+    },
+    "/iotdb/save": {
+      "post": {
+        "summary": "Write time-series data to IoTDB",
+        "parameters": [
+          {"in": "body", "name": "data", "required": true, "schema": {"type": "object",
+            "properties": {
+              "productid": {"type": "string"},
+              "devaddr": {"type": "string"},
+              "data": {"type": "object"}
+            }}}
+        ],
+        "responses": {"200": {"description": "Write result"}, "400": {"description": "Invalid write"}},
+        "tags": ["Basic"]
+      }
+    }
+  }
+}

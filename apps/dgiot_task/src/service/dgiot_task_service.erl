@@ -37,7 +37,7 @@
 %%% 数据保存函数（核心业务）
 %%%===================================================================
 
-%% @doc 保存数据到TDengine
+%% @doc 保存时序数据
 save_td(ProductId, DevAddr, Ack, _AppData) ->
     Topic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/properties/report">>,
     dgiot_mqttc_channel:send(ProductId, DevAddr, Topic, Ack),
@@ -496,10 +496,18 @@ dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage, _Interval) ->
         dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId, DeviceId, AllData})
     catch _:_ -> pass
     end,
-    dgiot_tdengine_adapter:save(ProductId, DevAddr, Storage),
+    StorageBackend =
+        case dgiot_data:lookup({ProductId, <<"IOTDB">>}) of
+            {ok, _ChannelId} ->
+                dgiot_iotdb_adapter:save(ProductId, DevAddr, Storage),
+                <<"IoTDB">>;
+            {error, not_find} ->
+                dgiot_tdengine_adapter:save(ProductId, DevAddr, Storage),
+                <<"TDengine">>
+        end,
     dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
     Channel = dgiot_product_channel:get_taskchannel(ProductId),
-    dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p save td => ProductId ~p DevAddr ~p ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(dgiot_json:encode(Storage))]),
+    dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p save ~ts => ProductId ~p DevAddr ~p ~ts ", [?FILE, ?LINE, StorageBackend, ProductId, DevAddr, unicode:characters_to_list(dgiot_json:encode(Storage))]),
     dgiot_data:insert({last_data, DeviceId}, AllData),
     ?LOG(info, "Updated last_data cache for device ~p", [DeviceId]),
     Storage.

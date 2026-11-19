@@ -1,0 +1,3 @@
+-define(TYPE, <<"IOTDB">>).
+-define(DEFAULT, <<"default">>).
+-define(DEFAULT_ROOT, <<"root.dgiot">>).
